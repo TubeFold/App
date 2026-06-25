@@ -11,6 +11,8 @@ final class LibraryViewModel: ObservableObject {
     @Published private(set) var lastLoadedAt: Date?
 
     private let service = LibraryService()
+    private var refreshTask: Task<Void, Never>?
+    private var isRefreshing = false
 
     var readyCount: Int {
         videos.filter(\.isReady).count
@@ -20,14 +22,46 @@ final class LibraryViewModel: ObservableObject {
         videos.filter { ["queued", "fetchingMetadata", "fetchingTranscript", "generatingSummary"].contains($0.status) }.count
     }
 
-    func load() async {
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
+    func startAutoRefresh() {
+        guard refreshTask == nil else { return }
+        refreshTask = Task { [weak self] in
+            guard let self else { return }
+            await self.load(showSpinner: self.videos.isEmpty)
+
+            while !Task.isCancelled {
+                let delaySeconds = self.activeCount > 0 ? 2.0 : 6.0
+                try? await Task.sleep(nanoseconds: UInt64(delaySeconds * 1_000_000_000))
+                if Task.isCancelled { return }
+                await self.load(showSpinner: false)
+            }
+        }
+    }
+
+    func stopAutoRefresh() {
+        refreshTask?.cancel()
+        refreshTask = nil
+    }
+
+    func load(showSpinner: Bool = true) async {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        if showSpinner {
+            isLoading = true
+        }
+        defer {
+            isRefreshing = false
+            if showSpinner {
+                isLoading = false
+            }
+        }
 
         do {
-            videos = try await service.listVideos()
+            let loadedVideos = try await service.listVideos()
+            if loadedVideos != videos {
+                videos = loadedVideos
+            }
             lastLoadedAt = Date()
+            errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -71,7 +105,7 @@ final class LibraryViewModel: ObservableObject {
         Task {
             do {
                 try await service.regenerate(videoID: video.id)
-                await load()
+                await load(showSpinner: false)
             } catch {
                 errorMessage = error.localizedDescription
             }

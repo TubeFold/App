@@ -10,7 +10,7 @@ struct RegenerateVideoResponse: Decodable {
     let status: String
 }
 
-struct LibraryVideo: Decodable, Identifiable {
+struct LibraryVideo: Decodable, Identifiable, Equatable {
     let id: String
     let youtubeVideoID: String
     let canonicalURL: String

@@ -30,14 +30,17 @@ struct LibraryView: View {
                     .padding(.bottom, 24)
                 }
                 .refreshable {
-                    await viewModel.load()
+                    await viewModel.load(showSpinner: true)
                 }
             }
         }
         .padding(32)
         .navigationTitle("Library")
         .task {
-            await viewModel.load()
+            viewModel.startAutoRefresh()
+        }
+        .onDisappear {
+            viewModel.stopAutoRefresh()
         }
     }
 
@@ -51,7 +54,7 @@ struct LibraryView: View {
             }
             Spacer()
             Button {
-                Task { await viewModel.load() }
+                Task { await viewModel.load(showSpinner: true) }
             } label: {
                 Label(viewModel.isLoading ? "Refreshing" : "Refresh", systemImage: "arrow.clockwise")
             }

@@ -44,7 +44,18 @@ class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         logger.info("GET path=%s origin=%s", self.path, self.headers.get("Origin"))
         if self.path == "/health":
-            self._send_json({"status": "ok", "appVersion": APP_VERSION, "apiVersion": API_VERSION})
+            self._send_json(
+                {
+                    "status": "ok",
+                    "appVersion": APP_VERSION,
+                    "apiVersion": API_VERSION,
+                    "backendFeatures": {
+                        "codexModelSettings": True,
+                        "libraryRegenerate": True,
+                        "unlimitedTranscripts": True,
+                    },
+                }
+            )
             return
 
         if self.path == "/api/v1/provider-setup":

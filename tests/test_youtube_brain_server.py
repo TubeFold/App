@@ -58,6 +58,9 @@ class ServerTests(unittest.TestCase):
         body = self.get_json("/health")
         self.assertEqual(body["status"], "ok")
         self.assertEqual(body["apiVersion"], 1)
+        self.assertTrue(body["backendFeatures"]["unlimitedTranscripts"])
+        self.assertTrue(body["backendFeatures"]["libraryRegenerate"])
+        self.assertTrue(body["backendFeatures"]["codexModelSettings"])
 
     def test_summary_request_creates_job_and_dedupes_active_video(self) -> None:
         request = {

@@ -4,22 +4,29 @@ final class BackendProcessController {
     static let shared = BackendProcessController()
 
     private let healthURL = URL(string: "http://127.0.0.1:43821/health")!
+    private let port = "43821"
     private var process: Process?
 
     private init() {}
 
     func ensureRunning() async throws {
-        if await isHealthy() {
+        if await isCompatibleBackendHealthy() {
             return
         }
 
-        if process?.isRunning != true {
-            try launch()
+        if let process, process.isRunning {
+            NSLog("youtube-brain-server: stopping incompatible helper pid=%d", process.processIdentifier)
+            process.terminate()
+            self.process = nil
+        } else {
+            terminateStaleHelperOnPort()
         }
+
+        try launch()
 
         for _ in 0..<30 {
             try await Task.sleep(nanoseconds: 200_000_000)
-            if await isHealthy() {
+            if await isCompatibleBackendHealthy() {
                 return
             }
         }
@@ -32,14 +39,22 @@ final class BackendProcessController {
         process = nil
     }
 
-    private func isHealthy() async -> Bool {
+    private func isCompatibleBackendHealthy() async -> Bool {
         var request = URLRequest(url: healthURL)
         request.timeoutInterval = 1.5
 
         do {
-            let (_, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await URLSession.shared.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else { return false }
-            return (200..<300).contains(httpResponse.statusCode)
+            guard (200..<300).contains(httpResponse.statusCode) else { return false }
+
+            let health = try JSONDecoder().decode(BackendHealthResponse.self, from: data)
+            let features = health.backendFeatures
+            return health.status == "ok"
+                && health.apiVersion == 1
+                && features?.codexModelSettings == true
+                && features?.libraryRegenerate == true
+                && features?.unlimitedTranscripts == true
         } catch {
             return false
         }
@@ -64,6 +79,51 @@ final class BackendProcessController {
 
         try launchedProcess.run()
         process = launchedProcess
+    }
+
+    private func terminateStaleHelperOnPort() {
+        guard let output = runProcessAndCapture(
+            executable: "/usr/sbin/lsof",
+            arguments: ["-nP", "-tiTCP:\(port)", "-sTCP:LISTEN"]
+        ) else {
+            return
+        }
+
+        let currentPID = ProcessInfo.processInfo.processIdentifier
+        let pids = output
+            .split(whereSeparator: \.isNewline)
+            .compactMap { Int32(String($0).trimmingCharacters(in: .whitespacesAndNewlines)) }
+            .filter { $0 != currentPID }
+
+        for pid in pids {
+            NSLog("youtube-brain-server: terminating stale helper on port %@ pid=%d", port, pid)
+            _ = runProcessAndCapture(executable: "/bin/kill", arguments: [String(pid)])
+        }
+
+        if !pids.isEmpty {
+            Thread.sleep(forTimeInterval: 0.2)
+        }
+    }
+
+    private func runProcessAndCapture(executable: String, arguments: [String]) -> String? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: executable)
+        process.arguments = arguments
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = Pipe()
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            return nil
+        }
+
+        guard process.terminationStatus == 0 else { return nil }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        return String(data: data, encoding: .utf8)
     }
 
     private func discoverServerExecutable() -> URL? {
@@ -143,4 +203,16 @@ final class BackendProcessController {
             NSLog("%@: %@", prefix, text.trimmingCharacters(in: .whitespacesAndNewlines))
         }
     }
+}
+
+private struct BackendHealthResponse: Decodable {
+    let status: String
+    let apiVersion: Int
+    let backendFeatures: BackendFeatures?
+}
+
+private struct BackendFeatures: Decodable {
+    let codexModelSettings: Bool
+    let libraryRegenerate: Bool
+    let unlimitedTranscripts: Bool
 }
