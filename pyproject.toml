@@ -1,0 +1,11 @@
+[project]
+name = "youtube-summary"
+version = "0.1.0"
+description = "Create Markdown summaries for YouTube videos through Codex CLI."
+requires-python = ">=3.11"
+dependencies = [
+  "youtube-transcript-api>=1.0.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["scripts"]
