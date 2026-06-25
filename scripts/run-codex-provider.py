@@ -26,9 +26,18 @@ def main() -> int:
     args.output_file.parent.mkdir(parents=True, exist_ok=True)
     args.workdir.mkdir(parents=True, exist_ok=True)
 
+    codex_model = os.environ.get("CODEX_MODEL", "").strip()
+    reasoning_effort = os.environ.get("CODEX_REASONING_EFFORT", "").strip()
     command = [
         codex,
         "exec",
+    ]
+    if codex_model:
+        command.extend(["--model", codex_model])
+    if reasoning_effort:
+        command.extend(["-c", f'model_reasoning_effort="{reasoning_effort}"'])
+    command.extend(
+        [
         "--sandbox",
         "read-only",
         "--cd",
@@ -41,7 +50,8 @@ def main() -> int:
         "--output-last-message",
         str(args.output_file),
         "-",
-    ]
+        ]
+    )
 
     process = subprocess.Popen(
         command,

@@ -116,7 +116,6 @@ PREFERRED_TRANSCRIPT_LANGS="pl,ru,en"
 ALLOW_ANY_TRANSCRIPT_LANGUAGE="true"
 OPEN_AFTER_SAVE="false"
 CODEX_TIMEOUT_SECONDS="900"
-MAX_TRANSCRIPT_CHARACTERS="150000"
 LOG_LEVEL="info"
 ```
 
@@ -203,6 +202,121 @@ ys.cliPath = "/Users/bogdan/.local/bin/youtube-summary"
 
 macOS может запросить Automation/Accessibility permissions для Hammerspoon, Safari или Chrome.
 
+## YouTube Brain Local API
+
+Дополнительно к CLI в проекте есть development-прототип YouTube Brain: localhost API + Chrome Extension. macOS-приложение включает копию backend-а внутри `.app` и поднимает этот helper само; ручной запуск нужен только для отладки API или extension. Helper переиспользует тот же transcript/Codex pipeline, но сохраняет данные в:
+
+```text
+~/Library/Application Support/YouTube Brain/
+```
+
+Ручной запуск сервера для development-отладки:
+
+```bash
+youtube-brain-server --provider codex
+```
+
+Для проверки без Codex:
+
+```bash
+youtube-brain-server --provider fake
+```
+
+Endpoints:
+
+```text
+GET  http://127.0.0.1:43821/health
+GET  http://127.0.0.1:43821/api/v1/provider-setup
+POST http://127.0.0.1:43821/api/v1/provider-setup/codex/detect
+POST http://127.0.0.1:43821/api/v1/provider-setup/codex/test
+POST http://127.0.0.1:43821/api/v1/provider-setup/complete
+POST http://127.0.0.1:43821/api/v1/summaries
+GET  http://127.0.0.1:43821/api/v1/jobs/{jobId}
+GET  http://127.0.0.1:43821/api/v1/videos/by-youtube-id/{youtubeVideoId}
+POST http://127.0.0.1:43821/api/v1/videos/{videoId}/regenerate
+```
+
+Provider setup endpoints implement the backend for the Codex onboarding wizard:
+
+```bash
+curl -sS -X POST http://127.0.0.1:43821/api/v1/provider-setup/codex/detect
+curl -sS -X POST http://127.0.0.1:43821/api/v1/provider-setup/codex/test
+curl -sS -X POST http://127.0.0.1:43821/api/v1/provider-setup/complete
+```
+
+Detection checks saved path, login-shell `command -v codex`, `/opt/homebrew/bin/codex`, `/usr/local/bin/codex`, and `~/.local/bin/codex`. The connection test runs Codex from an isolated temp directory with a marker prompt and stores only setup state, not credentials or the full test output.
+
+## YouTube Brain macOS App
+
+Xcode-проект находится в:
+
+```text
+Youtube Brain App/Youtube Brain App.xcodeproj
+```
+
+Текущий SwiftUI app реализует MVP onboarding для Codex:
+
+- стартовый экран состояния приложения без ручных backend-команд;
+- wizard `Before you begin -> Check installation -> Test connection -> Complete`;
+- автоматический запуск и остановку local helper;
+- embedded backend в `Contents/Resources/YouTubeBrainBackend`;
+- автоматический поиск `codex`;
+- ручной выбор executable;
+- connection test через `POST /api/v1/provider-setup/codex/test`;
+- сохранение завершённого setup через `POST /api/v1/provider-setup/complete`.
+- главный экран Codex status: `Installed`, `Signed in`, `Ready`;
+- repair flow: если сохранённый Codex путь сломан или connection test больше не проходит, setup помечается incomplete и app открывает нужный шаг wizard.
+
+Перед запуском app вручную поднимать `youtube-brain-server` не нужно. Xcode build phase `Embed Python Backend` копирует в app bundle `bin/`, `youtube_brain/`, `scripts/`, `providers/`, `prompts/`, `config/`, `requirements.txt`, Python framework, interpreter и Python dependencies. Для текущей direct-distribution сборки App Sandbox выключен, потому что приложение запускает локальный helper-процесс и может использовать выбранный пользователем Codex executable после перезапуска.
+
+Build phase проверяет embedded backend прямо во время сборки:
+
+```text
+Youtube Brain.app/Contents/Resources/YouTubeBrainBackend/
+  Runtime/Python.framework/
+  Runtime/bin/python3
+  Runtime/lib/python*/site-packages/
+  youtube-brain-server
+```
+
+Для сборки из терминала:
+
+```bash
+xcodebuild -project "Youtube Brain App/Youtube Brain App.xcodeproj" -scheme "Youtube Brain" -configuration Debug -destination "platform=macOS" build
+```
+
+Сервер слушает только `127.0.0.1`. Для development API token по умолчанию отключён. Чтобы включить локальную авторизацию:
+
+```bash
+export YOUTUBE_BRAIN_API_TOKEN="dev-local-token"
+```
+
+Логи:
+
+```text
+~/Library/Application Support/YouTube Brain/logs/app.log
+~/Library/Application Support/YouTube Brain/jobs/<job-id>/job.log
+~/Library/Application Support/YouTube Brain/jobs/<job-id>/metadata.stdout.log
+~/Library/Application Support/YouTube Brain/jobs/<job-id>/metadata.stderr.log
+~/Library/Application Support/YouTube Brain/jobs/<job-id>/transcript.stdout.log
+~/Library/Application Support/YouTube Brain/jobs/<job-id>/transcript.stderr.log
+~/Library/Application Support/YouTube Brain/jobs/<job-id>/provider-codex.stdout.log
+~/Library/Application Support/YouTube Brain/jobs/<job-id>/provider-codex.stderr.log
+```
+
+`app.log` содержит HTTP-запросы, dedupe-решения, переходы статусов, запуск процессов, exit codes, длительность и размеры. `job.log` содержит компактный timeline конкретной задачи. Полный transcript и summary в эти логи не пишутся.
+
+Chrome Extension находится в `chrome-extension/`. Установка development build:
+
+1. Откройте `chrome://extensions`.
+2. Включите Developer Mode.
+3. Нажмите Load unpacked.
+4. Выберите `/Users/bogdan/GIT/youtube-summary/chrome-extension`.
+5. Откройте macOS-приложение YouTube Brain или вручную запустите `youtube-brain-server` для чистой API-отладки.
+6. Откройте YouTube-видео и нажмите иконку YouTube Brain.
+
+Это ещё не финальная notarized упаковка. Сейчас macOS app уже прячет ручной запуск backend-а, управляет helper-ом и включает backend-код с Python runtime в `.app`; установленный Codex CLI пока остаётся внешней зависимостью пользователя.
+
 ## Тесты
 
 ```bash
@@ -239,8 +353,6 @@ youtube-summary "https://youtu.be/dQw4w9WgXcQ" --verbose
 `No transcript found`
 : У видео нет доступного transcript для настроенных языков. Можно включить `ALLOW_ANY_TRANSCRIPT_LANGUAGE=true`.
 
-`Transcript is too large`
-: MVP пока не делает chunked summarization. Увеличьте `MAX_TRANSCRIPT_CHARACTERS` или дождитесь реализации chunking.
 
 ## Ограничения MVP
 

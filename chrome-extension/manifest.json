@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Brain",
+  "version": "0.1.0",
+  "description": "Send the current YouTube video to the local YouTube Brain app.",
+  "permissions": ["activeTab", "storage", "tabs"],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://youtu.be/*",
+    "http://127.0.0.1/*"
+  ],
+  "action": {
+    "default_popup": "src/popup/popup.html"
+  },
+  "background": {
+    "service_worker": "src/background/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["src/content/youtube-content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
