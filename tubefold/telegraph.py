@@ -305,7 +305,7 @@ class TelegraphClient:
         return payload.get("result") or {}
 
     def create_account(self, short_name: str, author_name: str = "", author_url: str = "") -> dict[str, Any]:
-        params = {"short_name": short_name[:32] or "youtube-brain"}
+        params = {"short_name": short_name[:32] or "tubefold"}
         if author_name:
             params["author_name"] = author_name[:128]
         if author_url:
@@ -395,7 +395,7 @@ class TelegraphPublisher:
             return str(token)
 
         short_name = f"yt-brain-{secrets.token_hex(4)}"
-        account = self.client.create_account(short_name=short_name, author_name="YouTube Brain")
+        account = self.client.create_account(short_name=short_name, author_name="TubeFold")
         token = str(account.get("access_token") or "")
         if not token:
             raise TelegraphError("Telegraph did not return an access token.")

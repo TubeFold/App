@@ -5,14 +5,14 @@ struct StepIntroView: View {
         VStack(alignment: .leading, spacing: 18) {
             Text("Connect Codex")
                 .font(.largeTitle.weight(.semibold))
-            Text("YouTube Brain uses your signed-in Codex CLI on this Mac. No API key is needed.")
+            Text("TubeFold uses your signed-in Codex CLI on this Mac. No API key is needed.")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             VStack(alignment: .leading, spacing: 10) {
                 Label("Before you continue", systemImage: "terminal")
                     .font(.headline)
-                Text("Make sure Codex is installed and signed in. YouTube Brain will find it automatically, or you can choose the executable yourself.")
+                Text("Make sure Codex is installed and signed in. TubeFold will find it automatically, or you can choose the executable yourself.")
                     .foregroundStyle(.secondary)
             }
             .padding(18)

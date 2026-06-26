@@ -2,7 +2,7 @@ local M = {}
 
 M.hotkeyModifiers = { "cmd", "alt" }
 M.hotkeyKey = "Y"
-M.cliPath = os.getenv("YOUTUBE_SUMMARY_CLI") or os.getenv("HOME") .. "/.local/bin/youtube-summary"
+M.cliPath = os.getenv("TUBEFOLD_CLI") or os.getenv("HOME") .. "/.local/bin/tubefold"
 M.shellPath = "/bin/zsh"
 M.path = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 

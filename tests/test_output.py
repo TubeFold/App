@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from youtube_summary_lib import safe_filename, unique_markdown_path
+from tubefold_lib import safe_filename, unique_markdown_path
 
 
 class OutputTests(unittest.TestCase):

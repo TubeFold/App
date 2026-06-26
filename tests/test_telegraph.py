@@ -8,11 +8,11 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from youtube_brain.config import AppConfig
-from youtube_brain.models import SummaryRequest
-from youtube_brain.repository import Repository
-from youtube_brain.server import YouTubeBrainServer
-from youtube_brain.telegraph import (
+from tubefold.config import AppConfig
+from tubefold.models import SummaryRequest
+from tubefold.repository import Repository
+from tubefold.server import TubeFoldServer
+from tubefold.telegraph import (
     MAX_CONTENT_BYTES,
     TelegraphClient,
     TelegraphPublisher,
@@ -20,7 +20,7 @@ from youtube_brain.telegraph import (
     markdown_to_nodes,
     strip_front_matter,
 )
-import youtube_brain.server as server_module
+import tubefold.server as server_module
 
 
 def test_config(data_dir: Path, port: int = 0) -> AppConfig:
@@ -111,7 +111,7 @@ class MarkdownConversionTests(unittest.TestCase):
         self.assertEqual(fenced, [{"tag": "pre", "children": ["line1\nline2"]}])
 
     def test_strip_front_matter(self) -> None:
-        doc = '---\ntype: "youtube-summary"\ntitle: "X"\n---\n\n# Body\n\ntext'
+        doc = '---\ntype: "tubefold"\ntitle: "X"\n---\n\n# Body\n\ntext'
         stripped = strip_front_matter(doc)
         self.assertFalse(stripped.startswith("---"))
         self.assertTrue(stripped.startswith("# Body"))
@@ -220,7 +220,7 @@ class PublisherTests(unittest.TestCase):
     def test_publish_without_summary_raises(self) -> None:
         request = SummaryRequest(video_id="dQw4w9WgXcQ", url="https://youtu.be/dQw4w9WgXcQ", title="X")
         _status, vid, _job = self.repository.create_or_reuse(request)
-        from youtube_brain.telegraph import TelegraphError
+        from tubefold.telegraph import TelegraphError
 
         with self.assertRaises(TelegraphError):
             self.publisher().publish(self.repository.get_video(vid))
@@ -244,7 +244,7 @@ class PublishEndpointTests(unittest.TestCase):
             def notify(self) -> None:
                 pass
 
-        self.server = YouTubeBrainServer(test_config(self.data_dir), self.repository, DummyQueue())  # type: ignore[arg-type]
+        self.server = TubeFoldServer(test_config(self.data_dir), self.repository, DummyQueue())  # type: ignore[arg-type]
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         self.base_url = f"http://127.0.0.1:{self.server.server_port}"

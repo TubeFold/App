@@ -32,8 +32,8 @@ final class MenuBarController: NSObject {
 
     func start() {
         statusItem.button?.wantsLayer = true
-        setIconMode(.idle, tooltip: "YouTube Brain")
-        rebuildMenu(statusTitle: "YouTube Brain is ready", activeCount: 0)
+        setIconMode(.idle, tooltip: "TubeFold")
+        rebuildMenu(statusTitle: "TubeFold is ready", activeCount: 0)
         configureNotifications()
         refresh()
         timer = Timer.scheduledTimer(timeInterval: 6, target: self, selector: #selector(pollFromTimer), userInfo: nil, repeats: true)
@@ -51,7 +51,7 @@ final class MenuBarController: NSObject {
                 let videos = try await service.listVideos()
                 apply(videos: videos)
             } catch {
-                setIconMode(.error, tooltip: "YouTube Brain needs attention")
+                setIconMode(.error, tooltip: "TubeFold needs attention")
                 rebuildMenu(statusTitle: "Could not load Library", activeCount: 0)
             }
         }
@@ -236,7 +236,7 @@ final class MenuBarController: NSObject {
                     NSWorkspace.shared.open(url)
                 }
             } catch {
-                NSLog("youtube-brain: telegraph publish failed: %@", error.localizedDescription)
+                NSLog("tubefold: telegraph publish failed: %@", error.localizedDescription)
             }
         }
     }

@@ -1,5 +1,5 @@
 const API_BASE_URL = "http://127.0.0.1:43821";
-const API_TOKEN_STORAGE_KEY = "youtubeBrainApiToken";
+const API_TOKEN_STORAGE_KEY = "tubefoldApiToken";
 
 async function storedToken() {
   const data = await chrome.storage.local.get(API_TOKEN_STORAGE_KEY);
@@ -67,9 +67,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     }
     if (message?.type === "OPEN_MAC_APP") {
       const rawURL = message.url || "";
-      const targetURL = rawURL.startsWith("youtubebrain://")
+      const targetURL = rawURL.startsWith("tubefold://")
         ? rawURL
-        : `youtubebrain://summarize?url=${encodeURIComponent(rawURL)}`;
+        : `tubefold://summarize?url=${encodeURIComponent(rawURL)}`;
       await chrome.tabs.create({ url: targetURL });
       sendResponse({ ok: true });
       return;

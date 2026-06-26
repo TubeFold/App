@@ -6,7 +6,7 @@ Tool that turns a YouTube URL into a Markdown summary. It does **not** use the O
 
 ## Commands
 
-Run everything from the repo root — tests and the `youtube_brain` package assume the project root is the working directory / on `sys.path`.
+Run everything from the repo root — tests and the `tubefold` package assume the project root is the working directory / on `sys.path`.
 
 ```bash
 # All tests (28 of them; the canonical runner)
@@ -16,21 +16,21 @@ python3 -m unittest discover -s tests
 python3 -m unittest tests.test_youtube_url
 python3 -m unittest tests.test_youtube_url.NormalizeYouTubeUrlTests.test_short_url
 
-# Install: checks deps, seeds ~/.config/youtube-summary/config.env, symlinks both CLIs into ~/.local/bin
+# Install: checks deps, seeds ~/.config/tubefold/config.env, symlinks both CLIs into ~/.local/bin
 ./install.sh
 
 # Run the CLI without installing (the .venv python is used if present)
-./bin/youtube-summary "https://youtu.be/dQw4w9WgXcQ" --verbose
+./bin/tubefold "https://youtu.be/dQw4w9WgXcQ" --verbose
 
 # Exercise the full pipeline WITHOUT Codex (no model call) — use this for fast iteration
-./bin/youtube-summary "https://youtu.be/dQw4w9WgXcQ" --provider fake --no-open
+./bin/tubefold "https://youtu.be/dQw4w9WgXcQ" --provider fake --no-open
 
 # Run the local HTTP backend by hand (only for debugging the API / extension; the macOS app launches it itself)
-./bin/youtube-brain-server --provider codex   # or --provider fake
+./bin/tubefold-server --provider codex   # or --provider fake
 
 # Build the macOS app from the terminal
-xcodebuild -project "Youtube Brain App/Youtube Brain App.xcodeproj" \
-  -scheme "Youtube Brain" -configuration Debug -destination "platform=macOS" build
+xcodebuild -project "TubeFold App/TubeFold.xcodeproj" \
+  -scheme "TubeFold" -configuration Debug -destination "platform=macOS" build
 ```
 
 `pyproject.toml` sets `[tool.pytest.ini_options] pythonpath = ["scripts"]`, so `pytest` also works, but `unittest discover` is what the project documents.
@@ -39,10 +39,10 @@ xcodebuild -project "Youtube Brain App/Youtube Brain App.xcodeproj" \
 
 There are **two front ends over one shared pipeline**:
 
-- **`bin/youtube-summary`** — one-shot, synchronous CLI. Self-contained orchestrator that runs the pipeline start-to-finish in a temp dir and prints the saved `.md` path to stdout (diagnostics go to stderr).
-- **`bin/youtube-brain-server`** + the `youtube_brain/` package — a persistent localhost HTTP API with a SQLite store and a background job queue. Drives the Chrome extension and the macOS app.
+- **`bin/tubefold`** — one-shot, synchronous CLI. Self-contained orchestrator that runs the pipeline start-to-finish in a temp dir and prints the saved `.md` path to stdout (diagnostics go to stderr).
+- **`bin/tubefold-server`** + the `tubefold/` package — a persistent localhost HTTP API with a SQLite store and a background job queue. Drives the Chrome extension and the macOS app.
 
-Both reuse the same helpers in **`scripts/youtube_summary_lib.py`** (URL parsing, metadata-field extraction, `strip_outer_markdown_fence`, `validate_provider_response`, `yaml_front_matter`, safe/unique filenames) and the same pipeline shape:
+Both reuse the same helpers in **`scripts/tubefold_lib.py`** (URL parsing, metadata-field extraction, `strip_outer_markdown_fence`, `validate_provider_response`, `yaml_front_matter`, safe/unique filenames) and the same pipeline shape:
 
 ```
 URL → parse video id → (optional) yt-dlp metadata → youtube-transcript-api transcript
@@ -73,25 +73,25 @@ To add a provider, drop an executable `providers/<name>.sh` honoring the contrac
 - `render-prompt.py` — fills `prompts/<template>.md` with metadata + transcript.
 - `embed-macos-backend.sh` — Xcode build-phase script; see below.
 
-### CLI config layering (`bin/youtube-summary`)
+### CLI config layering (`bin/tubefold`)
 
-Precedence, lowest to highest: `DEFAULT_CONFIG` in the script → `~/.config/youtube-summary/config.env` (or `--config` / `$YOUTUBE_SUMMARY_CONFIG`) → environment variables → CLI flags. Legacy keys `SUBTITLE_LANGS` / `ALLOW_ANY_SUBTITLE_LANGUAGE` are mapped onto the `*_TRANSCRIPT_*` keys, and the legacy `SUMMARY_LANGUAGE` key maps onto `OUTPUT_LANGUAGE`. Output filenames are derived from the video title, sanitized for macOS, and never overwrite — collisions get a ` (2)`, ` (3)` suffix. The summary's output language is configurable (`OUTPUT_LANGUAGE` / `--language`, default `English`): it is substituted into the prompt template as `{{OUTPUT_LANGUAGE}}` by `render-prompt.py`, so the template no longer hard-codes a language.
+Precedence, lowest to highest: `DEFAULT_CONFIG` in the script → `~/.config/tubefold/config.env` (or `--config` / `$TUBEFOLD_CONFIG`) → environment variables → CLI flags. Legacy keys `SUBTITLE_LANGS` / `ALLOW_ANY_SUBTITLE_LANGUAGE` are mapped onto the `*_TRANSCRIPT_*` keys, and the legacy `SUMMARY_LANGUAGE` key maps onto `OUTPUT_LANGUAGE`. Output filenames are derived from the video title, sanitized for macOS, and never overwrite — collisions get a ` (2)`, ` (3)` suffix. The summary's output language is configurable (`OUTPUT_LANGUAGE` / `--language`, default `English`): it is substituted into the prompt template as `{{OUTPUT_LANGUAGE}}` by `render-prompt.py`, so the template no longer hard-codes a language.
 
-### `youtube_brain/` package (the local server)
+### `tubefold/` package (the local server)
 
 Pure Python stdlib HTTP (`http.server.ThreadingHTTPServer`) — no web framework.
 
-- `server.py` — request routing; bound to `127.0.0.1` only. Optional bearer auth via `YOUTUBE_BRAIN_API_TOKEN` (disabled by default for local dev). `/health` advertises `apiVersion` and a `backendFeatures` map.
+- `server.py` — request routing; bound to `127.0.0.1` only. Optional bearer auth via `TUBEFOLD_API_TOKEN` (disabled by default for local dev). `/health` advertises `apiVersion` and a `backendFeatures` map.
 - `repository.py` — SQLite (`videos` + `jobs` tables) under the data dir. `create_or_reuse` does dedupe so the same YouTube video isn't re-summarized; `force_regenerate=True` overrides.
 - `processing.py` — a single background worker thread draining queued jobs **one at a time**, writing per-stage logs and copying final artifacts into `videos/<youtube_id>/`.
 - `provider_setup.py` + `codex_settings.py` — Codex onboarding: detect the `codex` binary, run a marker connection test, persist setup state (state only — never credentials or full test output), and validate model/reasoning-effort choices. `ProviderSetupStore` (`data_dir/provider-setup.json`) is also the app-settings store: it holds the `outputLanguage` setting (`output_language.py` normalizes it; default `English`), saved via `POST /api/v1/provider-setup/output-language` and returned in the `/api/v1/provider-setup` state. `processing.py` reads it and passes `--output-language` to `render-prompt.py`.
 - `telegraph.py` — "Publish to Telegraph" feature (stdlib only). Converts a stored summary's Markdown body into the Telegraph node DOM (`markdown_to_nodes`; headings collapse to `h3`/`h4` since Telegraph forbids `h1`/`h2`, content capped at 64 KB), talks to the public `telegra.ph` API via `urllib` (`TelegraphClient`, injectable `request_fn` so tests never hit the network), persists one anonymous account token created on first use (`TelegraphStore` → `data_dir/telegraph-account.json`), and publishes via `TelegraphPublisher`. One article per video: the URL is cached on the video row (`telegraph_url`/`telegraph_path`/`telegraph_summary_hash`); a repeat publish with an unchanged summary reopens the same URL, a regenerated summary updates the same page in place via `editPage`. Telegraph pages are **public and cannot be deleted** — only edited. Endpoint: `POST /api/v1/videos/{id}/publish-telegraph` → `{url, status}`. The macOS Library row and the Chrome extension popup both call it. The published article's source header also carries the read-time label (`build_article_content` calls `reading_time`).
 - `reading_time.py` — stdlib port of the [`readtime`](https://github.com/alanhamlett/readtime) algorithm (Medium's formula: 265 WPM, words split on `\W+`, inline-image time decaying 12s→3s, `max(1, ceil(seconds/60))` minutes). Reuses `telegraph.markdown_to_nodes` to extract the summary's visible text (link URLs dropped, labels kept). Surfaced two ways: `/api/v1/videos` includes `readingTimeMinutes` per ready video (computed on the fly in `_video_payload`), and the Telegraph header shows `"N min read"`.
-- `config.py` — `AppConfig` dataclass, env-var driven. Data dir defaults to `~/Library/Application Support/YouTube Brain/` (`database.sqlite`, `videos/`, `jobs/`, `logs/`). `python_executable` defaults to `.venv/bin/python`.
+- `config.py` — `AppConfig` dataclass, env-var driven. Data dir defaults to `~/Library/Application Support/TubeFold/` (`database.sqlite`, `videos/`, `jobs/`, `logs/`). `python_executable` defaults to `.venv/bin/python`.
 
 ### macOS app + backend compatibility check
 
-The SwiftUI app (`Youtube Brain App/`) **embeds the entire Python backend and a framework Python runtime inside the `.app`** via the Xcode build phase that runs `scripts/embed-macos-backend.sh` (copies `bin/ youtube_brain/ scripts/ providers/ prompts/ config/ requirements.txt` + `Python.framework` + venv site-packages, rewrites the interpreter's install name, ad-hoc codesigns, and validates imports at build time). At runtime `BackendProcessController` launches and supervises the embedded `youtube-brain-server`; users never start it manually.
+The SwiftUI app (`TubeFold App/`) **embeds the entire Python backend and a framework Python runtime inside the `.app`** via the Xcode build phase that runs `scripts/embed-macos-backend.sh` (copies `bin/ tubefold/ scripts/ providers/ prompts/ config/ requirements.txt` + `Python.framework` + venv site-packages, rewrites the interpreter's install name, ad-hoc codesigns, and validates imports at build time). At runtime `BackendProcessController` launches and supervises the embedded `tubefold-server`; users never start it manually.
 
 Because client and server ship together but can drift, `BackendProcessController` treats `/health` as a **compatibility gate**: it only reuses a running helper when `apiVersion == 1` **and every flag in `backendFeatures` is true**. Otherwise it kills the stale/incompatible helper and relaunches. **If you add a `backendFeatures` flag in `server.py`, update the Swift check in `BackendProcessController.swift` (and vice-versa) or the app will reject its own backend.** (Current flags: `codexModelSettings`, `libraryRegenerate`, `unlimitedTranscripts`, `telegraphPublish`, `outputLanguageSetting`, `readingTime`.)
 

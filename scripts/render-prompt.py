@@ -5,11 +5,11 @@ import argparse
 import json
 from pathlib import Path
 
-from youtube_summary_lib import metadata_fields, render_template
+from tubefold_lib import metadata_fields, render_template
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Render a youtube-summary prompt template")
+    parser = argparse.ArgumentParser(description="Render a tubefold prompt template")
     parser.add_argument("template_file", type=Path)
     parser.add_argument("metadata_json", type=Path)
     parser.add_argument("transcript_file", type=Path)

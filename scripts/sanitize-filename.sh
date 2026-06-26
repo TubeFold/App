@@ -2,4 +2,4 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec python3 "$script_dir/youtube_summary_lib.py" sanitize-filename "$@"
+exec python3 "$script_dir/tubefold_lib.py" sanitize-filename "$@"

@@ -5,7 +5,7 @@ import argparse
 import json
 from pathlib import Path
 
-from youtube_summary_lib import parse_bool
+from tubefold_lib import parse_bool
 from youtube_transcript_source import TranscriptError, ensure_transcript_text, fetch_transcript
 
 

@@ -1,4 +1,4 @@
-"""Local YouTube Brain server package."""
+"""Local TubeFold server package."""
 
 import logging
 

@@ -242,7 +242,7 @@ def validate_provider_response(text: str) -> None:
 
 
 def _main() -> int:
-    parser = argparse.ArgumentParser(description="Shared helpers for youtube-summary")
+    parser = argparse.ArgumentParser(description="Shared helpers for tubefold")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     sanitize = subparsers.add_parser("sanitize-filename")

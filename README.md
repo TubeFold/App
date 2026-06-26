@@ -1,4 +1,4 @@
-# youtube-summary
+# tubefold
 
 macOS CLI-инструмент для создания Markdown-саммари YouTube-видео через пользовательскую подписку и Codex CLI. OpenAI API не используется: основной provider запускает `codex exec` локально и забирает только финальное сообщение модели.
 
@@ -19,12 +19,12 @@ YouTube URL
 
 Главные части:
 
-- `bin/youtube-summary` - CLI orchestrator.
+- `bin/tubefold` - CLI orchestrator.
 - `providers/codex.sh` - Codex CLI provider.
 - `providers/fake.sh` - test/development provider without Codex.
 - `prompts/detailed-summary.md` - prompt template.
 - `scripts/fetch-transcript.py` - transcript fetching through `youtube-transcript-api`.
-- `hammerspoon/youtube-summary.lua` - optional hotkey integration.
+- `hammerspoon/tubefold.lua` - optional hotkey integration.
 
 Provider contract:
 
@@ -83,9 +83,9 @@ python3 -m pip install -r requirements.txt
 Скрипт:
 
 - проверит `python3`, `youtube-transcript-api`, `codex`;
-- создаст `~/.config/youtube-summary/config.env`, если его еще нет;
+- создаст `~/.config/tubefold/config.env`, если его еще нет;
 - сделает скрипты исполняемыми;
-- создаст symlink `~/.local/bin/youtube-summary`.
+- создаст symlink `~/.local/bin/tubefold`.
 
 Если `~/.local/bin` не в `PATH`, добавьте его в shell profile.
 
@@ -96,7 +96,7 @@ python3 -m pip install -r requirements.txt
 Пользовательский конфиг по умолчанию:
 
 ```text
-~/.config/youtube-summary/config.env
+~/.config/tubefold/config.env
 ```
 
 Приоритет настроек:
@@ -122,13 +122,13 @@ LOG_LEVEL="info"
 ## Ручной запуск
 
 ```bash
-youtube-summary "https://youtu.be/dQw4w9WgXcQ" --verbose
+tubefold "https://youtu.be/dQw4w9WgXcQ" --verbose
 ```
 
 Для проверки pipeline без Codex:
 
 ```bash
-PROVIDER=fake youtube-summary "https://youtu.be/dQw4w9WgXcQ" --verbose
+PROVIDER=fake tubefold "https://youtu.be/dQw4w9WgXcQ" --verbose
 ```
 
 CLI печатает абсолютный путь к созданному `.md` в stdout. Диагностика идет в stderr.
@@ -136,10 +136,10 @@ CLI печатает абсолютный путь к созданному `.md`
 Полезные параметры:
 
 ```bash
-youtube-summary --help
-youtube-summary "https://www.youtube.com/watch?v=dQw4w9WgXcQ" --output-dir "$HOME/Desktop/Summaries"
-youtube-summary "https://youtu.be/dQw4w9WgXcQ" --keep-temp --verbose
-youtube-summary "https://youtu.be/dQw4w9WgXcQ" --provider fake
+tubefold --help
+tubefold "https://www.youtube.com/watch?v=dQw4w9WgXcQ" --output-dir "$HOME/Desktop/Summaries"
+tubefold "https://youtu.be/dQw4w9WgXcQ" --keep-temp --verbose
+tubefold "https://youtu.be/dQw4w9WgXcQ" --provider fake
 ```
 
 ## Output Markdown
@@ -148,7 +148,7 @@ youtube-summary "https://youtu.be/dQw4w9WgXcQ" --provider fake
 
 ```yaml
 ---
-type: "youtube-summary"
+type: "tubefold"
 source: "youtube"
 video_id: "..."
 url: "https://www.youtube.com/watch?v=..."
@@ -173,7 +173,7 @@ prompt_template: "detailed-summary"
 Подключите скрипт из `~/.hammerspoon/init.lua`:
 
 ```lua
-dofile("/Users/bogdan/GIT/youtube-summary/hammerspoon/youtube-summary.lua")
+dofile("/Users/bogdan/GIT/tubefold/hammerspoon/tubefold.lua")
 ```
 
 По умолчанию hotkey:
@@ -192,34 +192,34 @@ Option + Command + Y
 
 Скрипт получает URL активной вкладки через AppleScript и запускает CLI через `hs.task`, не открывая Terminal. Повторный запуск блокируется, пока текущая задача не завершится.
 
-Если Hammerspoon не видит `youtube-summary`, задайте абсолютный путь:
+Если Hammerspoon не видит `tubefold`, задайте абсолютный путь:
 
 ```lua
-package.loaded["youtube-summary"] = nil
-local ys = dofile("/Users/bogdan/GIT/youtube-summary/hammerspoon/youtube-summary.lua")
-ys.cliPath = "/Users/bogdan/.local/bin/youtube-summary"
+package.loaded["tubefold"] = nil
+local ys = dofile("/Users/bogdan/GIT/tubefold/hammerspoon/tubefold.lua")
+ys.cliPath = "/Users/bogdan/.local/bin/tubefold"
 ```
 
 macOS может запросить Automation/Accessibility permissions для Hammerspoon, Safari или Chrome.
 
-## YouTube Brain Local API
+## TubeFold Local API
 
-Дополнительно к CLI в проекте есть development-прототип YouTube Brain: localhost API + Chrome Extension. macOS-приложение включает копию backend-а внутри `.app` и поднимает этот helper само; ручной запуск нужен только для отладки API или extension. Helper переиспользует тот же transcript/Codex pipeline, но сохраняет данные в:
+Дополнительно к CLI в проекте есть development-прототип TubeFold: localhost API + Chrome Extension. macOS-приложение включает копию backend-а внутри `.app` и поднимает этот helper само; ручной запуск нужен только для отладки API или extension. Helper переиспользует тот же transcript/Codex pipeline, но сохраняет данные в:
 
 ```text
-~/Library/Application Support/YouTube Brain/
+~/Library/Application Support/TubeFold/
 ```
 
 Ручной запуск сервера для development-отладки:
 
 ```bash
-youtube-brain-server --provider codex
+tubefold-server --provider codex
 ```
 
 Для проверки без Codex:
 
 ```bash
-youtube-brain-server --provider fake
+tubefold-server --provider fake
 ```
 
 Endpoints:
@@ -246,12 +246,12 @@ curl -sS -X POST http://127.0.0.1:43821/api/v1/provider-setup/complete
 
 Detection checks saved path, login-shell `command -v codex`, `/opt/homebrew/bin/codex`, `/usr/local/bin/codex`, and `~/.local/bin/codex`. The connection test runs Codex from an isolated temp directory with a marker prompt and stores only setup state, not credentials or the full test output.
 
-## YouTube Brain macOS App
+## TubeFold macOS App
 
 Xcode-проект находится в:
 
 ```text
-Youtube Brain App/Youtube Brain App.xcodeproj
+TubeFold App/TubeFold.xcodeproj
 ```
 
 Текущий SwiftUI app реализует MVP onboarding для Codex:
@@ -259,7 +259,7 @@ Youtube Brain App/Youtube Brain App.xcodeproj
 - стартовый экран состояния приложения без ручных backend-команд;
 - wizard `Before you begin -> Check installation -> Test connection -> Complete`;
 - автоматический запуск и остановку local helper;
-- embedded backend в `Contents/Resources/YouTubeBrainBackend`;
+- embedded backend в `Contents/Resources/TubeFoldBackend`;
 - автоматический поиск `codex`;
 - ручной выбор executable;
 - connection test через `POST /api/v1/provider-setup/codex/test`;
@@ -267,41 +267,41 @@ Youtube Brain App/Youtube Brain App.xcodeproj
 - главный экран Codex status: `Installed`, `Signed in`, `Ready`;
 - repair flow: если сохранённый Codex путь сломан или connection test больше не проходит, setup помечается incomplete и app открывает нужный шаг wizard.
 
-Перед запуском app вручную поднимать `youtube-brain-server` не нужно. Xcode build phase `Embed Python Backend` копирует в app bundle `bin/`, `youtube_brain/`, `scripts/`, `providers/`, `prompts/`, `config/`, `requirements.txt`, Python framework, interpreter и Python dependencies. Для текущей direct-distribution сборки App Sandbox выключен, потому что приложение запускает локальный helper-процесс и может использовать выбранный пользователем Codex executable после перезапуска.
+Перед запуском app вручную поднимать `tubefold-server` не нужно. Xcode build phase `Embed Python Backend` копирует в app bundle `bin/`, `tubefold/`, `scripts/`, `providers/`, `prompts/`, `config/`, `requirements.txt`, Python framework, interpreter и Python dependencies. Для текущей direct-distribution сборки App Sandbox выключен, потому что приложение запускает локальный helper-процесс и может использовать выбранный пользователем Codex executable после перезапуска.
 
 Build phase проверяет embedded backend прямо во время сборки:
 
 ```text
-Youtube Brain.app/Contents/Resources/YouTubeBrainBackend/
+TubeFold.app/Contents/Resources/TubeFoldBackend/
   Runtime/Python.framework/
   Runtime/bin/python3
   Runtime/lib/python*/site-packages/
-  youtube-brain-server
+  tubefold-server
 ```
 
 Для сборки из терминала:
 
 ```bash
-xcodebuild -project "Youtube Brain App/Youtube Brain App.xcodeproj" -scheme "Youtube Brain" -configuration Debug -destination "platform=macOS" build
+xcodebuild -project "TubeFold App/TubeFold.xcodeproj" -scheme "TubeFold" -configuration Debug -destination "platform=macOS" build
 ```
 
 Сервер слушает только `127.0.0.1`. Для development API token по умолчанию отключён. Чтобы включить локальную авторизацию:
 
 ```bash
-export YOUTUBE_BRAIN_API_TOKEN="dev-local-token"
+export TUBEFOLD_API_TOKEN="dev-local-token"
 ```
 
 Логи:
 
 ```text
-~/Library/Application Support/YouTube Brain/logs/app.log
-~/Library/Application Support/YouTube Brain/jobs/<job-id>/job.log
-~/Library/Application Support/YouTube Brain/jobs/<job-id>/metadata.stdout.log
-~/Library/Application Support/YouTube Brain/jobs/<job-id>/metadata.stderr.log
-~/Library/Application Support/YouTube Brain/jobs/<job-id>/transcript.stdout.log
-~/Library/Application Support/YouTube Brain/jobs/<job-id>/transcript.stderr.log
-~/Library/Application Support/YouTube Brain/jobs/<job-id>/provider-codex.stdout.log
-~/Library/Application Support/YouTube Brain/jobs/<job-id>/provider-codex.stderr.log
+~/Library/Application Support/TubeFold/logs/app.log
+~/Library/Application Support/TubeFold/jobs/<job-id>/job.log
+~/Library/Application Support/TubeFold/jobs/<job-id>/metadata.stdout.log
+~/Library/Application Support/TubeFold/jobs/<job-id>/metadata.stderr.log
+~/Library/Application Support/TubeFold/jobs/<job-id>/transcript.stdout.log
+~/Library/Application Support/TubeFold/jobs/<job-id>/transcript.stderr.log
+~/Library/Application Support/TubeFold/jobs/<job-id>/provider-codex.stdout.log
+~/Library/Application Support/TubeFold/jobs/<job-id>/provider-codex.stderr.log
 ```
 
 `app.log` содержит HTTP-запросы, dedupe-решения, переходы статусов, запуск процессов, exit codes, длительность и размеры. `job.log` содержит компактный timeline конкретной задачи. Полный transcript и summary в эти логи не пишутся.
@@ -311,9 +311,9 @@ Chrome Extension находится в `chrome-extension/`. Установка d
 1. Откройте `chrome://extensions`.
 2. Включите Developer Mode.
 3. Нажмите Load unpacked.
-4. Выберите `/Users/bogdan/GIT/youtube-summary/chrome-extension`.
-5. Откройте macOS-приложение YouTube Brain или вручную запустите `youtube-brain-server` для чистой API-отладки.
-6. Откройте YouTube-видео и нажмите иконку YouTube Brain.
+4. Выберите `/Users/bogdan/GIT/tubefold/chrome-extension`.
+5. Откройте macOS-приложение TubeFold или вручную запустите `tubefold-server` для чистой API-отладки.
+6. Откройте YouTube-видео и нажмите иконку TubeFold.
 
 Это ещё не финальная notarized упаковка. Сейчас macOS app уже прячет ручной запуск backend-а, управляет helper-ом и включает backend-код с Python runtime в `.app`; установленный Codex CLI пока остаётся внешней зависимостью пользователя.
 
@@ -328,7 +328,7 @@ python3 -m unittest discover -s tests
 Manual smoke test с Codex:
 
 ```bash
-youtube-summary "https://youtu.be/dQw4w9WgXcQ" --verbose
+tubefold "https://youtu.be/dQw4w9WgXcQ" --verbose
 ```
 
 Критерии:

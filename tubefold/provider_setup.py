@@ -177,7 +177,7 @@ class CodexProviderDiagnostics:
                 "details": {"codexPath": str(codex_path), "timestamp": utc_now(), "errorCategory": "installationInvalid"},
             }
 
-        with tempfile.TemporaryDirectory(prefix="youtube-brain-codex-test-") as tmp:
+        with tempfile.TemporaryDirectory(prefix="tubefold-codex-test-") as tmp:
             tmp_path = Path(tmp)
             output_file = tmp_path / "last-message.txt"
             model = valid_codex_model(str(state.get("codexModel") or self.config.codex_model))

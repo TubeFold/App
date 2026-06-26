@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from scripts.youtube_summary_lib import (
+from scripts.tubefold_lib import (
     metadata_fields,
     processed_at_now,
     strip_outer_markdown_fence,
@@ -36,7 +36,7 @@ class ProcessingQueue:
         self.repository = repository
         self._condition = threading.Condition()
         self._stopped = False
-        self._worker = threading.Thread(target=self._run, name="youtube-brain-processing", daemon=True)
+        self._worker = threading.Thread(target=self._run, name="tubefold-processing", daemon=True)
 
     def start(self) -> None:
         logger.info("Starting processing queue provider=%s data_dir=%s", self.config.provider, self.config.data_dir)
@@ -417,7 +417,7 @@ class ProcessingQueue:
             provider_label = f"codex {codex_settings['model']}"
 
         metadata = {
-            "type": "youtube-summary",
+            "type": "tubefold",
             "source": "youtube",
             "video_id": fields["video_id"],
             "url": fields["url"],

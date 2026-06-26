@@ -10,9 +10,9 @@ import urllib.request
 from pathlib import Path
 
 
-from youtube_brain.config import AppConfig
-from youtube_brain.repository import Repository
-from youtube_brain.server import YouTubeBrainServer
+from tubefold.config import AppConfig
+from tubefold.repository import Repository
+from tubefold.server import TubeFoldServer
 
 
 class DummyQueue:
@@ -43,7 +43,7 @@ class ServerTests(unittest.TestCase):
         data_dir = Path(self.tmp.name)
         self.repository = Repository(data_dir / "database.sqlite")
         self.queue = DummyQueue()
-        self.server = YouTubeBrainServer(test_config(data_dir), self.repository, self.queue)  # type: ignore[arg-type]
+        self.server = TubeFoldServer(test_config(data_dir), self.repository, self.queue)  # type: ignore[arg-type]
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         self.base_url = f"http://127.0.0.1:{self.server.server_port}"

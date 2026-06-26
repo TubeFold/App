@@ -31,7 +31,7 @@ fi
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd "$script_dir/.." && pwd)"
-workdir="$(mktemp -d "${TMPDIR:-/tmp}/youtube-summary-codex.XXXXXX")"
+workdir="$(mktemp -d "${TMPDIR:-/tmp}/tubefold-codex.XXXXXX")"
 
 cleanup() {
   rm -rf "$workdir"

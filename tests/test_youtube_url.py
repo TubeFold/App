@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from youtube_summary_lib import normalize_youtube_url, parse_youtube_video_id
+from tubefold_lib import normalize_youtube_url, parse_youtube_video_id
 
 
 class YouTubeUrlTests(unittest.TestCase):

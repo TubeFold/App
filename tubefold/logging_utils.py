@@ -10,7 +10,7 @@ from .config import AppConfig
 def configure_logging(config: AppConfig) -> None:
     config.logs_dir.mkdir(parents=True, exist_ok=True)
     root = logging.getLogger()
-    if getattr(root, "_youtube_brain_configured", False):
+    if getattr(root, "_tubefold_configured", False):
         return
 
     root.setLevel(logging.INFO)
@@ -24,7 +24,7 @@ def configure_logging(config: AppConfig) -> None:
     file_handler.setFormatter(formatter)
     root.addHandler(file_handler)
 
-    setattr(root, "_youtube_brain_configured", True)
+    setattr(root, "_tubefold_configured", True)
 
 
 def append_job_log(job_dir: Path, message: str) -> None:

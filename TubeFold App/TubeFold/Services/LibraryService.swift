@@ -32,7 +32,7 @@ struct LibraryService {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else {
-                throw ProviderSetupAPIError(message: "YouTube Brain returned an invalid response.")
+                throw ProviderSetupAPIError(message: "TubeFold returned an invalid response.")
             }
             guard (200..<300).contains(httpResponse.statusCode) else {
                 let text = String(data: data, encoding: .utf8) ?? "HTTP \(httpResponse.statusCode)"
@@ -42,7 +42,7 @@ struct LibraryService {
         } catch let error as ProviderSetupAPIError {
             throw error
         } catch {
-            throw ProviderSetupAPIError(message: "Could not load Library from YouTube Brain helper.")
+            throw ProviderSetupAPIError(message: "Could not load Library from TubeFold helper.")
         }
     }
 }

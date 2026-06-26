@@ -2,10 +2,10 @@
 set -euo pipefail
 
 repo_root="$(cd "${SRCROOT:-$(pwd)}/.." && pwd)"
-dest="${TARGET_BUILD_DIR:?}/${UNLOCALIZED_RESOURCES_FOLDER_PATH:?}/YouTubeBrainBackend"
+dest="${TARGET_BUILD_DIR:?}/${UNLOCALIZED_RESOURCES_FOLDER_PATH:?}/TubeFoldBackend"
 runtime_dir="$dest/Runtime"
 
-build_python="${YOUTUBE_BRAIN_BUILD_PYTHON:-}"
+build_python="${TUBEFOLD_BUILD_PYTHON:-}"
 if [[ -z "$build_python" ]]; then
   if [[ -x "$repo_root/.venv/bin/python" ]]; then
     build_python="$repo_root/.venv/bin/python"
@@ -58,7 +58,7 @@ fi
 rm -rf "$dest"
 mkdir -p "$dest" "$runtime_dir/bin" "$site_packages_dest"
 
-for item in bin config prompts providers scripts youtube_brain requirements.txt; do
+for item in bin config prompts providers scripts tubefold requirements.txt; do
   /usr/bin/rsync -a --delete --exclude "__pycache__" --exclude "*.pyc" "$repo_root/$item" "$dest/"
 done
 
@@ -82,7 +82,7 @@ fi
 ln -sf "python${python_version}" "$runtime_dir/bin/python3"
 ln -sf "python${python_version}" "$runtime_dir/bin/python"
 
-cat > "$dest/youtube-brain-server" <<'LAUNCHER'
+cat > "$dest/tubefold-server" <<'LAUNCHER'
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -98,13 +98,13 @@ fi
 
 export PYTHONHOME="$runtime_dir/Python.framework/Versions/$python_framework_version"
 export PYTHONPATH="$backend_root:$runtime_dir/lib/python${python_framework_version}/site-packages${PYTHONPATH:+:$PYTHONPATH}"
-export YOUTUBE_BRAIN_PYTHON="$python_bin"
+export TUBEFOLD_PYTHON="$python_bin"
 
-exec "$python_bin" "$backend_root/bin/youtube-brain-server" "$@"
+exec "$python_bin" "$backend_root/bin/tubefold-server" "$@"
 LAUNCHER
 
-chmod +x "$dest/youtube-brain-server"
-chmod +x "$dest/bin/youtube-brain-server" "$dest/bin/youtube-summary"
+chmod +x "$dest/tubefold-server"
+chmod +x "$dest/bin/tubefold-server" "$dest/bin/tubefold"
 chmod +x "$dest/providers/"*.sh "$dest/scripts/"*.sh "$dest/scripts/"*.py
 chmod +x "$runtime_python"
 
@@ -116,8 +116,8 @@ fi
 PYTHONHOME="$runtime_dir/Python.framework/Versions/$python_version" \
 PYTHONPATH="$dest:$site_packages_dest" \
 "$runtime_python" - <<'PY'
-import youtube_brain.server
+import tubefold.server
 import youtube_transcript_api
 
-print("Embedded YouTube Brain backend validated.")
+print("Embedded TubeFold backend validated.")
 PY

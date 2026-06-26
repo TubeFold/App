@@ -159,7 +159,7 @@ final class ProviderSetupViewModel: ObservableObject {
     var installationMessage: String {
         installationResult?.userMessage
             ?? setupState?.codexExecutablePath
-            ?? "YouTube Brain will look for Codex automatically. You can also choose it manually."
+            ?? "TubeFold will look for Codex automatically. You can also choose it manually."
     }
 
     var installationDetails: [String] {
@@ -199,7 +199,7 @@ final class ProviderSetupViewModel: ObservableObject {
     }
 
     func loadState() async {
-        await runBusy("Starting YouTube Brain") {
+        await runBusy("Starting TubeFold") {
             let response = try await service.loadSetup()
             let state = response.state
             modelOptions = response.modelOptions

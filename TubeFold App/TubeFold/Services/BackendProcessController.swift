@@ -15,7 +15,7 @@ final class BackendProcessController {
         }
 
         if let process, process.isRunning {
-            NSLog("youtube-brain-server: stopping incompatible helper pid=%d", process.processIdentifier)
+            NSLog("tubefold-server: stopping incompatible helper pid=%d", process.processIdentifier)
             process.terminate()
             self.process = nil
         } else {
@@ -31,7 +31,7 @@ final class BackendProcessController {
             }
         }
 
-        throw ProviderSetupAPIError(message: "YouTube Brain could not start its local helper. Reopen the app or reinstall the command-line helper.")
+        throw ProviderSetupAPIError(message: "TubeFold could not start its local helper. Reopen the app or reinstall the command-line helper.")
     }
 
     func stop() {
@@ -65,7 +65,7 @@ final class BackendProcessController {
 
     private func launch() throws {
         guard let executableURL = discoverServerExecutable() else {
-            throw ProviderSetupAPIError(message: "YouTube Brain helper is missing from the app bundle. Rebuild the app or install the command-line helper.")
+            throw ProviderSetupAPIError(message: "TubeFold helper is missing from the app bundle. Rebuild the app or install the command-line helper.")
         }
 
         let launchedProcess = Process()
@@ -77,8 +77,8 @@ final class BackendProcessController {
         let errorPipe = Pipe()
         launchedProcess.standardOutput = outputPipe
         launchedProcess.standardError = errorPipe
-        attachLogHandler(outputPipe, prefix: "youtube-brain-server")
-        attachLogHandler(errorPipe, prefix: "youtube-brain-server")
+        attachLogHandler(outputPipe, prefix: "tubefold-server")
+        attachLogHandler(errorPipe, prefix: "tubefold-server")
 
         try launchedProcess.run()
         process = launchedProcess
@@ -99,7 +99,7 @@ final class BackendProcessController {
             .filter { $0 != currentPID }
 
         for pid in pids {
-            NSLog("youtube-brain-server: terminating stale helper on port %@ pid=%d", port, pid)
+            NSLog("tubefold-server: terminating stale helper on port %@ pid=%d", port, pid)
             _ = runProcessAndCapture(executable: "/bin/kill", arguments: [String(pid)])
         }
 
@@ -136,16 +136,16 @@ final class BackendProcessController {
 
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let candidates = [
-            "\(home)/.local/bin/youtube-brain-server",
-            "/opt/homebrew/bin/youtube-brain-server",
-            "/usr/local/bin/youtube-brain-server"
+            "\(home)/.local/bin/tubefold-server",
+            "/opt/homebrew/bin/tubefold-server",
+            "/usr/local/bin/tubefold-server"
         ]
 
         if let path = candidates.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) {
             return URL(fileURLWithPath: path)
         }
 
-        return lookupInLoginShell(command: "youtube-brain-server").flatMap { path in
+        return lookupInLoginShell(command: "tubefold-server").flatMap { path in
             FileManager.default.isExecutableFile(atPath: path) ? URL(fileURLWithPath: path) : nil
         }
     }
@@ -153,8 +153,8 @@ final class BackendProcessController {
     private func embeddedServerExecutable() -> URL? {
         guard let resourceURL = Bundle.main.resourceURL else { return nil }
         let executableURL = resourceURL
-            .appendingPathComponent("YouTubeBrainBackend", isDirectory: true)
-            .appendingPathComponent("youtube-brain-server")
+            .appendingPathComponent("TubeFoldBackend", isDirectory: true)
+            .appendingPathComponent("tubefold-server")
         return FileManager.default.isExecutableFile(atPath: executableURL.path) ? executableURL : nil
     }
 

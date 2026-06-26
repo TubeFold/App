@@ -1,5 +1,5 @@
 [project]
-name = "youtube-summary"
+name = "tubefold"
 version = "0.1.0"
 description = "Create Markdown summaries for YouTube videos through Codex CLI."
 requires-python = ">=3.11"

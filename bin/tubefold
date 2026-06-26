@@ -17,7 +17,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS_DIR = PROJECT_ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from youtube_summary_lib import (  # noqa: E402
+from tubefold_lib import (  # noqa: E402
     expand_path,
     metadata_fields,
     normalize_youtube_url,
@@ -84,7 +84,7 @@ def main() -> int:
 
         validate_dependencies(config, args)
 
-        temp_dir = Path(tempfile.mkdtemp(prefix="youtube-summary-"))
+        temp_dir = Path(tempfile.mkdtemp(prefix="tubefold-"))
         logger.debug(f"Temp directory: {temp_dir}")
 
         metadata_json = temp_dir / "metadata.json"
@@ -220,7 +220,7 @@ def main() -> int:
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="youtube-summary",
+        prog="tubefold",
         description="Create a Markdown summary for a YouTube video through a provider CLI.",
     )
     parser.add_argument("url", help="YouTube video URL")
@@ -247,7 +247,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def load_config(args: argparse.Namespace) -> dict[str, str]:
     config = dict(DEFAULT_CONFIG)
     config_path = expand_path(args.config) if args.config else expand_path(
-        os.environ.get("YOUTUBE_SUMMARY_CONFIG", "~/.config/youtube-summary/config.env")
+        os.environ.get("TUBEFOLD_CONFIG", "~/.config/tubefold/config.env")
     )
 
     file_config: dict[str, str] = {}
@@ -330,7 +330,7 @@ def ensure_writable_dir(output_dir: Path) -> None:
     if not output_dir.is_dir():
         raise UserError(f"Output path is not a directory: {output_dir}")
     try:
-        with tempfile.NamedTemporaryFile(prefix=".youtube-summary-write-test-", dir=output_dir, delete=True):
+        with tempfile.NamedTemporaryFile(prefix=".tubefold-write-test-", dir=output_dir, delete=True):
             pass
     except OSError as error:
         raise UserError(f"Output directory is not writable: {output_dir}: {error}") from error
@@ -393,7 +393,7 @@ def build_markdown(
         extra_fields["codex_reasoning_effort"] = config["CODEX_REASONING_EFFORT"]
 
     metadata = {
-        "type": "youtube-summary",
+        "type": "tubefold",
         "source": "youtube",
         "video_id": fields["video_id"],
         "url": fields["url"],

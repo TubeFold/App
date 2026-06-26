@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from youtube_brain.config import AppConfig
-from youtube_brain.provider_setup import CodexProviderDiagnostics
+from tubefold.config import AppConfig
+from tubefold.provider_setup import CodexProviderDiagnostics
 
 
 def make_config(data_dir: Path) -> AppConfig:

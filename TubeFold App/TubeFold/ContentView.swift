@@ -53,7 +53,7 @@ struct MainStatusView: View {
             VStack(alignment: .leading, spacing: 24) {
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("YouTube Brain")
+                    Text("TubeFold")
                         .font(.largeTitle.weight(.semibold))
                     Text("Save clean Markdown summaries from YouTube videos using your local Codex account.")
                         .foregroundStyle(.secondary)
@@ -91,7 +91,7 @@ struct MainStatusView: View {
             }
 
             VStack(alignment: .leading, spacing: 12) {
-                Text("Capture videos from the browser, then let YouTube Brain fetch the transcript, ask Codex for a summary, and save the result as Markdown.")
+                Text("Capture videos from the browser, then let TubeFold fetch the transcript, ask Codex for a summary, and save the result as Markdown.")
                     .font(.headline)
                 Text("The local helper is started by the app when needed and stopped when the app quits.")
                     .foregroundStyle(.secondary)

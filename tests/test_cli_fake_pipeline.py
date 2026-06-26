@@ -14,13 +14,13 @@ class CliFakePipelineTests(unittest.TestCase):
     def test_cli_pipeline_with_fake_provider_and_fixture_transcript(self) -> None:
         with tempfile.TemporaryDirectory() as output_dir:
             env = os.environ.copy()
-            env["YOUTUBE_SUMMARY_CONFIG"] = "/dev/null"
+            env["TUBEFOLD_CONFIG"] = "/dev/null"
             env.pop("PROVIDER", None)
             env.pop("OUTPUT_DIR", None)
 
             result = subprocess.run(
                 [
-                    str(ROOT / "bin" / "youtube-summary"),
+                    str(ROOT / "bin" / "tubefold"),
                     "https://youtu.be/dQw4w9WgXcQ",
                     "--provider",
                     "fake",
@@ -44,7 +44,7 @@ class CliFakePipelineTests(unittest.TestCase):
             self.assertTrue(output_path.exists())
             self.assertEqual(output_path.name, "Hello - World - Demo.md")
             content = output_path.read_text(encoding="utf-8")
-            self.assertIn('type: "youtube-summary"', content)
+            self.assertIn('type: "tubefold"', content)
             self.assertIn('transcript_language_code: "pl"', content)
             self.assertIn("# Fake Summary", content)
 

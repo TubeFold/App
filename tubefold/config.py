@@ -45,37 +45,37 @@ class AppConfig:
 
 
 def default_data_dir() -> Path:
-    return Path.home() / "Library" / "Application Support" / "YouTube Brain"
+    return Path.home() / "Library" / "Application Support" / "TubeFold"
 
 
 def load_config() -> AppConfig:
-    data_dir = Path(os.path.expandvars(os.path.expanduser(os.environ.get("YOUTUBE_BRAIN_DATA_DIR", str(default_data_dir())))))
-    provider = os.environ.get("YOUTUBE_BRAIN_PROVIDER", os.environ.get("PROVIDER", "codex"))
-    token = os.environ.get("YOUTUBE_BRAIN_API_TOKEN")
+    data_dir = Path(os.path.expandvars(os.path.expanduser(os.environ.get("TUBEFOLD_DATA_DIR", str(default_data_dir())))))
+    provider = os.environ.get("TUBEFOLD_PROVIDER", os.environ.get("PROVIDER", "codex"))
+    token = os.environ.get("TUBEFOLD_API_TOKEN")
     allowed_origins = tuple(
         origin.strip()
-        for origin in os.environ.get("YOUTUBE_BRAIN_ALLOWED_ORIGINS", "chrome-extension://*,null").split(",")
+        for origin in os.environ.get("TUBEFOLD_ALLOWED_ORIGINS", "chrome-extension://*,null").split(",")
         if origin.strip()
     )
     output_dir = Path(
         os.path.expandvars(
-            os.path.expanduser(os.environ.get("YOUTUBE_BRAIN_OUTPUT_DIR", str(data_dir / "exports")))
+            os.path.expanduser(os.environ.get("TUBEFOLD_OUTPUT_DIR", str(data_dir / "exports")))
         )
     )
     return AppConfig(
         host="127.0.0.1",
-        port=int(os.environ.get("YOUTUBE_BRAIN_PORT", "43821")),
+        port=int(os.environ.get("TUBEFOLD_PORT", "43821")),
         api_token=token,
         allowed_origins=allowed_origins,
         provider=provider,
-        python_executable=os.environ.get("YOUTUBE_BRAIN_PYTHON", str(PROJECT_ROOT / ".venv" / "bin" / "python")),
+        python_executable=os.environ.get("TUBEFOLD_PYTHON", str(PROJECT_ROOT / ".venv" / "bin" / "python")),
         codex_timeout_seconds=int(os.environ.get("CODEX_TIMEOUT_SECONDS", "900")),
         data_dir=data_dir.resolve(),
         output_dir=output_dir.resolve(),
-        codex_model=os.environ.get("YOUTUBE_BRAIN_CODEX_MODEL", os.environ.get("CODEX_MODEL", DEFAULT_CODEX_MODEL)),
+        codex_model=os.environ.get("TUBEFOLD_CODEX_MODEL", os.environ.get("CODEX_MODEL", DEFAULT_CODEX_MODEL)),
         codex_reasoning_effort=os.environ.get(
-            "YOUTUBE_BRAIN_CODEX_REASONING_EFFORT",
+            "TUBEFOLD_CODEX_REASONING_EFFORT",
             os.environ.get("CODEX_REASONING_EFFORT", DEFAULT_CODEX_REASONING_EFFORT),
         ),
-        output_language=normalize_output_language(os.environ.get("YOUTUBE_BRAIN_OUTPUT_LANGUAGE")),
+        output_language=normalize_output_language(os.environ.get("TUBEFOLD_OUTPUT_LANGUAGE")),
     )

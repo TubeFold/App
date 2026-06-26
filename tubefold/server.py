@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from socketserver import ThreadingMixIn
 from typing import Any
 
-from scripts.youtube_summary_lib import normalize_youtube_url, parse_youtube_video_id
+from scripts.tubefold_lib import normalize_youtube_url, parse_youtube_video_id
 
 from . import API_VERSION, APP_VERSION
 from .config import AppConfig, load_config
@@ -25,7 +25,7 @@ from .telegraph import TelegraphError, TelegraphPublisher
 logger = logging.getLogger(__name__)
 
 
-class YouTubeBrainServer(ThreadingHTTPServer):
+class TubeFoldServer(ThreadingHTTPServer):
     def __init__(self, config: AppConfig, repository: Repository, queue: ProcessingQueue) -> None:
         super().__init__((config.host, config.port), RequestHandler)
         self.config = config
@@ -34,7 +34,7 @@ class YouTubeBrainServer(ThreadingHTTPServer):
 
 
 class RequestHandler(BaseHTTPRequestHandler):
-    server: YouTubeBrainServer
+    server: TubeFoldServer
 
     def log_message(self, format: str, *args: Any) -> None:
         logger.info("HTTP %s - %s", self.address_string(), format % args)
@@ -357,7 +357,7 @@ def origin_allowed(origin: str, allowed: tuple[str, ...]) -> bool:
     return "*" in allowed or origin in allowed or ("chrome-extension://*" in allowed and origin.startswith("chrome-extension://"))
 
 
-def build_server(config: AppConfig | None = None) -> YouTubeBrainServer:
+def build_server(config: AppConfig | None = None) -> TubeFoldServer:
     config = config or load_config()
     configure_logging(config)
     config.data_dir.mkdir(parents=True, exist_ok=True)
@@ -366,7 +366,7 @@ def build_server(config: AppConfig | None = None) -> YouTubeBrainServer:
     config.logs_dir.mkdir(parents=True, exist_ok=True)
     repository = Repository(config.database_path)
     queue = ProcessingQueue(config, repository)
-    server = YouTubeBrainServer(config, repository, queue)
+    server = TubeFoldServer(config, repository, queue)
     logger.info(
         "Server configured host=%s port=%s provider=%s data_dir=%s db=%s token_enabled=%s allowed_origins=%s",
         config.host,
@@ -382,7 +382,7 @@ def build_server(config: AppConfig | None = None) -> YouTubeBrainServer:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run the local YouTube Brain API server")
+    parser = argparse.ArgumentParser(description="Run the local TubeFold API server")
     parser.add_argument("--port", type=int, help="Override server port")
     parser.add_argument("--provider", help="Override provider name")
     args = parser.parse_args()
@@ -406,14 +406,14 @@ def main() -> int:
         )
 
     server = build_server(config)
-    logger.info("YouTube Brain API listening on http://%s:%s", config.host, server.server_port)
-    print(f"YouTube Brain API listening on http://{config.host}:{server.server_port}")
+    logger.info("TubeFold API listening on http://%s:%s", config.host, server.server_port)
+    print(f"TubeFold API listening on http://{config.host}:{server.server_port}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
-        logger.info("Shutting down YouTube Brain API")
+        logger.info("Shutting down TubeFold API")
         server.queue.stop()
         server.server_close()
     return 0

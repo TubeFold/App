@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "YouTube Brain",
+  "name": "TubeFold",
   "version": "0.1.0",
-  "description": "Send the current YouTube video to the local YouTube Brain app.",
+  "description": "Send the current YouTube video to the local TubeFold app.",
   "permissions": ["activeTab", "storage", "tabs"],
   "host_permissions": [
     "https://www.youtube.com/*",

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from youtube_brain.reading_time import (
+from tubefold.reading_time import (
     DEFAULT_WPM,
     read_time_as_seconds,
     reading_minutes_for_markdown,

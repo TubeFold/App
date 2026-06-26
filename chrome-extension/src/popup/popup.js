@@ -70,7 +70,7 @@ function renderNotVideo() {
 function renderMacAppClosed(context) {
   setConnection("Mac app is not running.", true);
   render(`
-    <p class="muted">Start the local YouTube Brain app, then try again.</p>
+    <p class="muted">Start the local TubeFold app, then try again.</p>
     <div class="actions">
       <button id="openApp" class="primary">Open Mac App</button>
       <button id="retry">Try Again</button>
@@ -132,7 +132,7 @@ function renderVideo(context, library = { exists: false }) {
 }
 
 function renderSent(message) {
-  setConnection("Sent to YouTube Brain");
+  setConnection("Sent to TubeFold");
   render(`<p class="muted">${message}</p>`);
 }
 
@@ -145,7 +145,7 @@ function renderAlreadyExists(videoId) {
     </div>
   `);
   document.getElementById("openApp").addEventListener("click", () => {
-    chrome.runtime.sendMessage({ type: "OPEN_MAC_APP", url: `youtubebrain://video/${videoId}` });
+    chrome.runtime.sendMessage({ type: "OPEN_MAC_APP", url: `tubefold://video/${videoId}` });
   });
 }
 

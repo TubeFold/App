@@ -8,11 +8,11 @@ import types
 import unittest
 from pathlib import Path
 
-from youtube_brain.config import AppConfig
-from youtube_brain.provider_setup import ProviderSetupStore
-from youtube_brain.models import SummaryRequest
-from youtube_brain.processing import ProcessingQueue
-from youtube_brain.repository import Repository
+from tubefold.config import AppConfig
+from tubefold.provider_setup import ProviderSetupStore
+from tubefold.models import SummaryRequest
+from tubefold.processing import ProcessingQueue
+from tubefold.repository import Repository
 
 
 ROOT = Path(__file__).resolve().parents[1]
