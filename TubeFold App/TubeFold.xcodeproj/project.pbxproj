@@ -6,8 +6,13 @@
 	objectVersion = 90;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		4312DB8A2FEF1E58003CA83B /* TubeFold.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4312DB892FEF1E58003CA83B /* TubeFold.icon */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* TubeFold.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TubeFold.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4312DB892FEF1E58003CA83B /* TubeFold.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = TubeFold.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -30,6 +35,7 @@
 		000000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
+				4312DB892FEF1E58003CA83B /* TubeFold.icon */,
 				000000000000000000000010 /* TubeFold */,
 				000000000000000000000020 /* Products */,
 			);
@@ -103,6 +109,7 @@
 		000000000000000140000000 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
+				4312DB8A2FEF1E58003CA83B /* TubeFold.icon in Resources */,
 			);
 		};
 /* End PBXResourcesBuildPhase section */
@@ -267,6 +274,8 @@
 		000000000000000111000000 /* Debug configuration for PBXNativeTarget "TubeFold" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = TubeFold;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = TubeFold/TubeFold.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
@@ -308,6 +317,8 @@
 		000000000000000112000000 /* Release configuration for PBXNativeTarget "TubeFold" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = TubeFold;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = TubeFold/TubeFold.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
