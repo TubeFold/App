@@ -1,18 +1,35 @@
 import SwiftUI
 
 struct StepIntroView: View {
+    @ObservedObject var viewModel: ProviderSetupViewModel
+
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("Connect Codex")
+            Text("Choose your provider")
                 .font(.largeTitle.weight(.semibold))
-            Text("TubeFold uses your signed-in Codex CLI on this Mac. No API key is needed.")
+            Text("TubeFold uses a signed-in CLI on this Mac to write summaries. Both options use your own subscription — no API key is needed.")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+
+            Picker(
+                "Provider",
+                selection: Binding(
+                    get: { viewModel.selectedProviderID },
+                    set: { newValue in Task { await viewModel.selectProvider(newValue) } }
+                )
+            ) {
+                ForEach(viewModel.availableProviders) { provider in
+                    Text(provider.displayName).tag(provider.id)
+                }
+            }
+            .pickerStyle(.segmented)
+            .disabled(viewModel.isBusy)
+
             VStack(alignment: .leading, spacing: 10) {
                 Label("Before you continue", systemImage: "terminal")
                     .font(.headline)
-                Text("Make sure Codex is installed and signed in. TubeFold will find it automatically, or you can choose the executable yourself.")
+                Text("Make sure \(viewModel.providerDisplayName) is installed and signed in. TubeFold will find it automatically, or you can choose the executable yourself.")
                     .foregroundStyle(.secondary)
             }
             .padding(18)
@@ -30,11 +47,11 @@ struct StepInstallationView: View {
         VStack(alignment: .leading, spacing: 20) {
             Text("Check Installation")
                 .font(.largeTitle.weight(.semibold))
-            Text("We look for Codex and verify the executable with a version check.")
+            Text("We look for \(viewModel.providerDisplayName) and verify the executable with a version check.")
                 .foregroundStyle(.secondary)
 
             ProviderResultCard(
-                title: "Codex CLI",
+                title: viewModel.providerDisplayName,
                 status: viewModel.installationStatusTitle,
                 message: viewModel.installationMessage,
                 systemImage: viewModel.installationSucceeded ? "checkmark.circle.fill" : "terminal",
@@ -55,6 +72,7 @@ struct StepInstallationView: View {
                     Label("Choose Executable", systemImage: "folder")
                 }
                 .disabled(viewModel.isBusy)
+                .help("Pick the \(viewModel.providerDisplayName) executable manually")
             }
 
             DetailsView(details: viewModel.installationDetails)
@@ -70,11 +88,11 @@ struct StepConnectionView: View {
         VStack(alignment: .leading, spacing: 20) {
             Text("Test Connection")
                 .font(.largeTitle.weight(.semibold))
-            Text("We ask Codex for a short fixed response to confirm it is signed in and ready.")
+            Text("We ask \(viewModel.providerDisplayName) for a short fixed response to confirm it is signed in and ready.")
                 .foregroundStyle(.secondary)
 
             ProviderResultCard(
-                title: "Codex Account",
+                title: "\(viewModel.providerDisplayName) Account",
                 status: viewModel.connectionStatusTitle,
                 message: viewModel.connectionMessage,
                 systemImage: viewModel.connectionSucceeded ? "checkmark.circle.fill" : "bolt.fill",
@@ -84,7 +102,7 @@ struct StepConnectionView: View {
             Button {
                 Task { await viewModel.testConnection() }
             } label: {
-                Label("Test Codex", systemImage: "bolt.fill")
+                Label("Test Connection", systemImage: "bolt.fill")
             }
             .buttonStyle(.borderedProminent)
             .disabled(viewModel.isBusy || !viewModel.installationSucceeded)
@@ -102,7 +120,7 @@ struct StepCompleteView: View {
         VStack(alignment: .leading, spacing: 18) {
             Text("All set")
                 .font(.largeTitle.weight(.semibold))
-            Text("Codex is ready. You can reopen this setup any time from Settings.")
+            Text("\(viewModel.providerDisplayName) is ready. You can reopen this setup any time from Settings.")
                 .foregroundStyle(.secondary)
             ProviderResultCard(
                 title: "Provider",

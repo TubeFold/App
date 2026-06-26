@@ -108,7 +108,7 @@ struct ProviderSetupWizard: View {
     private var stepContent: some View {
         switch viewModel.currentStep {
         case .beforeBegin:
-            StepIntroView()
+            StepIntroView(viewModel: viewModel)
         case .checkInstallation:
             StepInstallationView(
                 viewModel: viewModel,

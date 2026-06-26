@@ -10,12 +10,24 @@ server_link_path="${bin_dir}/tubefold-server"
 project_root_quoted="$(printf "%q" "$project_root")"
 
 missing=0
-for tool in python3 codex; do
-  if ! command -v "$tool" >/dev/null 2>&1; then
-    echo "[ERROR] Missing dependency: $tool" >&2
-    missing=1
-  fi
-done
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "[ERROR] Missing dependency: python3" >&2
+  missing=1
+fi
+
+# A provider CLI is needed at runtime. Either Codex or Claude Code works; both use
+# the user's own subscription (no API key). Require at least one.
+have_codex=0
+have_claude=0
+command -v codex >/dev/null 2>&1 && have_codex=1
+command -v claude >/dev/null 2>&1 && have_claude=1
+if [[ "$have_codex" -eq 0 && "$have_claude" -eq 0 ]]; then
+  echo "[ERROR] Missing provider CLI: install 'codex' or 'claude' (Claude Code)." >&2
+  missing=1
+else
+  [[ "$have_codex" -eq 0 ]] && echo "[WARN] codex not found; provider=codex will be unavailable." >&2
+  [[ "$have_claude" -eq 0 ]] && echo "[WARN] claude not found; provider=claude will be unavailable." >&2
+fi
 
 if ! python3 -c 'import youtube_transcript_api' >/dev/null 2>&1; then
   echo "[ERROR] Missing Python dependency: youtube-transcript-api" >&2

@@ -43,6 +43,9 @@ DEFAULT_CONFIG = {
     "CODEX_TIMEOUT_SECONDS": "900",
     "CODEX_MODEL": "gpt-5.4-mini",
     "CODEX_REASONING_EFFORT": "medium",
+    "CLAUDE_TIMEOUT_SECONDS": "900",
+    "CLAUDE_MODEL": "sonnet",
+    "CLAUDE_REASONING_EFFORT": "medium",
     "LOG_LEVEL": "info",
 }
 
@@ -175,6 +178,11 @@ def main() -> int:
                 "Codex settings: "
                 f"model={config['CODEX_MODEL']} reasoning_effort={config['CODEX_REASONING_EFFORT']}"
             )
+        elif provider_name == "claude":
+            logger.info(
+                "Claude settings: "
+                f"model={config['CLAUDE_MODEL']} reasoning_effort={config['CLAUDE_REASONING_EFFORT']}"
+            )
         provider_env = os.environ.copy()
         provider_env.update(config)
         run_checked([str(provider_path), str(prompt_file), str(provider_output)], logger, env=provider_env)
@@ -230,6 +238,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--language", dest="output_language", help="Output language for the summary (e.g. English, Russian)")
     parser.add_argument("--codex-model", help="Codex model slug for provider=codex")
     parser.add_argument("--codex-reasoning-effort", help="Codex reasoning effort: minimal, low, medium, high, xhigh")
+    parser.add_argument("--claude-model", help="Claude model alias for provider=claude (e.g. sonnet, opus, haiku)")
+    parser.add_argument("--claude-effort", help="Claude effort level: low, medium, high, xhigh, max")
     parser.add_argument("--open", dest="open_after_save", action="store_true", default=None, help="Open result after save")
     parser.add_argument("--no-open", dest="open_after_save", action="store_false", help="Do not open result after save")
     parser.add_argument("--verbose", action="store_true", help="Print diagnostic details to stderr")
@@ -273,6 +283,8 @@ def load_config(args: argparse.Namespace) -> dict[str, str]:
         "OUTPUT_LANGUAGE": args.output_language,
         "CODEX_MODEL": args.codex_model,
         "CODEX_REASONING_EFFORT": args.codex_reasoning_effort,
+        "CLAUDE_MODEL": args.claude_model,
+        "CLAUDE_REASONING_EFFORT": args.claude_effort,
     }
     for key, value in cli_values.items():
         if value is not None:
@@ -296,6 +308,8 @@ def validate_dependencies(config: dict[str, str], args: argparse.Namespace) -> N
         )
     if config["PROVIDER"] == "codex" and shutil.which("codex") is None:
         raise UserError("Missing dependency: codex", 127)
+    if config["PROVIDER"] == "claude" and shutil.which("claude") is None:
+        raise UserError("Missing dependency: claude", 127)
 
 
 def apply_legacy_keys(config: dict[str, str], source: dict[str, str]) -> None:
@@ -391,6 +405,10 @@ def build_markdown(
         provider_label = f"codex {config['CODEX_MODEL']}"
         extra_fields["codex_model"] = config["CODEX_MODEL"]
         extra_fields["codex_reasoning_effort"] = config["CODEX_REASONING_EFFORT"]
+    elif provider_name == "claude":
+        provider_label = f"claude {config['CLAUDE_MODEL']}"
+        extra_fields["claude_model"] = config["CLAUDE_MODEL"]
+        extra_fields["claude_reasoning_effort"] = config["CLAUDE_REASONING_EFFORT"]
 
     metadata = {
         "type": "tubefold",

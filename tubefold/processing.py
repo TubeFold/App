@@ -19,11 +19,10 @@ from scripts.tubefold_lib import (
 )
 
 from .config import AppConfig, PROJECT_ROOT
-from .codex_settings import DEFAULT_CODEX_MODEL, DEFAULT_CODEX_REASONING_EFFORT, normalize_codex_settings
 from .output_language import normalize_output_language
 from .logging_utils import append_job_log
 from .models import ProcessingError, ProcessingStatus
-from .provider_setup import ProviderSetupStore
+from .provider_setup import DESCRIPTORS, ProviderSetupStore
 from .repository import Repository
 
 
@@ -306,40 +305,61 @@ class ProcessingQueue:
         )
         logger.info("Prompt rendered job_dir=%s bytes=%s", job_dir, prompt_file.stat().st_size)
 
+    def _active_provider(self) -> str:
+        """Resolve which provider to run: honor the UI selection for codex/claude, else config."""
+        configured = self.config.provider
+        if configured not in DESCRIPTORS:
+            return configured
+        try:
+            selected = ProviderSetupStore(self.config).load().get("selectedProviderID")
+        except (OSError, ValueError):
+            selected = None
+        if selected in DESCRIPTORS and (PROJECT_ROOT / "providers" / f"{selected}.sh").exists():
+            return str(selected)
+        return configured
+
     def _run_provider(self, prompt_file: Path, output_file: Path, job_dir: Path) -> None:
-        provider = PROJECT_ROOT / "providers" / f"{self.config.provider}.sh"
+        provider_name = self._active_provider()
+        provider = PROJECT_ROOT / "providers" / f"{provider_name}.sh"
         if not provider.exists():
             raise ProcessingError("provider_not_found", "Summary provider was not found.", str(provider))
         env = os.environ.copy()
         env["CODEX_TIMEOUT_SECONDS"] = str(self.config.codex_timeout_seconds)
-        codex_settings = self._codex_settings()
-        if self.config.provider == "codex":
-            env["CODEX_MODEL"] = codex_settings["model"]
-            env["CODEX_REASONING_EFFORT"] = codex_settings["reasoning_effort"]
+        env["CLAUDE_TIMEOUT_SECONDS"] = str(self.config.codex_timeout_seconds)
+        settings = self._provider_settings(provider_name)
+        if provider_name == "codex":
+            env["CODEX_MODEL"] = settings["model"]
+            env["CODEX_REASONING_EFFORT"] = settings["reasoning_effort"]
+        elif provider_name == "claude":
+            env["CLAUDE_MODEL"] = settings["model"]
+            env["CLAUDE_REASONING_EFFORT"] = settings["reasoning_effort"]
+        if settings["model"]:
             append_job_log(
                 job_dir,
-                f"provider settings model={codex_settings['model']} reasoning_effort={codex_settings['reasoning_effort']}",
+                f"provider settings provider={provider_name} model={settings['model']} "
+                f"reasoning_effort={settings['reasoning_effort']}",
             )
             logger.info(
-                "Provider settings provider=codex model=%s reasoning_effort=%s",
-                codex_settings["model"],
-                codex_settings["reasoning_effort"],
+                "Provider settings provider=%s model=%s reasoning_effort=%s",
+                provider_name,
+                settings["model"],
+                settings["reasoning_effort"],
             )
         completed = self._run_process(
             [str(provider), str(prompt_file), str(output_file)],
             job_dir,
             timeout=self.config.codex_timeout_seconds + 30,
             env=env,
-            label=f"provider-{self.config.provider}",
+            label=f"provider-{provider_name}",
         )
         if completed.returncode != 0:
-            code = "codex_process_failed" if self.config.provider == "codex" else "summary_process_failed"
+            code = f"{provider_name}_process_failed" if provider_name in DESCRIPTORS else "summary_process_failed"
             raise ProcessingError(code, "Could not generate summary.", completed.stderr)
         if not output_file.exists() or not output_file.read_text(encoding="utf-8", errors="replace").strip():
             raise ProcessingError("summary_empty", "Summary output is empty.", str(output_file))
         output_chars = len(output_file.read_text(encoding="utf-8", errors="replace"))
-        append_job_log(job_dir, f"provider completed provider={self.config.provider} output_chars={output_chars}")
-        logger.info("Provider completed provider=%s output_chars=%s output=%s", self.config.provider, output_chars, output_file)
+        append_job_log(job_dir, f"provider completed provider={provider_name} output_chars={output_chars}")
+        logger.info("Provider completed provider=%s output_chars=%s output=%s", provider_name, output_chars, output_file)
 
     def _output_language(self) -> str:
         try:
@@ -348,24 +368,27 @@ class ProcessingQueue:
             state = {}
         return normalize_output_language(state.get("outputLanguage") or self.config.output_language)
 
-    def _codex_settings(self) -> dict[str, str]:
-        if self.config.provider != "codex":
+    def _provider_settings(self, provider_name: str) -> dict[str, str]:
+        descriptor = DESCRIPTORS.get(provider_name)
+        if descriptor is None:
             return {"model": "", "reasoning_effort": ""}
         try:
             state = ProviderSetupStore(self.config).load()
         except (OSError, ValueError):
             state = {}
-        state = normalize_codex_settings(
+        config_model = self.config.claude_model if provider_name == "claude" else self.config.codex_model
+        config_effort = (
+            self.config.claude_reasoning_effort if provider_name == "claude" else self.config.codex_reasoning_effort
+        )
+        normalized = descriptor.normalize_settings(
             {
-                "codexModel": state.get("codexModel") or self.config.codex_model or DEFAULT_CODEX_MODEL,
-                "codexReasoningEffort": state.get("codexReasoningEffort")
-                or self.config.codex_reasoning_effort
-                or DEFAULT_CODEX_REASONING_EFFORT,
+                descriptor.model_key: state.get(descriptor.model_key) or config_model or descriptor.default_model,
+                descriptor.effort_key: state.get(descriptor.effort_key) or config_effort or descriptor.default_effort,
             }
         )
         return {
-            "model": str(state["codexModel"]),
-            "reasoning_effort": str(state["codexReasoningEffort"]),
+            "model": str(normalized[descriptor.model_key]),
+            "reasoning_effort": str(normalized[descriptor.effort_key]),
         }
 
     def _run_process(
@@ -411,10 +434,11 @@ class ProcessingQueue:
         return completed
 
     def _build_markdown(self, fields: dict[str, Any], transcript_info: dict[str, Any], response: str) -> str:
-        codex_settings = self._codex_settings()
-        provider_label = self.config.provider
-        if self.config.provider == "codex":
-            provider_label = f"codex {codex_settings['model']}"
+        provider_name = self._active_provider()
+        settings = self._provider_settings(provider_name)
+        provider_label = provider_name
+        if provider_name in DESCRIPTORS and settings["model"]:
+            provider_label = f"{provider_name} {settings['model']}"
 
         metadata = {
             "type": "tubefold",
@@ -434,9 +458,9 @@ class ProcessingQueue:
             "provider": provider_label,
             "prompt_template": "detailed-summary",
         }
-        if self.config.provider == "codex":
-            metadata["codex_model"] = codex_settings["model"]
-            metadata["codex_reasoning_effort"] = codex_settings["reasoning_effort"]
+        if provider_name in DESCRIPTORS and settings["model"]:
+            metadata[f"{provider_name}_model"] = settings["model"]
+            metadata[f"{provider_name}_reasoning_effort"] = settings["reasoning_effort"]
 
         front_matter = yaml_front_matter(
             metadata

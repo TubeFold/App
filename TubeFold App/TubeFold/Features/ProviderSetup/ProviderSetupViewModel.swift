@@ -12,9 +12,11 @@ final class ProviderSetupViewModel: ObservableObject {
     @Published private(set) var errorMessage: String?
     @Published private(set) var hasLoadedState = false
     @Published private(set) var apiReachable = false
+    @Published private(set) var selectedProviderID = "codex"
+    @Published private(set) var availableProviders: [ProviderInfo] = ProviderInfo.defaults
     @Published private(set) var modelOptions: [CodexModelOption] = CodexModelOption.defaultModelOptions
     @Published private(set) var reasoningEffortOptions: [CodexModelOption] = CodexModelOption.defaultReasoningEffortOptions
-    @Published private(set) var selectedCodexModel = "gpt-5.4-mini"
+    @Published private(set) var selectedModel = "gpt-5.4-mini"
     @Published private(set) var selectedReasoningEffort = "medium"
     @Published private(set) var outputLanguage = ProviderSetupViewModel.defaultOutputLanguage
     @Published var outputLanguageDraft = ProviderSetupViewModel.defaultOutputLanguage
@@ -22,6 +24,11 @@ final class ProviderSetupViewModel: ObservableObject {
     static let defaultOutputLanguage = "English"
 
     private let service = ProviderSetupService()
+
+    var providerDisplayName: String {
+        availableProviders.first { $0.id == selectedProviderID }?.displayName
+            ?? (selectedProviderID == "claude" ? "Claude Code CLI" : "Codex CLI")
+    }
 
     var isSetupComplete: Bool {
         setupState?.providerSetupCompleted == true && !hasInstallationFailure && !hasConnectionFailure
@@ -31,7 +38,7 @@ final class ProviderSetupViewModel: ObservableObject {
         hasLoadedState && setupState?.providerSetupCompleted != true
     }
 
-    var requiresCodexRepair: Bool {
+    var requiresRepair: Bool {
         hasLoadedState && apiReachable && (hasInstallationFailure || hasConnectionFailure)
     }
 
@@ -54,27 +61,27 @@ final class ProviderSetupViewModel: ObservableObject {
         if installationSucceeded {
             return "Installed"
         }
-        if let version = setupState?.codexVersion, !version.isEmpty {
+        if let version = setupState?.version(for: selectedProviderID), !version.isEmpty {
             return "Needs check: \(version)"
         }
-        if setupState?.codexExecutablePath != nil {
+        if setupState?.executablePath(for: selectedProviderID) != nil {
             return "Needs check"
         }
         return "Not configured"
     }
 
-    var codexVersionSummary: String {
-        installationResult?.version ?? setupState?.codexVersion ?? "Unknown version"
+    var versionSummary: String {
+        installationResult?.version ?? setupState?.version(for: selectedProviderID) ?? "Unknown version"
     }
 
-    var codexModelSummary: String {
-        let model = selectedModelOption?.label ?? selectedCodexModel
+    var modelSummary: String {
+        let model = selectedModelOption?.label ?? selectedModel
         let effort = selectedReasoningEffortOption?.label ?? selectedReasoningEffort
         return "\(model) • \(effort)"
     }
 
     var selectedModelOption: CodexModelOption? {
-        modelOptions.first { $0.id == selectedCodexModel }
+        modelOptions.first { $0.id == selectedModel }
     }
 
     var selectedReasoningEffortOption: CodexModelOption? {
@@ -85,20 +92,20 @@ final class ProviderSetupViewModel: ObservableObject {
         outputLanguageDraft.trimmingCharacters(in: .whitespacesAndNewlines) != outputLanguage
     }
 
-    var codexInstalled: Bool {
-        installationSucceeded || (isSetupComplete && setupState?.codexExecutablePath != nil)
+    var providerInstalled: Bool {
+        installationSucceeded || (isSetupComplete && setupState?.executablePath(for: selectedProviderID) != nil)
     }
 
-    var codexSignedIn: Bool {
+    var providerSignedIn: Bool {
         connectionSucceeded
     }
 
-    var codexReady: Bool {
+    var providerReady: Bool {
         isSetupComplete
     }
 
     var setupButtonTitle: String {
-        requiresCodexRepair ? "Repair Codex" : "Codex Setup"
+        requiresRepair ? "Repair \(providerDisplayName)" : "Provider Setup"
     }
 
     var outputDirectorySummary: String {
@@ -110,9 +117,9 @@ final class ProviderSetupViewModel: ObservableObject {
         case .beforeBegin:
             return "Next"
         case .checkInstallation:
-            return installationSucceeded ? "Next" : "Check Codex"
+            return installationSucceeded ? "Next" : "Check Installation"
         case .testConnection:
-            return connectionSucceeded ? "Next" : "Test Codex"
+            return connectionSucceeded ? "Next" : "Test Connection"
         case .complete:
             return "Complete Setup"
         }
@@ -158,8 +165,8 @@ final class ProviderSetupViewModel: ObservableObject {
 
     var installationMessage: String {
         installationResult?.userMessage
-            ?? setupState?.codexExecutablePath
-            ?? "TubeFold will look for Codex automatically. You can also choose it manually."
+            ?? setupState?.executablePath(for: selectedProviderID)
+            ?? "TubeFold will look for \(providerDisplayName) automatically. You can also choose it manually."
     }
 
     var installationDetails: [String] {
@@ -191,7 +198,7 @@ final class ProviderSetupViewModel: ObservableObject {
 
     var connectionMessage: String {
         connectionResult?.userMessage
-            ?? "Run a quick Codex request to confirm this Mac is signed in."
+            ?? "Run a quick \(providerDisplayName) request to confirm this Mac is signed in."
     }
 
     var connectionDetails: [String] {
@@ -202,6 +209,8 @@ final class ProviderSetupViewModel: ObservableObject {
         await runBusy("Starting TubeFold") {
             let response = try await service.loadSetup()
             let state = response.state
+            selectedProviderID = state.provider
+            availableProviders = response.providers
             modelOptions = response.modelOptions
             reasoningEffortOptions = response.reasoningEffortOptions
             setupState = state
@@ -210,8 +219,8 @@ final class ProviderSetupViewModel: ObservableObject {
             apiReachable = true
             configureStep(from: state)
 
-            if let codexPath = state.codexExecutablePath {
-                let result = try await service.detectCodex(path: codexPath)
+            if let executablePath = state.executablePath(for: selectedProviderID) {
+                let result = try await service.detect(provider: selectedProviderID, path: executablePath)
                 installationResult = result
                 setupState = try await service.loadState()
                 if let setupState {
@@ -224,10 +233,32 @@ final class ProviderSetupViewModel: ObservableObject {
         }
     }
 
+    func selectProvider(_ provider: String) async {
+        guard provider != selectedProviderID else { return }
+        await runBusy("Switching provider") {
+            let response = try await service.selectProvider(provider)
+            selectedProviderID = response.provider
+            setupState = response.state
+            availableProviders = response.providers
+            modelOptions = response.modelOptions
+            reasoningEffortOptions = response.reasoningEffortOptions
+            installationResult = nil
+            connectionResult = nil
+            configureModelSettings(from: response.state)
+            configureStep(from: response.state)
+            apiReachable = true
+
+            if let executablePath = response.state.executablePath(for: selectedProviderID) {
+                installationResult = try await service.detect(provider: selectedProviderID, path: executablePath)
+                setupState = try await service.loadState()
+            }
+        }
+    }
+
     func prepareCurrentStepIfNeeded() async {
         guard currentStep == .checkInstallation else { return }
         guard installationResult == nil, !isBusy else { return }
-        await detectInstallation(path: setupState?.codexExecutablePath)
+        await detectInstallation(path: setupState?.executablePath(for: selectedProviderID))
     }
 
     func advance() async {
@@ -237,7 +268,7 @@ final class ProviderSetupViewModel: ObservableObject {
             await prepareCurrentStepIfNeeded()
         case .checkInstallation:
             if !installationSucceeded {
-                await detectInstallation(path: setupState?.codexExecutablePath)
+                await detectInstallation(path: setupState?.executablePath(for: selectedProviderID))
             }
             if installationSucceeded {
                 currentStep = .testConnection
@@ -265,8 +296,8 @@ final class ProviderSetupViewModel: ObservableObject {
     }
 
     func detectInstallation(path: String?) async {
-        await runBusy("Checking Codex") {
-            let result = try await service.detectCodex(path: path)
+        await runBusy("Checking \(providerDisplayName)") {
+            let result = try await service.detect(provider: selectedProviderID, path: path)
             installationResult = result
             apiReachable = true
             if result.status == "installed" {
@@ -276,9 +307,9 @@ final class ProviderSetupViewModel: ObservableObject {
     }
 
     func testConnection() async {
-        await runBusy("Testing Codex") {
-            let path = installationResult?.path ?? setupState?.codexExecutablePath
-            let result = try await service.testCodex(path: path)
+        await runBusy("Testing \(providerDisplayName)") {
+            let path = installationResult?.path ?? setupState?.executablePath(for: selectedProviderID)
+            let result = try await service.test(provider: selectedProviderID, path: path)
             connectionResult = result
             apiReachable = true
             if result.status == "success" {
@@ -297,8 +328,8 @@ final class ProviderSetupViewModel: ObservableObject {
         }
     }
 
-    func updateCodexModel(_ model: String) {
-        selectedCodexModel = model
+    func updateModel(_ model: String) {
+        selectedModel = model
         Task { await saveModelSettings() }
     }
 
@@ -361,7 +392,7 @@ final class ProviderSetupViewModel: ObservableObject {
             currentStep = .checkInstallation
         } else if state.providerSetupCompleted {
             currentStep = .complete
-        } else if state.codexExecutablePath != nil || state.lastSuccessfulConnectionTest != nil {
+        } else if state.executablePath(for: selectedProviderID) != nil || state.lastSuccessfulConnectionTest != nil {
             currentStep = .checkInstallation
         } else {
             currentStep = .beforeBegin
@@ -369,8 +400,8 @@ final class ProviderSetupViewModel: ObservableObject {
     }
 
     private func configureModelSettings(from state: ProviderSetupState) {
-        selectedCodexModel = state.codexModel ?? CodexModelOption.defaultModelOptions[0].id
-        selectedReasoningEffort = state.codexReasoningEffort ?? "medium"
+        selectedModel = state.model(for: selectedProviderID) ?? CodexModelOption.defaultModel(for: selectedProviderID)
+        selectedReasoningEffort = state.reasoningEffort(for: selectedProviderID) ?? "medium"
     }
 
     private func applyOutputLanguage(from state: ProviderSetupState) {
@@ -389,9 +420,10 @@ final class ProviderSetupViewModel: ObservableObject {
     }
 
     private func saveModelSettings() async {
-        await runBusy("Saving Codex settings") {
+        await runBusy("Saving \(providerDisplayName) settings") {
             let response = try await service.saveModelSettings(
-                model: selectedCodexModel,
+                provider: selectedProviderID,
+                model: selectedModel,
                 reasoningEffort: selectedReasoningEffort
             )
             setupState = response.state
@@ -401,5 +433,4 @@ final class ProviderSetupViewModel: ObservableObject {
             apiReachable = true
         }
     }
-
 }

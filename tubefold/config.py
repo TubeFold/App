@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from .claude_settings import DEFAULT_CLAUDE_MODEL, DEFAULT_CLAUDE_REASONING_EFFORT
 from .codex_settings import DEFAULT_CODEX_MODEL, DEFAULT_CODEX_REASONING_EFFORT
 from .output_language import DEFAULT_OUTPUT_LANGUAGE, normalize_output_language
 
@@ -24,6 +25,8 @@ class AppConfig:
     output_dir: Path
     codex_model: str = DEFAULT_CODEX_MODEL
     codex_reasoning_effort: str = DEFAULT_CODEX_REASONING_EFFORT
+    claude_model: str = DEFAULT_CLAUDE_MODEL
+    claude_reasoning_effort: str = DEFAULT_CLAUDE_REASONING_EFFORT
     output_language: str = DEFAULT_OUTPUT_LANGUAGE
     max_request_bytes: int = 1024 * 64
 
@@ -76,6 +79,11 @@ def load_config() -> AppConfig:
         codex_reasoning_effort=os.environ.get(
             "TUBEFOLD_CODEX_REASONING_EFFORT",
             os.environ.get("CODEX_REASONING_EFFORT", DEFAULT_CODEX_REASONING_EFFORT),
+        ),
+        claude_model=os.environ.get("TUBEFOLD_CLAUDE_MODEL", os.environ.get("CLAUDE_MODEL", DEFAULT_CLAUDE_MODEL)),
+        claude_reasoning_effort=os.environ.get(
+            "TUBEFOLD_CLAUDE_REASONING_EFFORT",
+            os.environ.get("CLAUDE_REASONING_EFFORT", DEFAULT_CLAUDE_REASONING_EFFORT),
         ),
         output_language=normalize_output_language(os.environ.get("TUBEFOLD_OUTPUT_LANGUAGE")),
     )

@@ -107,6 +107,47 @@ class ProcessingTests(unittest.TestCase):
             self.assertIn('codex_model: "gpt-5.5"', markdown)
             self.assertIn('codex_reasoning_effort: "high"', markdown)
 
+    def test_claude_selection_drives_markdown_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            data_dir = Path(directory)
+            repository = Repository(data_dir / "database.sqlite")
+            config = AppConfig(
+                host="127.0.0.1",
+                port=0,
+                api_token=None,
+                allowed_origins=("chrome-extension://*",),
+                provider="codex",
+                python_executable=sys.executable,
+                codex_timeout_seconds=30,
+                data_dir=data_dir,
+                output_dir=data_dir / "exports",
+            )
+            # The server boots with provider=codex, but the UI selection picks claude.
+            ProviderSetupStore(config).update(
+                selectedProviderID="claude",
+                claudeModel="opus",
+                claudeReasoningEffort="high",
+            )
+            queue = ProcessingQueue(config, repository)
+            self.assertEqual(queue._active_provider(), "claude")
+
+            markdown = queue._build_markdown(
+                {
+                    "video_id": "abc123def45",
+                    "url": "https://www.youtube.com/watch?v=abc123def45",
+                    "title": "Demo",
+                    "channel": "Channel",
+                    "duration_seconds": 10,
+                    "published_at": "2026-06-25",
+                },
+                {"language": "English", "language_code": "en", "is_generated": False},
+                "# Summary",
+            )
+
+            self.assertIn('provider: "claude opus"', markdown)
+            self.assertIn('claude_model: "opus"', markdown)
+            self.assertIn('claude_reasoning_effort: "high"', markdown)
+
 
 if __name__ == "__main__":
     unittest.main()

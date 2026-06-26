@@ -61,6 +61,7 @@ class ServerTests(unittest.TestCase):
         self.assertTrue(body["backendFeatures"]["unlimitedTranscripts"])
         self.assertTrue(body["backendFeatures"]["libraryRegenerate"])
         self.assertTrue(body["backendFeatures"]["codexModelSettings"])
+        self.assertTrue(body["backendFeatures"]["claudeProvider"])
 
     def test_summary_request_creates_job_and_dedupes_active_video(self) -> None:
         request = {
@@ -108,6 +109,37 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(saved["status"], "saved")
         self.assertEqual(saved["state"]["codexModel"], "gpt-5.5")
         self.assertEqual(saved["state"]["codexReasoningEffort"], "high")
+
+    def test_provider_setup_lists_providers_and_supports_selection(self) -> None:
+        response = self.get_json("/api/v1/provider-setup")
+        self.assertEqual(response["provider"], "codex")
+        provider_ids = {item["id"] for item in response["providers"]}
+        self.assertEqual(provider_ids, {"codex", "claude"})
+
+        selected = self.post_json("/api/v1/provider-setup/select", {"provider": "claude"})
+        self.assertEqual(selected["status"], "selected")
+        self.assertEqual(selected["provider"], "claude")
+        self.assertEqual(selected["state"]["selectedProviderID"], "claude")
+
+        reloaded = self.get_json("/api/v1/provider-setup")
+        self.assertEqual(reloaded["provider"], "claude")
+        self.assertEqual(reloaded["state"]["claudeModel"], "sonnet")
+
+    def test_provider_setup_claude_model_endpoint_saves_settings(self) -> None:
+        saved = self.post_json(
+            "/api/v1/provider-setup/claude/model",
+            {"model": "opus", "reasoningEffort": "high"},
+        )
+        self.assertEqual(saved["status"], "saved")
+        self.assertEqual(saved["provider"], "claude")
+        self.assertEqual(saved["state"]["claudeModel"], "opus")
+        self.assertEqual(saved["state"]["claudeReasoningEffort"], "high")
+
+    def test_provider_setup_select_rejects_unknown_provider(self) -> None:
+        with self.assertRaises(urllib.error.HTTPError) as context:
+            self.post_json("/api/v1/provider-setup/select", {"provider": "bogus"})
+        self.assertEqual(context.exception.code, 400)
+        context.exception.close()
 
     def test_output_language_endpoint_saves_and_normalizes(self) -> None:
         response = self.get_json("/api/v1/provider-setup")

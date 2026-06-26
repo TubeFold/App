@@ -13,21 +13,29 @@ struct ProviderSetupService {
         return response.state
     }
 
-    func detectCodex(path: String?) async throws -> InstallationResult {
-        try await request(path: "/api/v1/provider-setup/codex/detect", method: "POST", body: StringRequest(path: path))
+    func selectProvider(_ provider: String) async throws -> ProviderSelectionResult {
+        try await request(
+            path: "/api/v1/provider-setup/select",
+            method: "POST",
+            body: SelectProviderRequest(provider: provider)
+        )
     }
 
-    func testCodex(path: String?) async throws -> ConnectionTestResult {
-        try await request(path: "/api/v1/provider-setup/codex/test", method: "POST", body: StringRequest(path: path))
+    func detect(provider: String, path: String?) async throws -> InstallationResult {
+        try await request(path: "/api/v1/provider-setup/\(provider)/detect", method: "POST", body: StringRequest(path: path))
+    }
+
+    func test(provider: String, path: String?) async throws -> ConnectionTestResult {
+        try await request(path: "/api/v1/provider-setup/\(provider)/test", method: "POST", body: StringRequest(path: path))
     }
 
     func completeSetup() async throws -> CompleteSetupResult {
         try await request(path: "/api/v1/provider-setup/complete", method: "POST", body: Optional<StringRequest>.none)
     }
 
-    func saveModelSettings(model: String, reasoningEffort: String) async throws -> SaveModelSettingsResult {
+    func saveModelSettings(provider: String, model: String, reasoningEffort: String) async throws -> SaveModelSettingsResult {
         try await request(
-            path: "/api/v1/provider-setup/codex/model",
+            path: "/api/v1/provider-setup/\(provider)/model",
             method: "POST",
             body: ModelSettingsRequest(model: model, reasoningEffort: reasoningEffort)
         )

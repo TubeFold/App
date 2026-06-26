@@ -16,7 +16,13 @@ from .config import AppConfig, load_config
 from .logging_utils import configure_logging
 from .models import ProcessingStatus, SummaryRequest
 from .processing import ProcessingQueue
-from .provider_setup import CodexProviderDiagnostics
+from .provider_setup import (
+    DESCRIPTORS,
+    ProviderSetupStore,
+    diagnostics_for,
+    provider_summaries,
+    selected_diagnostics,
+)
 from .reading_time import reading_minutes_for_markdown
 from .repository import Repository
 from .telegraph import TelegraphError, TelegraphPublisher
@@ -58,6 +64,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                         "telegraphPublish": True,
                         "outputLanguageSetting": True,
                         "readingTime": True,
+                        "claudeProvider": True,
                     },
                 }
             )
@@ -66,8 +73,15 @@ class RequestHandler(BaseHTTPRequestHandler):
         if self.path == "/api/v1/provider-setup":
             if not self._authorized():
                 return
-            diagnostics = CodexProviderDiagnostics(self.server.config)
-            self._send_json({"provider": "codex", "state": diagnostics.state(), **diagnostics.model_options()})
+            diagnostics = selected_diagnostics(self.server.config)
+            self._send_json(
+                {
+                    "provider": diagnostics.provider_id,
+                    "state": diagnostics.state(),
+                    "providers": provider_summaries(self.server.config),
+                    **diagnostics.model_options(),
+                }
+            )
             return
 
         if self.path == "/api/v1/videos":
@@ -155,49 +169,78 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self._send_json({"jobId": None, "videoId": video_record_id, "status": "already_exists"})
             return
 
-        if self.path == "/api/v1/provider-setup/codex/detect":
-            data = self._read_optional_json_body()
+        if self.path == "/api/v1/provider-setup/select":
+            data = self._read_json_body()
             if data is None:
                 return
-            diagnostics = CodexProviderDiagnostics(self.server.config)
-            result = diagnostics.detect_installation(data.get("path") if data else None)
-            logger.info("Provider setup detect status=%s path=%s version=%s", result.get("status"), result.get("path"), result.get("version"))
-            self._send_json(result)
+            provider_id = str(data.get("provider") or "")
+            if provider_id not in DESCRIPTORS:
+                self._send_error("invalid_provider", "Unknown provider.", HTTPStatus.BAD_REQUEST)
+                return
+            state = ProviderSetupStore(self.server.config).select(provider_id)
+            diagnostics = diagnostics_for(provider_id, self.server.config)
+            logger.info("Provider selected provider=%s completed=%s", provider_id, state.get("providerSetupCompleted"))
+            self._send_json(
+                {
+                    "status": "selected",
+                    "provider": provider_id,
+                    "state": state,
+                    "providers": provider_summaries(self.server.config),
+                    **diagnostics.model_options(),
+                }
+            )
             return
 
-        if self.path == "/api/v1/provider-setup/codex/test":
-            data = self._read_optional_json_body()
+        match = re.fullmatch(r"/api/v1/provider-setup/(codex|claude)/(detect|test|model)", self.path)
+        if match:
+            provider_id, action = match.group(1), match.group(2)
+            diagnostics = diagnostics_for(provider_id, self.server.config)
+            if action == "detect":
+                data = self._read_optional_json_body()
+                if data is None:
+                    return
+                result = diagnostics.detect_installation(data.get("path") if data else None)
+                logger.info(
+                    "Provider setup detect provider=%s status=%s path=%s version=%s",
+                    provider_id,
+                    result.get("status"),
+                    result.get("path"),
+                    result.get("version"),
+                )
+                self._send_json(result)
+                return
+            if action == "test":
+                data = self._read_optional_json_body()
+                if data is None:
+                    return
+                result = diagnostics.test_connection(data.get("path") if data else None)
+                logger.info(
+                    "Provider setup connection test provider=%s status=%s category=%s",
+                    provider_id,
+                    result.get("status"),
+                    (result.get("details") or {}).get("errorCategory"),
+                )
+                self._send_json(result)
+                return
+            # action == "model"
+            data = self._read_json_body()
             if data is None:
                 return
-            diagnostics = CodexProviderDiagnostics(self.server.config)
-            result = diagnostics.test_connection(data.get("path") if data else None)
+            result = diagnostics.save_model_settings(data.get("model"), data.get("reasoningEffort"))
+            state = result.get("state") or {}
             logger.info(
-                "Provider setup connection test status=%s category=%s",
-                result.get("status"),
-                (result.get("details") or {}).get("errorCategory"),
+                "Provider setup model saved provider=%s model=%s reasoning_effort=%s",
+                provider_id,
+                state.get(f"{provider_id}Model"),
+                state.get(f"{provider_id}ReasoningEffort"),
             )
             self._send_json(result)
             return
 
         if self.path == "/api/v1/provider-setup/complete":
-            diagnostics = CodexProviderDiagnostics(self.server.config)
+            diagnostics = selected_diagnostics(self.server.config)
             result = diagnostics.complete_setup()
-            logger.info("Provider setup completed provider=codex")
-            self._send_json(result)
-            return
-
-        if self.path == "/api/v1/provider-setup/codex/model":
-            data = self._read_json_body()
-            if data is None:
-                return
-            diagnostics = CodexProviderDiagnostics(self.server.config)
-            result = diagnostics.save_model_settings(data.get("model"), data.get("reasoningEffort"))
-            state = result.get("state") or {}
-            logger.info(
-                "Provider setup model saved provider=codex model=%s reasoning_effort=%s",
-                state.get("codexModel"),
-                state.get("codexReasoningEffort"),
-            )
+            logger.info("Provider setup completed provider=%s", diagnostics.provider_id)
             self._send_json(result)
             return
 
@@ -205,7 +248,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             data = self._read_json_body()
             if data is None:
                 return
-            diagnostics = CodexProviderDiagnostics(self.server.config)
+            diagnostics = selected_diagnostics(self.server.config)
             result = diagnostics.save_output_language(data.get("outputLanguage"))
             logger.info(
                 "Provider setup output language saved value=%r",
@@ -401,6 +444,8 @@ def main() -> int:
             output_dir=config.output_dir,
             codex_model=config.codex_model,
             codex_reasoning_effort=config.codex_reasoning_effort,
+            claude_model=config.claude_model,
+            claude_reasoning_effort=config.claude_reasoning_effort,
             output_language=config.output_language,
             max_request_bytes=config.max_request_bytes,
         )

@@ -26,7 +26,7 @@ struct ContentView: View {
             await viewModel.loadState()
             showingSetup = viewModel.shouldPresentSetupOnLaunch
         }
-        .onChange(of: viewModel.requiresCodexRepair) { _, needsRepair in
+        .onChange(of: viewModel.requiresRepair) { _, needsRepair in
             if needsRepair {
                 viewModel.startRepair()
                 showingSetup = true
@@ -55,7 +55,7 @@ struct MainStatusView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("TubeFold")
                         .font(.largeTitle.weight(.semibold))
-                    Text("Save clean Markdown summaries from YouTube videos using your local Codex account.")
+                    Text("Save clean Markdown summaries from YouTube videos using your signed-in provider CLI.")
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -63,7 +63,7 @@ struct MainStatusView: View {
                     viewModel.startRepair()
                     showingSetup = true
                 } label: {
-                    Label(viewModel.setupButtonTitle, systemImage: viewModel.requiresCodexRepair ? "wrench.and.screwdriver" : "sparkles")
+                    Label(viewModel.setupButtonTitle, systemImage: viewModel.requiresRepair ? "wrench.and.screwdriver" : "sparkles")
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
@@ -77,7 +77,7 @@ struct MainStatusView: View {
                     tint: viewModel.apiReachable ? .green : .orange
                 )
                 StatusTile(
-                    title: "Codex",
+                    title: viewModel.providerDisplayName,
                     value: viewModel.providerSummary,
                     systemImage: "terminal",
                     tint: .blue
@@ -91,7 +91,7 @@ struct MainStatusView: View {
             }
 
             VStack(alignment: .leading, spacing: 12) {
-                Text("Capture videos from the browser, then let TubeFold fetch the transcript, ask Codex for a summary, and save the result as Markdown.")
+                Text("Capture videos from the browser, then let TubeFold fetch the transcript, ask your provider for a summary, and save the result as Markdown.")
                     .font(.headline)
                 Text("The local helper is started by the app when needed and stopped when the app quits.")
                     .foregroundStyle(.secondary)
@@ -101,19 +101,19 @@ struct MainStatusView: View {
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 14) {
-                Text("Codex Status")
+                Text("\(viewModel.providerDisplayName) Status")
                     .font(.headline)
                 HStack(spacing: 12) {
-                    StatusCheckItem(title: "Installed", isReady: viewModel.codexInstalled, detail: viewModel.codexVersionSummary)
-                    StatusCheckItem(title: "Signed in", isReady: viewModel.codexSignedIn, detail: viewModel.codexSignedIn ? "Account verified" : "Test required")
-                    StatusCheckItem(title: "Ready", isReady: viewModel.codexReady, detail: viewModel.codexReady ? "Summaries enabled" : "Setup incomplete")
+                    StatusCheckItem(title: "Installed", isReady: viewModel.providerInstalled, detail: viewModel.versionSummary)
+                    StatusCheckItem(title: "Signed in", isReady: viewModel.providerSignedIn, detail: viewModel.providerSignedIn ? "Account verified" : "Test required")
+                    StatusCheckItem(title: "Ready", isReady: viewModel.providerReady, detail: viewModel.providerReady ? "Summaries enabled" : "Setup incomplete")
                 }
             }
             .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
 
-            CodexModelSettingsView(viewModel: viewModel)
+            ProviderModelSettingsView(viewModel: viewModel)
 
             OutputLanguageSettingsView(viewModel: viewModel)
 
@@ -131,31 +131,45 @@ struct MainStatusView: View {
     }
 }
 
-struct CodexModelSettingsView: View {
+struct ProviderModelSettingsView: View {
     @ObservedObject var viewModel: ProviderSetupViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Codex Model")
+                    Text("Provider & Model")
                         .font(.headline)
                     Text("Used for new summaries. Existing Markdown files stay unchanged.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Text(viewModel.codexModelSummary)
+                Text(viewModel.modelSummary)
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
+
+            Picker(
+                "Provider",
+                selection: Binding(
+                    get: { viewModel.selectedProviderID },
+                    set: { newValue in Task { await viewModel.selectProvider(newValue) } }
+                )
+            ) {
+                ForEach(viewModel.availableProviders) { provider in
+                    Text(provider.displayName).tag(provider.id)
+                }
+            }
+            .pickerStyle(.segmented)
+            .disabled(viewModel.isBusy)
 
             HStack(alignment: .top, spacing: 14) {
                 Picker(
                     "Model",
                     selection: Binding(
-                        get: { viewModel.selectedCodexModel },
-                        set: { viewModel.updateCodexModel($0) }
+                        get: { viewModel.selectedModel },
+                        set: { viewModel.updateModel($0) }
                     )
                 ) {
                     ForEach(viewModel.modelOptions) { option in
@@ -181,8 +195,8 @@ struct CodexModelSettingsView: View {
 
             HStack(alignment: .top, spacing: 18) {
                 SettingsHint(
-                    title: viewModel.selectedModelOption?.label ?? viewModel.selectedCodexModel,
-                    detail: viewModel.selectedModelOption?.description ?? "Selected Codex model."
+                    title: viewModel.selectedModelOption?.label ?? viewModel.selectedModel,
+                    detail: viewModel.selectedModelOption?.description ?? "Selected model."
                 )
                 SettingsHint(
                     title: viewModel.selectedReasoningEffortOption?.label ?? viewModel.selectedReasoningEffort,

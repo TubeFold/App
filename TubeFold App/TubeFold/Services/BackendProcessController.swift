@@ -58,6 +58,7 @@ final class BackendProcessController {
                 && features?.telegraphPublish == true
                 && features?.outputLanguageSetting == true
                 && features?.readingTime == true
+                && features?.claudeProvider == true
         } catch {
             return false
         }
@@ -221,4 +222,5 @@ private struct BackendFeatures: Decodable {
     let telegraphPublish: Bool
     let outputLanguageSetting: Bool
     let readingTime: Bool
+    let claudeProvider: Bool
 }
