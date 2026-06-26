@@ -223,8 +223,8 @@ def _content_within_limit(content: list[Any]) -> list[Any]:
     return [notice]
 
 
-def _format_watch_label(duration_seconds: Any) -> str | None:
-    """Human "N min watch" label for the video runtime, or ``None`` if unknown."""
+def _format_watch_duration(duration_seconds: Any) -> str | None:
+    """Human "N min" / "Hh MMm" label for the video runtime, or ``None`` if unknown."""
     try:
         total = int(round(float(duration_seconds)))
     except (TypeError, ValueError):
@@ -234,9 +234,9 @@ def _format_watch_label(duration_seconds: Any) -> str | None:
     if total >= 3600:
         hours, remainder = divmod(total, 3600)
         minutes = remainder // 60
-        return f"{hours}h {minutes:02d}m watch"
+        return f"{hours}h {minutes:02d}m"
     minutes = max(1, round(total / 60))
-    return f"{minutes} min watch"
+    return f"{minutes} min"
 
 
 def build_article_content(
@@ -245,11 +245,13 @@ def build_article_content(
     channel: str | None,
     duration_seconds: Any = None,
 ) -> list[Any]:
-    """Assemble the full Telegraph content: a source header, a rule, then the summary.
+    """Assemble the full Telegraph content: a one-line source header, a rule, then
+    the summary.
 
-    The header is two lines so the time trade-off reads at a glance: the first
-    line links to the video and shows how long it is to *watch*; the second line
-    shows how long the summary is to *read*.
+    The header puts the time trade-off on a single line — the video link with its
+    runtime *or* how long the summary is to read — e.g.::
+
+        ▶ Watch on YouTube · 29 min  or  4 min read summary
     """
     from .reading_time import reading_minutes_for_markdown, reading_time_label
 
@@ -258,18 +260,15 @@ def build_article_content(
     header_children: list[Any] = [
         {"tag": "a", "attrs": {"href": video_url}, "children": ["▶ Watch on YouTube"]},
     ]
-    if channel:
-        header_children.append(f" · {channel}")
-    watch_label = _format_watch_label(duration_seconds)
-    if watch_label:
-        header_children.append(f" · {watch_label}")
-
     read_label = reading_time_label(reading_minutes_for_markdown(summary_markdown))
-    read_line = {"tag": "p", "children": [{"tag": "em", "children": [f"📄 {read_label} summary"]}]}
+    watch_duration = _format_watch_duration(duration_seconds)
+    if watch_duration:
+        header_children.append(f" · {watch_duration}  or  {read_label} summary")
+    else:
+        header_children.append(f" · {read_label} summary")
 
     content: list[Any] = [
         {"tag": "p", "children": header_children},
-        read_line,
         {"tag": "hr"},
         *body,
     ]

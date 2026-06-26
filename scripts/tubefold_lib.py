@@ -108,6 +108,18 @@ def extract_video_id(url: str) -> str:
     return parse_youtube_video_id(url)
 
 
+def youtube_thumbnail_url(video_id: str) -> str:
+    """Deterministic thumbnail URL derived from a YouTube video id.
+
+    Manually-added videos arrive as a bare URL with no thumbnail; the id alone
+    is enough to build a working cover image without any network call.
+    """
+    video_id = str(video_id or "").strip()
+    if not video_id:
+        return ""
+    return f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
+
+
 def duration_hms(seconds: Any) -> str:
     try:
         total = int(seconds)
@@ -212,6 +224,17 @@ def _yaml_scalar(value: Any) -> str:
     if isinstance(value, int):
         return str(value)
     return json.dumps(str(value), ensure_ascii=False)
+
+
+def model_label(provider: str, model: str, reasoning_effort: str = "") -> str:
+    """Combined model field, e.g. ``codex gpt-5.4-mini (effort: medium)``."""
+    provider = (provider or "").strip()
+    model = (model or "").strip()
+    reasoning_effort = (reasoning_effort or "").strip()
+    label = f"{provider} {model}".strip() if model else provider
+    if reasoning_effort:
+        label = f"{label} (effort: {reasoning_effort})"
+    return label
 
 
 def processed_at_now() -> str:

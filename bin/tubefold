@@ -20,6 +20,7 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 from tubefold_lib import (  # noqa: E402
     expand_path,
     metadata_fields,
+    model_label,
     normalize_youtube_url,
     parse_bool,
     parse_env_file,
@@ -399,16 +400,11 @@ def build_markdown(
     response: str,
     config: dict[str, str],
 ) -> str:
-    provider_label = provider_name
-    extra_fields: dict[str, Any] = {}
+    model = provider_name
     if provider_name == "codex":
-        provider_label = f"codex {config['CODEX_MODEL']}"
-        extra_fields["codex_model"] = config["CODEX_MODEL"]
-        extra_fields["codex_reasoning_effort"] = config["CODEX_REASONING_EFFORT"]
+        model = model_label("codex", config["CODEX_MODEL"], config["CODEX_REASONING_EFFORT"])
     elif provider_name == "claude":
-        provider_label = f"claude {config['CLAUDE_MODEL']}"
-        extra_fields["claude_model"] = config["CLAUDE_MODEL"]
-        extra_fields["claude_reasoning_effort"] = config["CLAUDE_REASONING_EFFORT"]
+        model = model_label("claude", config["CLAUDE_MODEL"], config["CLAUDE_REASONING_EFFORT"])
 
     metadata = {
         "type": "tubefold",
@@ -425,10 +421,9 @@ def build_markdown(
         "transcript_language_code": transcript_info.get("language_code", ""),
         "transcript_is_generated": bool(transcript_info.get("is_generated")),
         "output_language": config["OUTPUT_LANGUAGE"],
-        "provider": provider_label,
+        "model": model,
         "prompt_template": prompt_template.stem,
     }
-    metadata.update(extra_fields)
     front_matter = yaml_front_matter(
         metadata
     )

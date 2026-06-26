@@ -69,7 +69,7 @@ class ProcessingTests(unittest.TestCase):
             self.assertTrue(summary_path.exists())
             self.assertTrue(transcript_path.exists())
             summary = summary_path.read_text(encoding="utf-8")
-            self.assertIn('provider: "fake"', summary)
+            self.assertIn('model: "fake"', summary)
             self.assertIn("# Fake Summary", summary)
 
     def test_codex_markdown_includes_model_metadata(self) -> None:
@@ -103,9 +103,7 @@ class ProcessingTests(unittest.TestCase):
                 "# Summary",
             )
 
-            self.assertIn('provider: "codex gpt-5.5"', markdown)
-            self.assertIn('codex_model: "gpt-5.5"', markdown)
-            self.assertIn('codex_reasoning_effort: "high"', markdown)
+            self.assertIn('model: "codex gpt-5.5 (effort: high)"', markdown)
 
     def test_claude_selection_drives_markdown_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -144,9 +142,7 @@ class ProcessingTests(unittest.TestCase):
                 "# Summary",
             )
 
-            self.assertIn('provider: "claude opus"', markdown)
-            self.assertIn('claude_model: "opus"', markdown)
-            self.assertIn('claude_reasoning_effort: "high"', markdown)
+            self.assertIn('model: "claude opus (effort: high)"', markdown)
 
 
 if __name__ == "__main__":

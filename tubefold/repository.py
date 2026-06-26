@@ -230,6 +230,33 @@ class Repository:
                     (status.value, now, job_id),
                 )
 
+    def update_metadata(
+        self,
+        video_id: str,
+        title: str | None = None,
+        channel_name: str | None = None,
+        duration_seconds: float | None = None,
+        thumbnail_url: str | None = None,
+    ) -> None:
+        """Fill in metadata fields as soon as it is fetched, without clobbering
+        anything a client already supplied. Title/channel/duration use COALESCE so
+        existing values win when the fetch returns blanks; the thumbnail is only set
+        when the row has none yet (a client-provided cover may be higher quality)."""
+        now = utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE videos
+                SET title = COALESCE(?, title),
+                    channel_name = COALESCE(NULLIF(?, ''), channel_name),
+                    duration_seconds = COALESCE(?, duration_seconds),
+                    thumbnail_url = COALESCE(thumbnail_url, NULLIF(?, '')),
+                    updated_at = ?
+                WHERE id = ?
+                """,
+                (title, channel_name, duration_seconds, thumbnail_url, now, video_id),
+            )
+
     def mark_ready(
         self,
         video_id: str,

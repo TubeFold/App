@@ -12,10 +12,12 @@ from typing import Any
 
 from scripts.tubefold_lib import (
     metadata_fields,
+    model_label,
     processed_at_now,
     strip_outer_markdown_fence,
     validate_provider_response,
     yaml_front_matter,
+    youtube_thumbnail_url,
 )
 
 from .config import AppConfig, PROJECT_ROOT
@@ -126,6 +128,18 @@ class ProcessingQueue:
         self.repository.mark_status(video_id, job_id, ProcessingStatus.FETCHING_METADATA)
         metadata_json = job_dir / "metadata.json"
         metadata = self._fetch_metadata(video["canonical_url"], video["youtube_video_id"], metadata_json)
+
+        # Surface the fetched metadata immediately so manually-added videos (added as a
+        # bare URL with no title/channel/cover) stop showing placeholders while the
+        # summary is still generating.
+        fetched_title = metadata.get("title")
+        self.repository.update_metadata(
+            video_id,
+            title=fetched_title if fetched_title and fetched_title != video["youtube_video_id"] else None,
+            channel_name=metadata.get("channel"),
+            duration_seconds=metadata.get("duration"),
+            thumbnail_url=youtube_thumbnail_url(video["youtube_video_id"]),
+        )
 
         logger.info("Job=%s status=%s", job_id, ProcessingStatus.FETCHING_TRANSCRIPT.value)
         append_job_log(job_dir, f"status {ProcessingStatus.FETCHING_TRANSCRIPT.value}")
@@ -436,9 +450,10 @@ class ProcessingQueue:
     def _build_markdown(self, fields: dict[str, Any], transcript_info: dict[str, Any], response: str) -> str:
         provider_name = self._active_provider()
         settings = self._provider_settings(provider_name)
-        provider_label = provider_name
         if provider_name in DESCRIPTORS and settings["model"]:
-            provider_label = f"{provider_name} {settings['model']}"
+            model = model_label(provider_name, settings["model"], settings["reasoning_effort"])
+        else:
+            model = provider_name
 
         metadata = {
             "type": "tubefold",
@@ -455,12 +470,9 @@ class ProcessingQueue:
             "transcript_language_code": transcript_info.get("language_code", ""),
             "transcript_is_generated": bool(transcript_info.get("is_generated")),
             "output_language": self._output_language(),
-            "provider": provider_label,
+            "model": model,
             "prompt_template": "detailed-summary",
         }
-        if provider_name in DESCRIPTORS and settings["model"]:
-            metadata[f"{provider_name}_model"] = settings["model"]
-            metadata[f"{provider_name}_reasoning_effort"] = settings["reasoning_effort"]
 
         front_matter = yaml_front_matter(
             metadata

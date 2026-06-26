@@ -269,14 +269,36 @@ struct LibraryVideoRow: View {
 
 struct StatusBadge: View {
     let status: String
+    @State private var spin = false
+
+    private var isActive: Bool {
+        ["queued", "fetchingMetadata", "fetchingTranscript", "generatingSummary"].contains(status)
+    }
 
     var body: some View {
-        Label(statusTitle, systemImage: statusIcon)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(statusColor)
-            .padding(.vertical, 5)
-            .padding(.horizontal, 9)
-            .background(statusColor.opacity(0.12), in: Capsule())
+        HStack(spacing: 4) {
+            Image(systemName: statusIcon)
+                .rotationEffect(.degrees(spin ? 360 : 0))
+            Text(statusTitle)
+        }
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(statusColor)
+        .padding(.vertical, 5)
+        .padding(.horizontal, 9)
+        .background(statusColor.opacity(0.12), in: Capsule())
+        .onAppear { updateSpin() }
+        .onChange(of: status) { _, _ in updateSpin() }
+    }
+
+    private func updateSpin() {
+        if isActive {
+            spin = false
+            withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
+                spin = true
+            }
+        } else {
+            withAnimation(.default) { spin = false }
+        }
     }
 
     private var statusTitle: String {

@@ -128,28 +128,30 @@ class MarkdownConversionTests(unittest.TestCase):
         link = content[0]["children"][0]
         self.assertEqual(link["tag"], "a")
         self.assertEqual(link["attrs"]["href"], "https://youtu.be/abc")
-        # Header line, reading-time line, then the rule.
-        self.assertEqual(content[2], {"tag": "hr"})
+        # One header line, then the rule.
+        self.assertEqual(content[1], {"tag": "hr"})
 
-    def test_reading_time_is_on_its_own_line(self) -> None:
+    def test_reading_time_is_on_the_header_line(self) -> None:
         content = build_article_content("# Summary\n\nBody.", "https://youtu.be/abc", "Some Channel")
-        read_line_text = json.dumps(content[1], ensure_ascii=False)
-        self.assertIn("min read", read_line_text)
-        # The watch link line should NOT carry the reading time anymore.
         header_text = "".join(part for part in content[0]["children"] if isinstance(part, str))
-        self.assertNotIn("min read", header_text)
+        self.assertIn("min read summary", header_text)
 
-    def test_header_includes_video_duration(self) -> None:
+    def test_header_combines_watch_and_read_on_one_line(self) -> None:
         content = build_article_content(
             "# Summary\n\nBody.", "https://youtu.be/abc", "Some Channel", duration_seconds=1380
         )
         header_text = "".join(part for part in content[0]["children"] if isinstance(part, str))
-        self.assertIn("23 min watch", header_text)
+        self.assertIn("23 min", header_text)
+        self.assertIn("or", header_text)
+        self.assertIn("min read summary", header_text)
+        # The combined line replaces the old separate reading-time paragraph.
+        self.assertEqual(content[1], {"tag": "hr"})
 
-    def test_header_omits_duration_when_unknown(self) -> None:
+    def test_header_shows_only_read_time_when_duration_unknown(self) -> None:
         content = build_article_content("# Summary\n\nBody.", "https://youtu.be/abc", "Some Channel")
         header_text = "".join(part for part in content[0]["children"] if isinstance(part, str))
-        self.assertNotIn("watch", header_text)
+        self.assertIn("min read summary", header_text)
+        self.assertNotIn(" or ", header_text)
 
     def test_content_truncated_under_64kb(self) -> None:
         huge = "\n\n".join(f"Paragraph {i} " + "word " * 200 for i in range(400))

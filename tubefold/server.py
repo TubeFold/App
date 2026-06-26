@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from socketserver import ThreadingMixIn
 from typing import Any
 
-from scripts.tubefold_lib import normalize_youtube_url, parse_youtube_video_id
+from scripts.tubefold_lib import normalize_youtube_url, parse_youtube_video_id, youtube_thumbnail_url
 
 from . import API_VERSION, APP_VERSION
 from .config import AppConfig, load_config
@@ -369,7 +369,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             "canonicalURL": video["canonical_url"],
             "title": video["title"],
             "channelName": video["channel_name"],
-            "thumbnailURL": video["thumbnail_url"],
+            "thumbnailURL": video["thumbnail_url"] or youtube_thumbnail_url(video["youtube_video_id"]),
             "durationSeconds": video["duration_seconds"],
             "currentTimeAtRequest": video["current_time_at_request"],
             "createdAt": video["created_at"],

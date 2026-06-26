@@ -96,22 +96,18 @@ struct MainStatusView: View {
                 Text("The local helper is started by the app when needed and stopped when the app quits.")
                     .foregroundStyle(.secondary)
             }
-            .padding(18)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+            .settingsCard()
 
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 16) {
                 Text("\(viewModel.providerDisplayName) Status")
                     .font(.headline)
-                HStack(spacing: 12) {
+                HStack(alignment: .top, spacing: 12) {
                     StatusCheckItem(title: "Installed", isReady: viewModel.providerInstalled, detail: viewModel.versionSummary)
                     StatusCheckItem(title: "Signed in", isReady: viewModel.providerSignedIn, detail: viewModel.providerSignedIn ? "Account verified" : "Test required")
                     StatusCheckItem(title: "Ready", isReady: viewModel.providerReady, detail: viewModel.providerReady ? "Summaries enabled" : "Setup incomplete")
                 }
             }
-            .padding(18)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+            .settingsCard()
 
             ProviderModelSettingsView(viewModel: viewModel)
 
@@ -135,8 +131,8 @@ struct ProviderModelSettingsView: View {
     @ObservedObject var viewModel: ProviderSetupViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Provider & Model")
                         .font(.headline)
@@ -144,69 +140,78 @@ struct ProviderModelSettingsView: View {
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
-                Spacer()
+                Spacer(minLength: 16)
                 Text(viewModel.modelSummary)
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
 
-            Picker(
-                "Provider",
-                selection: Binding(
-                    get: { viewModel.selectedProviderID },
-                    set: { newValue in Task { await viewModel.selectProvider(newValue) } }
-                )
-            ) {
-                ForEach(viewModel.availableProviders) { provider in
-                    Text(provider.displayName).tag(provider.id)
-                }
-            }
-            .pickerStyle(.segmented)
-            .disabled(viewModel.isBusy)
-
-            HStack(alignment: .top, spacing: 14) {
+            VStack(alignment: .leading, spacing: 8) {
+                SettingsFieldLabel("Provider")
                 Picker(
-                    "Model",
+                    "Provider",
                     selection: Binding(
-                        get: { viewModel.selectedModel },
-                        set: { viewModel.updateModel($0) }
+                        get: { viewModel.selectedProviderID },
+                        set: { newValue in Task { await viewModel.selectProvider(newValue) } }
                     )
                 ) {
-                    ForEach(viewModel.modelOptions) { option in
-                        Text(option.label).tag(option.id)
+                    ForEach(viewModel.availableProviders) { provider in
+                        Text(provider.displayName).tag(provider.id)
                     }
                 }
-                .frame(maxWidth: .infinity)
-
-                Picker(
-                    "Effort",
-                    selection: Binding(
-                        get: { viewModel.selectedReasoningEffort },
-                        set: { viewModel.updateReasoningEffort($0) }
-                    )
-                ) {
-                    ForEach(viewModel.reasoningEffortOptions) { option in
-                        Text(option.label).tag(option.id)
-                    }
-                }
-                .frame(width: 210)
+                .labelsHidden()
+                .pickerStyle(.segmented)
             }
             .disabled(viewModel.isBusy)
 
-            HStack(alignment: .top, spacing: 18) {
-                SettingsHint(
-                    title: viewModel.selectedModelOption?.label ?? viewModel.selectedModel,
-                    detail: viewModel.selectedModelOption?.description ?? "Selected model."
-                )
-                SettingsHint(
-                    title: viewModel.selectedReasoningEffortOption?.label ?? viewModel.selectedReasoningEffort,
-                    detail: viewModel.selectedReasoningEffortOption?.description ?? "Selected reasoning effort."
-                )
+            HStack(alignment: .top, spacing: 20) {
+                VStack(alignment: .leading, spacing: 8) {
+                    SettingsFieldLabel("Model")
+                    Picker(
+                        "Model",
+                        selection: Binding(
+                            get: { viewModel.selectedModel },
+                            set: { viewModel.updateModel($0) }
+                        )
+                    ) {
+                        ForEach(viewModel.modelOptions) { option in
+                            Text(option.label).tag(option.id)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    SettingsHint(
+                        title: viewModel.selectedModelOption?.label ?? viewModel.selectedModel,
+                        detail: viewModel.selectedModelOption?.description ?? "Selected model."
+                    )
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    SettingsFieldLabel("Effort")
+                    Picker(
+                        "Effort",
+                        selection: Binding(
+                            get: { viewModel.selectedReasoningEffort },
+                            set: { viewModel.updateReasoningEffort($0) }
+                        )
+                    ) {
+                        ForEach(viewModel.reasoningEffortOptions) { option in
+                            Text(option.label).tag(option.id)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    SettingsHint(
+                        title: viewModel.selectedReasoningEffortOption?.label ?? viewModel.selectedReasoningEffort,
+                        detail: viewModel.selectedReasoningEffortOption?.description ?? "Selected reasoning effort."
+                    )
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .disabled(viewModel.isBusy)
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .settingsCard()
     }
 }
 
@@ -214,7 +219,7 @@ struct OutputLanguageSettingsView: View {
     @ObservedObject var viewModel: ProviderSetupViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Output language")
                     .font(.headline)
@@ -224,9 +229,10 @@ struct OutputLanguageSettingsView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 TextField("English", text: $viewModel.outputLanguageDraft)
                     .textFieldStyle(.roundedBorder)
+                    .controlSize(.large)
                     .frame(maxWidth: 320)
                     .onSubmit { viewModel.saveOutputLanguage() }
 
@@ -234,22 +240,40 @@ struct OutputLanguageSettingsView: View {
                     viewModel.saveOutputLanguage()
                 } label: {
                     if viewModel.outputLanguageDirty {
-                        Text("Save")
+                        Text("Save").frame(minWidth: 56)
                     } else {
                         Label("Saved", systemImage: "checkmark")
                     }
                 }
+                .controlSize(.large)
                 .disabled(!viewModel.outputLanguageDirty || viewModel.isBusy)
 
                 Button("Reset") {
                     viewModel.resetOutputLanguage()
                 }
+                .controlSize(.large)
                 .disabled(viewModel.isBusy)
+
+                Spacer(minLength: 0)
             }
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .settingsCard()
+    }
+}
+
+/// Small uppercase caption used to label a form control.
+struct SettingsFieldLabel: View {
+    let text: String
+
+    init(_ text: String) {
+        self.text = text
+    }
+
+    var body: some View {
+        Text(text.uppercased())
+            .font(.caption.weight(.semibold))
+            .tracking(0.5)
+            .foregroundStyle(.secondary)
     }
 }
 
@@ -288,9 +312,9 @@ struct StatusCheckItem: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
-            Spacer()
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }
 
@@ -312,10 +336,21 @@ struct StatusTile: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
                 .truncationMode(.middle)
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(18)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
+private extension View {
+    /// Consistent card chrome for every Settings section.
+    func settingsCard() -> some View {
+        self
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 

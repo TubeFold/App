@@ -90,6 +90,16 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(library["videos"][0]["status"], "queued")
         self.assertEqual(library["videos"][0]["latestJobID"], first["jobId"])
 
+    def test_manual_add_without_thumbnail_gets_derived_cover(self) -> None:
+        self.post_json(
+            "/api/v1/summaries",
+            {"url": "https://youtu.be/kdDBQoi_NmQ", "source": "macos-app"},
+        )
+        library = self.get_json("/api/v1/videos")
+        video = library["videos"][0]
+        self.assertEqual(video["youtubeVideoID"], "kdDBQoi_NmQ")
+        self.assertEqual(video["thumbnailURL"], "https://i.ytimg.com/vi/kdDBQoi_NmQ/hqdefault.jpg")
+
     def test_invalid_youtube_url(self) -> None:
         with self.assertRaises(urllib.error.HTTPError) as context:
             self.post_json("/api/v1/summaries", {"url": "https://example.com"})
