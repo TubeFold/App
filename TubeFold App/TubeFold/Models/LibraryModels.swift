@@ -15,6 +15,17 @@ struct PublishTelegraphResponse: Decodable {
     let status: String
 }
 
+struct CreateSummaryRequest: Encodable {
+    let url: String
+    let source: String
+}
+
+struct CreateSummaryResponse: Decodable {
+    let jobId: String?
+    let videoId: String
+    let status: String
+}
+
 struct LibraryVideo: Decodable, Identifiable, Equatable {
     let id: String
     let youtubeVideoID: String

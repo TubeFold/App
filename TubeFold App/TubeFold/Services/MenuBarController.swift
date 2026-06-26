@@ -1,6 +1,5 @@
 import AppKit
 import Foundation
-import UserNotifications
 
 @MainActor
 final class MenuBarController: NSObject {
@@ -22,11 +21,6 @@ final class MenuBarController: NSObject {
     private var lastReadyVideo: LibraryVideo?
     private var latestVideo: LibraryVideo?
     private var iconMode: IconMode = .idle
-    private var notificationsReady = false
-
-    private static let readyCategoryID = "summary.ready"
-    private static let openSummaryActionID = "summary.open"
-    private static let publishTelegraphActionID = "summary.telegraph"
 
     private override init() {}
 
@@ -34,7 +28,6 @@ final class MenuBarController: NSObject {
         statusItem.button?.wantsLayer = true
         setIconMode(.idle, tooltip: "TubeFold")
         rebuildMenu(statusTitle: "TubeFold is ready", activeCount: 0)
-        configureNotifications()
         refresh()
         timer = Timer.scheduledTimer(timeInterval: 6, target: self, selector: #selector(pollFromTimer), userInfo: nil, repeats: true)
     }
@@ -87,8 +80,9 @@ final class MenuBarController: NSObject {
             rebuildMenu(statusTitle: videos.isEmpty ? "Waiting for videos" : "Library is up to date", activeCount: 0)
         }
 
-        if let completed = newlyReady.first {
-            announceCompletion(of: completed, additional: newlyReady.count - 1)
+        // On completion, open the Telegraph page directly — no notification.
+        for completed in newlyReady {
+            openTelegraph(for: completed)
         }
     }
 
@@ -156,87 +150,23 @@ final class MenuBarController: NSObject {
         layer.add(bounce, forKey: "bounce")
     }
 
-    // MARK: - Completion notification
+    // MARK: - Completion
 
-    private func configureNotifications() {
-        let center = UNUserNotificationCenter.current()
-        center.delegate = self
-
-        let openAction = UNNotificationAction(
-            identifier: Self.openSummaryActionID,
-            title: "Open Summary",
-            options: [.foreground]
-        )
-        let telegraphAction = UNNotificationAction(
-            identifier: Self.publishTelegraphActionID,
-            title: "Share to Telegraph",
-            options: [.foreground]
-        )
-        let category = UNNotificationCategory(
-            identifier: Self.readyCategoryID,
-            actions: [openAction, telegraphAction],
-            intentIdentifiers: [],
-            options: []
-        )
-        center.setNotificationCategories([category])
-
-        center.requestAuthorization(options: [.alert, .sound]) { [weak self] granted, _ in
-            Task { @MainActor in
-                self?.notificationsReady = granted
-            }
-        }
-    }
-
-    private func announceCompletion(of video: LibraryVideo, additional: Int) {
-        guard notificationsReady else { return }
-
-        let content = UNMutableNotificationContent()
-        content.title = "Summary ready"
-        if additional > 0 {
-            content.subtitle = "\(video.displayTitle) (+\(additional) more)"
-        } else {
-            content.subtitle = video.displayTitle
-        }
-        content.body = video.isPublishedToTelegraph
-            ? "Tap to open, or reopen the Telegraph page."
-            : "Tap to open, or share it to Telegraph."
-        content.sound = .default
-        content.categoryIdentifier = Self.readyCategoryID
-        content.userInfo = [
-            "videoID": video.id,
-            "summaryPath": video.summaryPath ?? "",
-            "telegraphURL": video.telegraphURL ?? ""
-        ]
-
-        let request = UNNotificationRequest(
-            identifier: "ready-\(video.id)",
-            content: content,
-            trigger: nil
-        )
-        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
-    }
-
-    private func openSummary(path: String) {
-        guard !path.isEmpty else {
-            openApp()
-            return
-        }
-        NSWorkspace.shared.open(URL(fileURLWithPath: path))
-    }
-
-    private func shareToTelegraph(videoID: String, existingURL: String) {
-        if !existingURL.isEmpty, let url = URL(string: existingURL) {
+    /// When a summary becomes ready, publish it to Telegraph (if not already published)
+    /// and open the page in the browser right away — no notification.
+    private func openTelegraph(for video: LibraryVideo) {
+        if let existing = video.telegraphURL, !existing.isEmpty, let url = URL(string: existing) {
             NSWorkspace.shared.open(url)
             return
         }
         Task {
             do {
-                let response = try await service.publishTelegraph(videoID: videoID)
+                let response = try await service.publishTelegraph(videoID: video.id)
                 if let url = URL(string: response.url) {
                     NSWorkspace.shared.open(url)
                 }
             } catch {
-                NSLog("tubefold: telegraph publish failed: %@", error.localizedDescription)
+                NSLog("tubefold: telegraph auto-publish failed: %@", error.localizedDescription)
             }
         }
     }
@@ -294,37 +224,5 @@ final class MenuBarController: NSObject {
 
     @objc private func pollFromTimer() {
         refresh()
-    }
-}
-
-extension MenuBarController: UNUserNotificationCenterDelegate {
-    nonisolated func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification,
-        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
-    ) {
-        completionHandler([.banner, .sound])
-    }
-
-    nonisolated func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse,
-        withCompletionHandler completionHandler: @escaping () -> Void
-    ) {
-        let userInfo = response.notification.request.content.userInfo
-        let videoID = userInfo["videoID"] as? String ?? ""
-        let summaryPath = userInfo["summaryPath"] as? String ?? ""
-        let telegraphURL = userInfo["telegraphURL"] as? String ?? ""
-        let actionID = response.actionIdentifier
-
-        Task { @MainActor in
-            switch actionID {
-            case Self.publishTelegraphActionID:
-                self.shareToTelegraph(videoID: videoID, existingURL: telegraphURL)
-            default:
-                self.openSummary(path: summaryPath)
-            }
-            completionHandler()
-        }
     }
 }

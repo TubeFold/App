@@ -9,6 +9,14 @@ struct LibraryService {
         return response.videos
     }
 
+    func createSummary(url: String) async throws -> CreateSummaryResponse {
+        try await request(
+            path: "/api/v1/summaries",
+            method: "POST",
+            body: CreateSummaryRequest(url: url, source: "macos-app")
+        )
+    }
+
     func regenerate(videoID: String) async throws {
         let _: RegenerateVideoResponse = try await request(path: "/api/v1/videos/\(videoID)/regenerate", method: "POST")
     }
@@ -18,6 +26,14 @@ struct LibraryService {
     }
 
     private func request<Response: Decodable>(path: String, method: String = "GET") async throws -> Response {
+        try await request(path: path, method: method, body: Optional<CreateSummaryRequest>.none)
+    }
+
+    private func request<Response: Decodable, Body: Encodable>(
+        path: String,
+        method: String,
+        body: Body?
+    ) async throws -> Response {
         try await backend.ensureRunning()
 
         guard let url = URL(string: path, relativeTo: baseURL)?.absoluteURL else {
@@ -29,20 +45,39 @@ struct LibraryService {
         request.timeoutInterval = 30
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
+        if let body {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONEncoder().encode(body)
+        }
+
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw ProviderSetupAPIError(message: "TubeFold returned an invalid response.")
             }
             guard (200..<300).contains(httpResponse.statusCode) else {
-                let text = String(data: data, encoding: .utf8) ?? "HTTP \(httpResponse.statusCode)"
-                throw ProviderSetupAPIError(message: text)
+                throw ProviderSetupAPIError(message: Self.errorMessage(from: data, status: httpResponse.statusCode))
             }
             return try JSONDecoder().decode(Response.self, from: data)
         } catch let error as ProviderSetupAPIError {
             throw error
         } catch {
-            throw ProviderSetupAPIError(message: "Could not load Library from TubeFold helper.")
+            throw ProviderSetupAPIError(message: "Could not reach the TubeFold helper.")
         }
     }
+
+    private static func errorMessage(from data: Data, status: Int) -> String {
+        if let envelope = try? JSONDecoder().decode(APIErrorEnvelope.self, from: data) {
+            return envelope.error.message
+        }
+        return String(data: data, encoding: .utf8) ?? "HTTP \(status)"
+    }
+}
+
+private struct APIErrorEnvelope: Decodable {
+    struct Body: Decodable {
+        let code: String
+        let message: String
+    }
+    let error: Body
 }

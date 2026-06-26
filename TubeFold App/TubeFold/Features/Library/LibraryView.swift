@@ -7,6 +7,8 @@ struct LibraryView: View {
         VStack(alignment: .leading, spacing: 20) {
             header
 
+            addBar
+
             if let errorMessage = viewModel.errorMessage {
                 Label(errorMessage, systemImage: "exclamationmark.triangle")
                     .foregroundStyle(.orange)
@@ -64,6 +66,61 @@ struct LibraryView: View {
         }
     }
 
+    private var addBar: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                Image(systemName: "link")
+                    .foregroundStyle(.secondary)
+
+                TextField("Paste a YouTube link…", text: $viewModel.urlInput)
+                    .textFieldStyle(.plain)
+                    .disableAutocorrection(true)
+                    .onSubmit { viewModel.submitURL() }
+
+                if !viewModel.urlInput.isEmpty {
+                    Button {
+                        viewModel.urlInput = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Clear")
+                }
+
+                Button {
+                    viewModel.pasteFromClipboard()
+                } label: {
+                    Label("Paste", systemImage: "doc.on.clipboard")
+                }
+                .buttonStyle(.bordered)
+                .disabled(viewModel.isSubmitting)
+                .help("Paste a link from the clipboard and start processing")
+
+                Button {
+                    viewModel.submitURL()
+                } label: {
+                    if viewModel.isSubmitting {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Label("Add", systemImage: "plus")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!viewModel.canSubmitURL)
+            }
+            .padding(10)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+
+            if let notice = viewModel.noticeMessage {
+                Label(notice, systemImage: "checkmark.circle.fill")
+                    .font(.callout)
+                    .foregroundStyle(.green)
+            }
+        }
+    }
+
     private var emptyState: some View {
         VStack(spacing: 14) {
             Image(systemName: "play.rectangle")
@@ -71,7 +128,7 @@ struct LibraryView: View {
                 .foregroundStyle(.secondary)
             Text("No videos yet")
                 .font(.title2.weight(.semibold))
-            Text("Send a YouTube video from the Chrome extension and it will appear here.")
+            Text("Paste a YouTube link above, or send one from the Chrome extension, and it will appear here.")
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

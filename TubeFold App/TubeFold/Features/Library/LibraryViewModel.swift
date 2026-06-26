@@ -10,10 +10,14 @@ final class LibraryViewModel: ObservableObject {
     @Published private(set) var errorMessage: String?
     @Published private(set) var lastLoadedAt: Date?
     @Published private(set) var publishingVideoIDs: Set<String> = []
+    @Published var urlInput = ""
+    @Published private(set) var isSubmitting = false
+    @Published private(set) var noticeMessage: String?
 
     private let service = LibraryService()
     private var refreshTask: Task<Void, Never>?
     private var isRefreshing = false
+    private var noticeTask: Task<Void, Never>?
 
     var readyCount: Int {
         videos.filter(\.isReady).count
@@ -66,6 +70,71 @@ final class LibraryViewModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    var canSubmitURL: Bool {
+        !isSubmitting && !urlInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    func submitURL() {
+        let trimmed = urlInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !isSubmitting else { return }
+        guard Self.looksLikeYouTubeURL(trimmed) else {
+            errorMessage = "That doesn't look like a YouTube link."
+            return
+        }
+
+        isSubmitting = true
+        errorMessage = nil
+        noticeMessage = nil
+        Task {
+            do {
+                let response = try await service.createSummary(url: trimmed)
+                urlInput = ""
+                showNotice(Self.noticeText(for: response.status))
+                await load(showSpinner: false)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            isSubmitting = false
+        }
+    }
+
+    func pasteFromClipboard() {
+        let clip = NSPasteboard.general.string(forType: .string)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !clip.isEmpty else {
+            errorMessage = "Clipboard is empty."
+            return
+        }
+        urlInput = clip
+        submitURL()
+    }
+
+    private func showNotice(_ message: String) {
+        noticeMessage = message
+        noticeTask?.cancel()
+        noticeTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            if Task.isCancelled { return }
+            self?.noticeMessage = nil
+        }
+    }
+
+    private static func noticeText(for status: String) -> String {
+        switch status {
+        case "already_exists":
+            return "This video is already in your Library."
+        case "already_processing":
+            return "This video is already being processed."
+        default:
+            return "Added — processing started."
+        }
+    }
+
+    private static func looksLikeYouTubeURL(_ value: String) -> Bool {
+        let lower = value.lowercased()
+        return lower.contains("youtube.com/") || lower.contains("youtu.be/")
     }
 
     func openYouTube(_ video: LibraryVideo) {
