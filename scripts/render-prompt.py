@@ -16,6 +16,7 @@ def main() -> int:
     parser.add_argument("transcript_language")
     parser.add_argument("output_file", type=Path)
     parser.add_argument("--fallback-url", default="")
+    parser.add_argument("--output-language", default="English")
     args = parser.parse_args()
 
     metadata = json.loads(args.metadata_json.read_text(encoding="utf-8"))
@@ -32,6 +33,7 @@ def main() -> int:
             "DURATION": fields["duration"],
             "SUBTITLE_LANGUAGE": args.transcript_language,
             "TRANSCRIPT_LANGUAGE": args.transcript_language,
+            "OUTPUT_LANGUAGE": args.output_language,
             "TRANSCRIPT": transcript.rstrip(),
         },
     )

@@ -6,6 +6,7 @@ struct ProviderSetupState: Codable {
     let codexVersion: String?
     let codexModel: String?
     let codexReasoningEffort: String?
+    let outputLanguage: String?
     let providerSetupCompleted: Bool
     let lastSuccessfulConnectionTest: String?
     let preferredOutputDirectory: String?
@@ -148,4 +149,8 @@ struct StringRequest: Encodable {
 struct ModelSettingsRequest: Encodable {
     let model: String
     let reasoningEffort: String
+}
+
+struct OutputLanguageRequest: Encodable {
+    let outputLanguage: String
 }

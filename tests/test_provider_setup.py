@@ -122,6 +122,20 @@ class ProviderSetupTests(unittest.TestCase):
             self.assertEqual(state["codexModel"], "gpt-5.4-mini")
             self.assertEqual(state["codexReasoningEffort"], "medium")
 
+    def test_output_language_is_saved_and_normalized(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            data_dir = Path(directory)
+            diagnostics = CodexProviderDiagnostics(make_config(data_dir))
+
+            self.assertEqual(diagnostics.state()["outputLanguage"], "English")
+
+            result = diagnostics.save_output_language("  日本語 \n語")
+            self.assertEqual(result["status"], "saved")
+            self.assertEqual(diagnostics.state()["outputLanguage"], "日本語 語")
+
+            diagnostics.save_output_language("")
+            self.assertEqual(diagnostics.state()["outputLanguage"], "English")
+
     def test_connection_test_invalid_response(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             data_dir = Path(directory)

@@ -115,6 +115,8 @@ struct MainStatusView: View {
 
             CodexModelSettingsView(viewModel: viewModel)
 
+            OutputLanguageSettingsView(viewModel: viewModel)
+
             if let errorMessage = viewModel.errorMessage {
                 Label(errorMessage, systemImage: "exclamationmark.triangle")
                     .foregroundStyle(.orange)
@@ -186,6 +188,49 @@ struct CodexModelSettingsView: View {
                     title: viewModel.selectedReasoningEffortOption?.label ?? viewModel.selectedReasoningEffort,
                     detail: viewModel.selectedReasoningEffortOption?.description ?? "Selected reasoning effort."
                 )
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+struct OutputLanguageSettingsView: View {
+    @ObservedObject var viewModel: ProviderSetupViewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Output language")
+                    .font(.headline)
+                Text("The default language is English. You can specify any language here (examples: English, 简体中文, Español, 日本語, 한국어, Français). Applied to new summaries.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack(spacing: 12) {
+                TextField("English", text: $viewModel.outputLanguageDraft)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: 320)
+                    .onSubmit { viewModel.saveOutputLanguage() }
+
+                Button {
+                    viewModel.saveOutputLanguage()
+                } label: {
+                    if viewModel.outputLanguageDirty {
+                        Text("Save")
+                    } else {
+                        Label("Saved", systemImage: "checkmark")
+                    }
+                }
+                .disabled(!viewModel.outputLanguageDirty || viewModel.isBusy)
+
+                Button("Reset") {
+                    viewModel.resetOutputLanguage()
+                }
+                .disabled(viewModel.isBusy)
             }
         }
         .padding(18)

@@ -14,10 +14,12 @@ from scripts.youtube_summary_lib import normalize_youtube_url, parse_youtube_vid
 from . import API_VERSION, APP_VERSION
 from .config import AppConfig, load_config
 from .logging_utils import configure_logging
-from .models import SummaryRequest
+from .models import ProcessingStatus, SummaryRequest
 from .processing import ProcessingQueue
 from .provider_setup import CodexProviderDiagnostics
+from .reading_time import reading_minutes_for_markdown
 from .repository import Repository
+from .telegraph import TelegraphError, TelegraphPublisher
 
 
 logger = logging.getLogger(__name__)
@@ -53,6 +55,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                         "codexModelSettings": True,
                         "libraryRegenerate": True,
                         "unlimitedTranscripts": True,
+                        "telegraphPublish": True,
+                        "outputLanguageSetting": True,
+                        "readingTime": True,
                     },
                 }
             )
@@ -196,6 +201,19 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_json(result)
             return
 
+        if self.path == "/api/v1/provider-setup/output-language":
+            data = self._read_json_body()
+            if data is None:
+                return
+            diagnostics = CodexProviderDiagnostics(self.server.config)
+            result = diagnostics.save_output_language(data.get("outputLanguage"))
+            logger.info(
+                "Provider setup output language saved value=%r",
+                (result.get("state") or {}).get("outputLanguage"),
+            )
+            self._send_json(result)
+            return
+
         match = re.fullmatch(r"/api/v1/videos/([^/?]+)/regenerate", self.path)
         if match:
             video = self.server.repository.get_video(match.group(1))
@@ -215,6 +233,31 @@ class RequestHandler(BaseHTTPRequestHandler):
             _status, video_record_id, job_id = self.server.repository.create_or_reuse(request, force_regenerate=True)
             self.server.queue.notify()
             self._send_json({"jobId": job_id, "videoId": video_record_id, "status": "queued"}, HTTPStatus.ACCEPTED)
+            return
+
+        match = re.fullmatch(r"/api/v1/videos/([^/?]+)/publish-telegraph", self.path)
+        if match:
+            video = self.server.repository.get_video(match.group(1))
+            if video is None:
+                logger.warning("Telegraph publish requested for missing video=%s", match.group(1))
+                self._send_error("not_found", "Video was not found.", HTTPStatus.NOT_FOUND)
+                return
+            if video["status"] != ProcessingStatus.READY.value:
+                self._send_error("not_ready", "The summary is not ready to publish yet.", HTTPStatus.CONFLICT)
+                return
+            try:
+                result = TelegraphPublisher(self.server.config, self.server.repository).publish(video)
+            except TelegraphError as error:
+                logger.warning("Telegraph publish failed video=%s error=%s", video["youtube_video_id"], error)
+                self._send_error("telegraph_failed", str(error), HTTPStatus.BAD_GATEWAY)
+                return
+            logger.info(
+                "Telegraph publish result video=%s status=%s url=%s",
+                video["youtube_video_id"],
+                result["status"],
+                result["url"],
+            )
+            self._send_json(result)
             return
 
         self._send_error("not_found", "Endpoint was not found.", HTTPStatus.NOT_FOUND)
@@ -271,6 +314,12 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     @staticmethod
     def _video_payload(video: Any) -> dict[str, Any]:
+        summary_markdown = video["summary_markdown"]
+        reading_time_minutes = (
+            reading_minutes_for_markdown(summary_markdown)
+            if summary_markdown and str(summary_markdown).strip()
+            else None
+        )
         return {
             "id": video["id"],
             "youtubeVideoID": video["youtube_video_id"],
@@ -291,6 +340,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             "latestJobStatus": video["latest_job_status"],
             "latestJobCreatedAt": video["latest_job_created_at"],
             "latestJobFinishedAt": video["latest_job_finished_at"],
+            "telegraphURL": video["telegraph_url"],
+            "readingTimeMinutes": reading_time_minutes,
         }
 
     def _send_cors_headers(self) -> None:
@@ -350,6 +401,7 @@ def main() -> int:
             output_dir=config.output_dir,
             codex_model=config.codex_model,
             codex_reasoning_effort=config.codex_reasoning_effort,
+            output_language=config.output_language,
             max_request_bytes=config.max_request_bytes,
         )
 

@@ -55,6 +55,9 @@ final class BackendProcessController {
                 && features?.codexModelSettings == true
                 && features?.libraryRegenerate == true
                 && features?.unlimitedTranscripts == true
+                && features?.telegraphPublish == true
+                && features?.outputLanguageSetting == true
+                && features?.readingTime == true
         } catch {
             return false
         }
@@ -215,4 +218,7 @@ private struct BackendFeatures: Decodable {
     let codexModelSettings: Bool
     let libraryRegenerate: Bool
     let unlimitedTranscripts: Bool
+    let telegraphPublish: Bool
+    let outputLanguageSetting: Bool
+    let readingTime: Bool
 }

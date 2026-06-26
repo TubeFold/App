@@ -9,6 +9,7 @@ final class LibraryViewModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
     @Published private(set) var lastLoadedAt: Date?
+    @Published private(set) var publishingVideoIDs: Set<String> = []
 
     private let service = LibraryService()
     private var refreshTask: Task<Void, Never>?
@@ -98,6 +99,27 @@ final class LibraryViewModel: ObservableObject {
             } catch {
                 errorMessage = error.localizedDescription
             }
+        }
+    }
+
+    func isPublishing(_ video: LibraryVideo) -> Bool {
+        publishingVideoIDs.contains(video.id)
+    }
+
+    func publishToTelegraph(_ video: LibraryVideo) {
+        guard !publishingVideoIDs.contains(video.id) else { return }
+        publishingVideoIDs.insert(video.id)
+        Task {
+            do {
+                let response = try await service.publishTelegraph(videoID: video.id)
+                if let url = URL(string: response.url) {
+                    NSWorkspace.shared.open(url)
+                }
+                await load(showSpinner: false)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            publishingVideoIDs.remove(video.id)
         }
     }
 

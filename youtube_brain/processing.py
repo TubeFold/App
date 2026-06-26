@@ -20,6 +20,7 @@ from scripts.youtube_summary_lib import (
 
 from .config import AppConfig, PROJECT_ROOT
 from .codex_settings import DEFAULT_CODEX_MODEL, DEFAULT_CODEX_REASONING_EFFORT, normalize_codex_settings
+from .output_language import normalize_output_language
 from .logging_utils import append_job_log
 from .models import ProcessingError, ProcessingStatus
 from .provider_setup import ProviderSetupStore
@@ -278,6 +279,7 @@ class ProcessingQueue:
         script = PROJECT_ROOT / "scripts" / "render-prompt.py"
         template = PROJECT_ROOT / "prompts" / "detailed-summary.md"
         language = transcript_language_label(transcript_info)
+        output_language = self._output_language()
         completed = self._run_process(
             [
                 self.config.python_executable,
@@ -289,6 +291,8 @@ class ProcessingQueue:
                 str(prompt_file),
                 "--fallback-url",
                 fallback_url,
+                "--output-language",
+                output_language,
             ],
             job_dir,
             timeout=60,
@@ -296,7 +300,10 @@ class ProcessingQueue:
         )
         if completed.returncode != 0:
             raise ProcessingError("prompt_failed", "Could not render prompt.", completed.stderr)
-        append_job_log(job_dir, f"prompt rendered chars={prompt_file.stat().st_size} path={prompt_file}")
+        append_job_log(
+            job_dir,
+            f"prompt rendered chars={prompt_file.stat().st_size} output_language={output_language!r} path={prompt_file}",
+        )
         logger.info("Prompt rendered job_dir=%s bytes=%s", job_dir, prompt_file.stat().st_size)
 
     def _run_provider(self, prompt_file: Path, output_file: Path, job_dir: Path) -> None:
@@ -333,6 +340,13 @@ class ProcessingQueue:
         output_chars = len(output_file.read_text(encoding="utf-8", errors="replace"))
         append_job_log(job_dir, f"provider completed provider={self.config.provider} output_chars={output_chars}")
         logger.info("Provider completed provider=%s output_chars=%s output=%s", self.config.provider, output_chars, output_file)
+
+    def _output_language(self) -> str:
+        try:
+            state = ProviderSetupStore(self.config).load()
+        except (OSError, ValueError):
+            state = {}
+        return normalize_output_language(state.get("outputLanguage") or self.config.output_language)
 
     def _codex_settings(self) -> dict[str, str]:
         if self.config.provider != "codex":
@@ -416,6 +430,7 @@ class ProcessingQueue:
             "transcript_language": transcript_info.get("language", ""),
             "transcript_language_code": transcript_info.get("language_code", ""),
             "transcript_is_generated": bool(transcript_info.get("is_generated")),
+            "output_language": self._output_language(),
             "provider": provider_label,
             "prompt_template": "detailed-summary",
         }

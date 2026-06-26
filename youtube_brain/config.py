@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .codex_settings import DEFAULT_CODEX_MODEL, DEFAULT_CODEX_REASONING_EFFORT
+from .output_language import DEFAULT_OUTPUT_LANGUAGE, normalize_output_language
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +24,7 @@ class AppConfig:
     output_dir: Path
     codex_model: str = DEFAULT_CODEX_MODEL
     codex_reasoning_effort: str = DEFAULT_CODEX_REASONING_EFFORT
+    output_language: str = DEFAULT_OUTPUT_LANGUAGE
     max_request_bytes: int = 1024 * 64
 
     @property
@@ -75,4 +77,5 @@ def load_config() -> AppConfig:
             "YOUTUBE_BRAIN_CODEX_REASONING_EFFORT",
             os.environ.get("CODEX_REASONING_EFFORT", DEFAULT_CODEX_REASONING_EFFORT),
         ),
+        output_language=normalize_output_language(os.environ.get("YOUTUBE_BRAIN_OUTPUT_LANGUAGE")),
     )

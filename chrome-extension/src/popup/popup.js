@@ -34,6 +34,19 @@ async function healthCheck() {
   return chrome.runtime.sendMessage({ type: "HEALTH_CHECK" });
 }
 
+async function lookupVideo(youtubeId) {
+  try {
+    const response = await chrome.runtime.sendMessage({ type: "LOOKUP_VIDEO", youtubeId });
+    return response?.ok ? response.body : { exists: false };
+  } catch {
+    return { exists: false };
+  }
+}
+
+async function publishTelegraph(videoId) {
+  return chrome.runtime.sendMessage({ type: "PUBLISH_TELEGRAPH", videoId });
+}
+
 async function submitSummary(context) {
   return chrome.runtime.sendMessage({
     type: "SUBMIT_SUMMARY",
@@ -69,14 +82,16 @@ function renderMacAppClosed(context) {
   document.getElementById("retry").addEventListener("click", init);
 }
 
-function renderVideo(context) {
+function renderVideo(context, library = { exists: false }) {
   setConnection("Mac app connected");
+  const isReady = library?.exists && library.status === "ready";
   render(`
     ${context.thumbnailURL ? `<img class="thumbnail" src="${context.thumbnailURL}" alt="">` : ""}
     <p class="title"></p>
     <p class="meta"></p>
     <div class="actions">
       <button id="create" class="primary">Create Summary</button>
+      ${isReady ? `<button id="publishTelegraph">Share to Telegraph</button>` : ""}
     </div>
   `);
   document.querySelector(".title").textContent = context.title || context.videoId;
@@ -99,6 +114,21 @@ function renderVideo(context) {
       renderSent("The summary is being generated in the Mac app.");
     }
   });
+
+  const publishButton = document.getElementById("publishTelegraph");
+  if (publishButton) {
+    publishButton.addEventListener("click", async () => {
+      publishButton.disabled = true;
+      publishButton.textContent = "Publishing...";
+      const response = await publishTelegraph(library.videoId);
+      if (!response?.ok) {
+        renderError(response?.error || "Could not publish to Telegraph.", context);
+        return;
+      }
+      // The background script opens the Telegraph article in a new tab.
+      publishButton.textContent = "Opened in Telegraph";
+    });
+  }
 }
 
 function renderSent(message) {
@@ -142,7 +172,8 @@ async function init() {
     renderMacAppClosed(context);
     return;
   }
-  renderVideo(context);
+  const library = await lookupVideo(context.videoId);
+  renderVideo(context, library);
 }
 
 init().catch((error) => renderError(error.message || String(error), null));

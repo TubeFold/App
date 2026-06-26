@@ -16,6 +16,10 @@ final class ProviderSetupViewModel: ObservableObject {
     @Published private(set) var reasoningEffortOptions: [CodexModelOption] = CodexModelOption.defaultReasoningEffortOptions
     @Published private(set) var selectedCodexModel = "gpt-5.4-mini"
     @Published private(set) var selectedReasoningEffort = "medium"
+    @Published private(set) var outputLanguage = ProviderSetupViewModel.defaultOutputLanguage
+    @Published var outputLanguageDraft = ProviderSetupViewModel.defaultOutputLanguage
+
+    static let defaultOutputLanguage = "English"
 
     private let service = ProviderSetupService()
 
@@ -75,6 +79,10 @@ final class ProviderSetupViewModel: ObservableObject {
 
     var selectedReasoningEffortOption: CodexModelOption? {
         reasoningEffortOptions.first { $0.id == selectedReasoningEffort }
+    }
+
+    var outputLanguageDirty: Bool {
+        outputLanguageDraft.trimmingCharacters(in: .whitespacesAndNewlines) != outputLanguage
     }
 
     var codexInstalled: Bool {
@@ -198,6 +206,7 @@ final class ProviderSetupViewModel: ObservableObject {
             reasoningEffortOptions = response.reasoningEffortOptions
             setupState = state
             configureModelSettings(from: state)
+            applyOutputLanguage(from: state)
             apiReachable = true
             configureStep(from: state)
 
@@ -298,6 +307,15 @@ final class ProviderSetupViewModel: ObservableObject {
         Task { await saveModelSettings() }
     }
 
+    func saveOutputLanguage() {
+        Task { await persistOutputLanguage(outputLanguageDraft) }
+    }
+
+    func resetOutputLanguage() {
+        outputLanguageDraft = ProviderSetupViewModel.defaultOutputLanguage
+        Task { await persistOutputLanguage(outputLanguageDraft) }
+    }
+
     func isStepComplete(_ step: SetupStep) -> Bool {
         switch step {
         case .beforeBegin:
@@ -353,6 +371,21 @@ final class ProviderSetupViewModel: ObservableObject {
     private func configureModelSettings(from state: ProviderSetupState) {
         selectedCodexModel = state.codexModel ?? CodexModelOption.defaultModelOptions[0].id
         selectedReasoningEffort = state.codexReasoningEffort ?? "medium"
+    }
+
+    private func applyOutputLanguage(from state: ProviderSetupState) {
+        let value = state.outputLanguage ?? ProviderSetupViewModel.defaultOutputLanguage
+        outputLanguage = value
+        outputLanguageDraft = value
+    }
+
+    private func persistOutputLanguage(_ value: String) async {
+        await runBusy("Saving language") {
+            let response = try await service.saveOutputLanguage(value)
+            setupState = response.state
+            applyOutputLanguage(from: response.state)
+            apiReachable = true
+        }
     }
 
     private func saveModelSettings() async {

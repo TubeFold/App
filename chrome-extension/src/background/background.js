@@ -47,6 +47,24 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse({ ok: true, body });
       return;
     }
+    if (message?.type === "LOOKUP_VIDEO") {
+      const youtubeId = encodeURIComponent(message.youtubeId || "");
+      const body = await apiFetch(`/api/v1/videos/by-youtube-id/${youtubeId}`, { timeout: 2500 });
+      sendResponse({ ok: true, body });
+      return;
+    }
+    if (message?.type === "PUBLISH_TELEGRAPH") {
+      const videoId = encodeURIComponent(message.videoId || "");
+      const body = await apiFetch(`/api/v1/videos/${videoId}/publish-telegraph`, {
+        method: "POST",
+        timeout: 30000
+      });
+      if (body?.url) {
+        await chrome.tabs.create({ url: body.url });
+      }
+      sendResponse({ ok: true, body });
+      return;
+    }
     if (message?.type === "OPEN_MAC_APP") {
       const rawURL = message.url || "";
       const targetURL = rawURL.startsWith("youtubebrain://")

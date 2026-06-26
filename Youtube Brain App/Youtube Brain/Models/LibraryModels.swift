@@ -10,6 +10,11 @@ struct RegenerateVideoResponse: Decodable {
     let status: String
 }
 
+struct PublishTelegraphResponse: Decodable {
+    let url: String
+    let status: String
+}
+
 struct LibraryVideo: Decodable, Identifiable, Equatable {
     let id: String
     let youtubeVideoID: String
@@ -30,6 +35,8 @@ struct LibraryVideo: Decodable, Identifiable, Equatable {
     let latestJobStatus: String?
     let latestJobCreatedAt: String?
     let latestJobFinishedAt: String?
+    let telegraphURL: String?
+    let readingTimeMinutes: Int?
 
     var displayTitle: String {
         title?.isEmpty == false ? title! : youtubeVideoID
@@ -64,5 +71,15 @@ struct LibraryVideo: Decodable, Identifiable, Equatable {
     var markdownURL: URL? {
         guard let summaryPath, !summaryPath.isEmpty else { return nil }
         return URL(fileURLWithPath: summaryPath)
+    }
+
+    var isPublishedToTelegraph: Bool {
+        guard let telegraphURL else { return false }
+        return !telegraphURL.isEmpty
+    }
+
+    var readingTimeText: String? {
+        guard isReady, let minutes = readingTimeMinutes, minutes > 0 else { return nil }
+        return "\(minutes) min read"
     }
 }

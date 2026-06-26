@@ -109,6 +109,26 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(saved["state"]["codexModel"], "gpt-5.5")
         self.assertEqual(saved["state"]["codexReasoningEffort"], "high")
 
+    def test_output_language_endpoint_saves_and_normalizes(self) -> None:
+        response = self.get_json("/api/v1/provider-setup")
+        self.assertEqual(response["state"]["outputLanguage"], "English")
+
+        saved = self.post_json(
+            "/api/v1/provider-setup/output-language",
+            {"outputLanguage": "  Russian \n"},
+        )
+        self.assertEqual(saved["status"], "saved")
+        self.assertEqual(saved["state"]["outputLanguage"], "Russian")
+
+        reloaded = self.get_json("/api/v1/provider-setup")
+        self.assertEqual(reloaded["state"]["outputLanguage"], "Russian")
+
+        blanked = self.post_json(
+            "/api/v1/provider-setup/output-language",
+            {"outputLanguage": "   "},
+        )
+        self.assertEqual(blanked["state"]["outputLanguage"], "English")
+
     def get_json(self, path: str) -> dict:
         with urllib.request.urlopen(self.base_url + path, timeout=5) as response:
             return json.loads(response.read().decode("utf-8"))

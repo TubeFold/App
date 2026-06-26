@@ -104,6 +104,9 @@ struct LibraryVideoRow: View {
 
                 HStack(spacing: 14) {
                     MetadataLabel(systemImage: "clock", text: formatDuration(video.durationSeconds))
+                    if let readingTimeText = video.readingTimeText {
+                        MetadataLabel(systemImage: "book", text: readingTimeText)
+                    }
                     MetadataLabel(systemImage: "calendar", text: formatDate(video.updatedAt))
                     if let latestJobID = video.latestJobID {
                         MetadataLabel(systemImage: "number", text: String(latestJobID.prefix(8)))
@@ -152,6 +155,19 @@ struct LibraryVideoRow: View {
                         Label("Save Markdown", systemImage: "square.and.arrow.down")
                     }
                     .disabled(!video.hasMarkdown)
+
+                    Button {
+                        viewModel.publishToTelegraph(video)
+                    } label: {
+                        if viewModel.isPublishing(video) {
+                            Label("Publishing…", systemImage: "paperplane")
+                        } else if video.isPublishedToTelegraph {
+                            Label("Open Telegraph", systemImage: "paperplane.fill")
+                        } else {
+                            Label("Share to Telegraph", systemImage: "paperplane")
+                        }
+                    }
+                    .disabled(!video.hasMarkdown || viewModel.isPublishing(video))
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)

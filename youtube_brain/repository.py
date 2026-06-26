@@ -62,6 +62,13 @@ class Repository:
                 );
                 """
             )
+            self._migrate(conn)
+
+    def _migrate(self, conn: sqlite3.Connection) -> None:
+        existing = {row["name"] for row in conn.execute("PRAGMA table_info(videos)")}
+        for column in ("telegraph_url", "telegraph_path", "telegraph_summary_hash"):
+            if column not in existing:
+                conn.execute(f"ALTER TABLE videos ADD COLUMN {column} TEXT")
 
     def get_video_by_youtube_id(self, youtube_video_id: str) -> sqlite3.Row | None:
         with self.connect() as conn:
@@ -257,6 +264,13 @@ class Repository:
             conn.execute(
                 "UPDATE jobs SET status = ?, finished_at = COALESCE(finished_at, ?) WHERE id = ?",
                 (ProcessingStatus.READY.value, now, job_id),
+            )
+
+    def set_telegraph_page(self, video_id: str, url: str, path: str, summary_hash: str = "") -> None:
+        with self.connect() as conn:
+            conn.execute(
+                "UPDATE videos SET telegraph_url = ?, telegraph_path = ?, telegraph_summary_hash = ? WHERE id = ?",
+                (url, path, summary_hash, video_id),
             )
 
     def mark_failed(self, video_id: str, job_id: str, code: str, message: str) -> None:

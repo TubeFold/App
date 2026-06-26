@@ -36,7 +36,7 @@ DEFAULT_CONFIG = {
     "PROVIDER": "codex",
     "OUTPUT_DIR": "$HOME/Documents/YouTube Summaries",
     "PROMPT_TEMPLATE": "detailed-summary.md",
-    "SUMMARY_LANGUAGE": "ru",
+    "OUTPUT_LANGUAGE": "English",
     "PREFERRED_TRANSCRIPT_LANGS": "pl,ru,en",
     "ALLOW_ANY_TRANSCRIPT_LANGUAGE": "true",
     "OPEN_AFTER_SAVE": "false",
@@ -160,6 +160,8 @@ def main() -> int:
                 str(prompt_file),
                 "--fallback-url",
                 url,
+                "--output-language",
+                config["OUTPUT_LANGUAGE"],
             ],
             logger,
         )
@@ -225,7 +227,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--provider", help="Provider name from providers/<name>.sh")
     parser.add_argument("--output-dir", help="Directory where Markdown summaries are saved")
     parser.add_argument("--prompt", dest="prompt_template", help="Prompt template path or prompts/<name>")
-    parser.add_argument("--language", dest="summary_language", help="Preferred summary language")
+    parser.add_argument("--language", dest="output_language", help="Output language for the summary (e.g. English, Russian)")
     parser.add_argument("--codex-model", help="Codex model slug for provider=codex")
     parser.add_argument("--codex-reasoning-effort", help="Codex reasoning effort: minimal, low, medium, high, xhigh")
     parser.add_argument("--open", dest="open_after_save", action="store_true", default=None, help="Open result after save")
@@ -252,23 +254,23 @@ def load_config(args: argparse.Namespace) -> dict[str, str]:
     if config_path.exists():
         file_config = parse_env_file(config_path)
         config.update(file_config)
-        apply_legacy_transcript_keys(config, file_config)
+        apply_legacy_keys(config, file_config)
 
     for key in DEFAULT_CONFIG:
         if key in os.environ:
             config[key] = os.environ[key]
     env_legacy = {
         key: os.environ[key]
-        for key in ("SUBTITLE_LANGS", "ALLOW_ANY_SUBTITLE_LANGUAGE")
+        for key in ("SUBTITLE_LANGS", "ALLOW_ANY_SUBTITLE_LANGUAGE", "SUMMARY_LANGUAGE", "OUTPUT_LANGUAGE")
         if key in os.environ
     }
-    apply_legacy_transcript_keys(config, env_legacy)
+    apply_legacy_keys(config, env_legacy)
 
     cli_values = {
         "PROVIDER": args.provider,
         "OUTPUT_DIR": args.output_dir,
         "PROMPT_TEMPLATE": args.prompt_template,
-        "SUMMARY_LANGUAGE": args.summary_language,
+        "OUTPUT_LANGUAGE": args.output_language,
         "CODEX_MODEL": args.codex_model,
         "CODEX_REASONING_EFFORT": args.codex_reasoning_effort,
     }
@@ -296,11 +298,13 @@ def validate_dependencies(config: dict[str, str], args: argparse.Namespace) -> N
         raise UserError("Missing dependency: codex", 127)
 
 
-def apply_legacy_transcript_keys(config: dict[str, str], source: dict[str, str]) -> None:
+def apply_legacy_keys(config: dict[str, str], source: dict[str, str]) -> None:
     if "SUBTITLE_LANGS" in source and "PREFERRED_TRANSCRIPT_LANGS" not in source:
         config["PREFERRED_TRANSCRIPT_LANGS"] = source["SUBTITLE_LANGS"]
     if "ALLOW_ANY_SUBTITLE_LANGUAGE" in source and "ALLOW_ANY_TRANSCRIPT_LANGUAGE" not in source:
         config["ALLOW_ANY_TRANSCRIPT_LANGUAGE"] = source["ALLOW_ANY_SUBTITLE_LANGUAGE"]
+    if "SUMMARY_LANGUAGE" in source and "OUTPUT_LANGUAGE" not in source:
+        config["OUTPUT_LANGUAGE"] = source["SUMMARY_LANGUAGE"]
 
 
 def resolve_prompt_template(value: str) -> Path:
@@ -402,6 +406,7 @@ def build_markdown(
         "transcript_language": transcript_info.get("language", ""),
         "transcript_language_code": transcript_info.get("language_code", ""),
         "transcript_is_generated": bool(transcript_info.get("is_generated")),
+        "output_language": config["OUTPUT_LANGUAGE"],
         "provider": provider_label,
         "prompt_template": prompt_template.stem,
     }

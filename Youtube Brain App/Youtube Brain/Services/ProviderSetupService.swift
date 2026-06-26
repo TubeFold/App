@@ -33,6 +33,14 @@ struct ProviderSetupService {
         )
     }
 
+    func saveOutputLanguage(_ outputLanguage: String) async throws -> SaveModelSettingsResult {
+        try await request(
+            path: "/api/v1/provider-setup/output-language",
+            method: "POST",
+            body: OutputLanguageRequest(outputLanguage: outputLanguage)
+        )
+    }
+
     private func request<Response: Decodable, Body: Encodable>(
         path: String,
         method: String,

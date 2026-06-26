@@ -13,6 +13,10 @@ struct LibraryService {
         let _: RegenerateVideoResponse = try await request(path: "/api/v1/videos/\(videoID)/regenerate", method: "POST")
     }
 
+    func publishTelegraph(videoID: String) async throws -> PublishTelegraphResponse {
+        try await request(path: "/api/v1/videos/\(videoID)/publish-telegraph", method: "POST")
+    }
+
     private func request<Response: Decodable>(path: String, method: String = "GET") async throws -> Response {
         try await backend.ensureRunning()
 

@@ -20,6 +20,7 @@ from .codex_settings import (
     valid_codex_reasoning_effort,
 )
 from .config import AppConfig
+from .output_language import DEFAULT_OUTPUT_LANGUAGE, normalize_output_language
 from .repository import utc_now
 
 
@@ -46,15 +47,21 @@ class ProviderSetupStore:
             "codexVersion": None,
             "codexModel": self.config.codex_model or DEFAULT_CODEX_MODEL,
             "codexReasoningEffort": self.config.codex_reasoning_effort or DEFAULT_CODEX_REASONING_EFFORT,
+            "outputLanguage": self.config.output_language or DEFAULT_OUTPUT_LANGUAGE,
             "providerSetupCompleted": False,
             "lastSuccessfulConnectionTest": None,
             "preferredOutputDirectory": str(self.config.output_dir),
         }
-        if not self.path.exists():
-            return normalize_codex_settings(default_state)
-        stored = json.loads(self.path.read_text(encoding="utf-8"))
-        default_state.update(stored)
-        return normalize_codex_settings(default_state)
+        if self.path.exists():
+            stored = json.loads(self.path.read_text(encoding="utf-8"))
+            default_state.update(stored)
+        return self._normalize(default_state)
+
+    @staticmethod
+    def _normalize(state: dict[str, Any]) -> dict[str, Any]:
+        state = normalize_codex_settings(state)
+        state["outputLanguage"] = normalize_output_language(state.get("outputLanguage"))
+        return state
 
     def save(self, state: dict[str, Any]) -> dict[str, Any]:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -86,6 +93,15 @@ class CodexProviderDiagnostics:
             codexModel=valid_codex_model(model),
             codexReasoningEffort=valid_codex_reasoning_effort(reasoning_effort),
         )
+        return {
+            "status": "saved",
+            "provider": "codex",
+            "state": state,
+            **self.model_options(),
+        }
+
+    def save_output_language(self, value: str | None) -> dict[str, Any]:
+        state = self.store.update(outputLanguage=normalize_output_language(value))
         return {
             "status": "saved",
             "provider": "codex",
