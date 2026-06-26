@@ -21,6 +21,7 @@ final class MenuBarController: NSObject {
     private var lastReadyVideo: LibraryVideo?
     private var latestVideo: LibraryVideo?
     private var iconMode: IconMode = .idle
+    private var currentSymbol: String?
 
     private override init() {}
 
@@ -97,15 +98,20 @@ final class MenuBarController: NSObject {
 
         switch mode {
         case .processing:
-            // Keep our own icon and spin the icon itself — no swap to a circular-arrows glyph.
-            setButtonImage("play.rectangle", tooltip: tooltip)
+            // Swap to a circular-arrows glyph so the spin reads as "working", not a spinning play button.
+            setButtonImage("arrow.triangle.2.circlepath", tooltip: tooltip)
             startSpinning()
         case .ready:
-            stopSpinning()
-            setButtonImage("checkmark.circle.fill", tooltip: tooltip)
-            // Only celebrate a fresh transition into "ready", not the initial app launch.
+            // Coming out of processing: let the spinner coast to a stop, then swap to the
+            // checkmark with a spring pop. Otherwise (e.g. app launch) just settle in quietly.
             if previousMode == .processing {
-                bounceIcon()
+                decelerateSpinning { [weak self] in
+                    self?.setButtonImage("checkmark.circle.fill", tooltip: tooltip)
+                    self?.popIn()
+                }
+            } else {
+                stopSpinning()
+                setButtonImage("checkmark.circle.fill", tooltip: tooltip)
             }
         case .error:
             stopSpinning()
@@ -118,11 +124,44 @@ final class MenuBarController: NSObject {
 
     private func setButtonImage(_ systemName: String, tooltip: String) {
         guard let button = statusItem.button else { return }
+        // Cross-fade whenever the glyph actually changes; skip on first paint / no-op swaps.
+        if let current = currentSymbol, current != systemName {
+            crossfadeImage()
+        }
+        currentSymbol = systemName
         button.image = NSImage(systemSymbolName: systemName, accessibilityDescription: tooltip)
         button.imagePosition = .imageOnly
     }
 
+    // MARK: - Animation primitives
+
+    /// Pin the layer's anchor to its geometric center (compensating position so it doesn't
+    /// visually jump) so rotation and scale always pivot around the glyph, even after the
+    /// variable-length button resizes on an icon swap.
+    private func centerAnchorPoint() {
+        guard let layer = statusItem.button?.layer else { return }
+        let center = CGPoint(x: 0.5, y: 0.5)
+        guard layer.anchorPoint != center else { return }
+        let bounds = layer.bounds
+        let new = CGPoint(x: bounds.width * center.x, y: bounds.height * center.y)
+            .applying(layer.affineTransform())
+        let old = CGPoint(x: bounds.width * layer.anchorPoint.x, y: bounds.height * layer.anchorPoint.y)
+            .applying(layer.affineTransform())
+        layer.position = CGPoint(x: layer.position.x - old.x + new.x,
+                                 y: layer.position.y - old.y + new.y)
+        layer.anchorPoint = center
+    }
+
+    private func crossfadeImage(duration: CFTimeInterval = 0.2) {
+        guard let layer = statusItem.button?.layer else { return }
+        let fade = CATransition()
+        fade.type = .fade
+        fade.duration = duration
+        layer.add(fade, forKey: "fade")
+    }
+
     private func startSpinning() {
+        centerAnchorPoint()
         guard let layer = statusItem.button?.layer else { return }
         guard layer.animation(forKey: "spin") == nil else { return }
 
@@ -140,14 +179,43 @@ final class MenuBarController: NSObject {
         statusItem.button?.layer?.removeAnimation(forKey: "spin")
     }
 
-    private func bounceIcon() {
+    /// Ease the spinner from its current angle to rest along the shortest arc, then run `completion`.
+    private func decelerateSpinning(then completion: @escaping () -> Void) {
+        guard let layer = statusItem.button?.layer else {
+            completion()
+            return
+        }
+        let current = (layer.presentation()?.value(forKeyPath: "transform.rotation.z") as? CGFloat) ?? 0
+        layer.removeAnimation(forKey: "spin")
+        guard current != 0 else {
+            completion()
+            return
+        }
+
+        let settle = CABasicAnimation(keyPath: "transform.rotation.z")
+        settle.fromValue = current
+        settle.toValue = 0
+        settle.duration = 0.3
+        settle.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        CATransaction.begin()
+        CATransaction.setCompletionBlock(completion)
+        layer.add(settle, forKey: "settle")
+        CATransaction.commit()
+    }
+
+    /// Spring the glyph up from a slightly shrunken state — the "summary is ready" celebration.
+    private func popIn() {
+        centerAnchorPoint()
         guard let layer = statusItem.button?.layer else { return }
-        let bounce = CAKeyframeAnimation(keyPath: "transform.scale")
-        bounce.values = [1.0, 1.35, 0.88, 1.12, 1.0]
-        bounce.keyTimes = [0.0, 0.3, 0.55, 0.8, 1.0]
-        bounce.duration = 0.55
-        bounce.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        layer.add(bounce, forKey: "bounce")
+        let pop = CASpringAnimation(keyPath: "transform.scale")
+        pop.fromValue = 0.6
+        pop.toValue = 1.0
+        pop.mass = 0.6
+        pop.stiffness = 180
+        pop.damping = 9
+        pop.initialVelocity = 6
+        pop.duration = pop.settlingDuration
+        layer.add(pop, forKey: "pop")
     }
 
     // MARK: - Completion
