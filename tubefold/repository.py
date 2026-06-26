@@ -60,6 +60,17 @@ class Repository:
                     error_message TEXT,
                     FOREIGN KEY(video_id) REFERENCES videos(id)
                 );
+
+                CREATE TABLE IF NOT EXISTS watch_activity (
+                    youtube_video_id TEXT PRIMARY KEY,
+                    canonical_url TEXT NOT NULL,
+                    title TEXT,
+                    channel_name TEXT,
+                    thumbnail_url TEXT,
+                    duration_seconds REAL,
+                    watched_at TEXT NOT NULL,
+                    dismissed_at TEXT
+                );
                 """
             )
             self._migrate(conn)
@@ -214,6 +225,65 @@ class Repository:
             )
             return "queued", video_id, job_id
 
+    def record_watch_activity(
+        self,
+        youtube_video_id: str,
+        canonical_url: str,
+        title: str | None = None,
+        channel_name: str | None = None,
+        thumbnail_url: str | None = None,
+        duration_seconds: float | None = None,
+    ) -> None:
+        """Remember the most recently opened YouTube video so the app can suggest it.
+
+        Re-opening a video refreshes ``watched_at`` and clears any prior dismissal, so a
+        video the user dismissed earlier becomes a fresh suggestion when they return to it."""
+        now = utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO watch_activity (
+                    youtube_video_id, canonical_url, title, channel_name,
+                    thumbnail_url, duration_seconds, watched_at, dismissed_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, NULL)
+                ON CONFLICT(youtube_video_id) DO UPDATE SET
+                    canonical_url = excluded.canonical_url,
+                    title = COALESCE(excluded.title, watch_activity.title),
+                    channel_name = COALESCE(NULLIF(excluded.channel_name, ''), watch_activity.channel_name),
+                    thumbnail_url = COALESCE(excluded.thumbnail_url, watch_activity.thumbnail_url),
+                    duration_seconds = COALESCE(excluded.duration_seconds, watch_activity.duration_seconds),
+                    watched_at = excluded.watched_at,
+                    dismissed_at = NULL
+                """,
+                (youtube_video_id, canonical_url, title, channel_name, thumbnail_url, duration_seconds, now),
+            )
+
+    def latest_watch_suggestion(self) -> sqlite3.Row | None:
+        """Newest non-dismissed watched video, joined to the library so the caller knows
+        whether it has already been added (and the local video id / status if so)."""
+        with self.connect() as conn:
+            return conn.execute(
+                """
+                SELECT
+                    watch_activity.*,
+                    videos.id AS library_video_id,
+                    videos.status AS library_status
+                FROM watch_activity
+                LEFT JOIN videos ON videos.youtube_video_id = watch_activity.youtube_video_id
+                WHERE watch_activity.dismissed_at IS NULL
+                ORDER BY watch_activity.watched_at DESC
+                LIMIT 1
+                """
+            ).fetchone()
+
+    def dismiss_watch_activity(self, youtube_video_id: str) -> None:
+        with self.connect() as conn:
+            conn.execute(
+                "UPDATE watch_activity SET dismissed_at = ? WHERE youtube_video_id = ?",
+                (utc_now(), youtube_video_id),
+            )
+
     def list_queued_jobs(self) -> list[sqlite3.Row]:
         with self.connect() as conn:
             return list(
@@ -226,6 +296,38 @@ class Repository:
                     (ProcessingStatus.QUEUED.value,),
                 )
             )
+
+    def reclaim_orphaned_jobs(self, code: str, message: str) -> list[str]:
+        """Fail any job left mid-run by a previous process and reset its video.
+
+        The worker processes jobs one at a time, so on a fresh start nothing is
+        actually running: any job in an in-progress status (fetching*/generating)
+        was interrupted (the app was quit or the provider was killed) and would
+        otherwise show "processing" forever. We mark those failed so the user can
+        regenerate. Queued jobs are left alone — the worker will pick them up.
+        Returns the ids of the jobs that were reclaimed."""
+        in_progress = [
+            ProcessingStatus.FETCHING_METADATA.value,
+            ProcessingStatus.FETCHING_TRANSCRIPT.value,
+            ProcessingStatus.GENERATING_SUMMARY.value,
+        ]
+        placeholders = ",".join("?" for _ in in_progress)
+        now = utc_now()
+        with self.connect() as conn:
+            rows = conn.execute(
+                f"SELECT id, video_id FROM jobs WHERE status IN ({placeholders})",
+                tuple(in_progress),
+            ).fetchall()
+            for row in rows:
+                conn.execute(
+                    "UPDATE jobs SET status = ?, finished_at = COALESCE(finished_at, ?), error_message = ? WHERE id = ?",
+                    (ProcessingStatus.FAILED.value, now, message, row["id"]),
+                )
+                conn.execute(
+                    "UPDATE videos SET status = ?, updated_at = ?, error_code = ?, error_message = ? WHERE id = ?",
+                    (ProcessingStatus.FAILED.value, now, code, message, row["video_id"]),
+                )
+        return [row["id"] for row in rows]
 
     def mark_status(self, video_id: str, job_id: str, status: ProcessingStatus) -> None:
         now = utc_now()

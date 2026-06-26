@@ -64,3 +64,24 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
   return true;
 });
+
+// Report the currently opened watch page to the Mac app so it can surface a
+// "recently watched" suggestion. YouTube is a single-page app, so we report on
+// initial load and again whenever it navigates between videos, debounced so the
+// title/channel DOM has time to settle.
+let reportTimer;
+function reportWatch() {
+  clearTimeout(reportTimer);
+  reportTimer = setTimeout(() => {
+    const context = extractVideoContext();
+    if (!context.isVideo) return;
+    try {
+      chrome.runtime.sendMessage({ type: "REPORT_WATCH", payload: context });
+    } catch {
+      // Extension context can be invalidated on reload; ignore.
+    }
+  }, 1500);
+}
+
+reportWatch();
+document.addEventListener("yt-navigate-finish", reportWatch);

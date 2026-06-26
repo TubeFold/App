@@ -26,6 +26,48 @@ struct CreateSummaryResponse: Decodable {
     let status: String
 }
 
+struct WatchSuggestionResponse: Decodable {
+    let suggestion: WatchSuggestion?
+}
+
+struct DismissWatchRequest: Encodable {
+    let youtubeVideoID: String
+}
+
+struct StatusResponse: Decodable {
+    let status: String
+}
+
+struct WatchSuggestion: Decodable, Equatable {
+    let youtubeVideoID: String
+    let canonicalURL: String
+    let title: String?
+    let channelName: String?
+    let thumbnailURL: String?
+    let durationSeconds: Double?
+    let watchedAt: String
+    let inLibrary: Bool
+    let libraryVideoID: String?
+    let libraryStatus: String?
+
+    var displayTitle: String {
+        title?.isEmpty == false ? title! : youtubeVideoID
+    }
+
+    var displayChannel: String {
+        channelName?.isEmpty == false ? channelName! : "Unknown channel"
+    }
+
+    var thumbnailImageURL: URL? {
+        guard let thumbnailURL else { return nil }
+        return URL(string: thumbnailURL)
+    }
+
+    var youtubeURL: URL? {
+        URL(string: canonicalURL)
+    }
+}
+
 struct LibraryVideo: Decodable, Identifiable, Equatable {
     let id: String
     let youtubeVideoID: String

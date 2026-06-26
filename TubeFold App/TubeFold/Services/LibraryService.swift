@@ -17,6 +17,19 @@ struct LibraryService {
         )
     }
 
+    func latestWatchSuggestion() async throws -> WatchSuggestion? {
+        let response: WatchSuggestionResponse = try await request(path: "/api/v1/watch-activity")
+        return response.suggestion
+    }
+
+    func dismissWatchSuggestion(youtubeID: String) async throws {
+        let _: StatusResponse = try await request(
+            path: "/api/v1/watch-activity/dismiss",
+            method: "POST",
+            body: DismissWatchRequest(youtubeVideoID: youtubeID)
+        )
+    }
+
     func regenerate(videoID: String) async throws {
         let _: RegenerateVideoResponse = try await request(path: "/api/v1/videos/\(videoID)/regenerate", method: "POST")
     }

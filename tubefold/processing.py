@@ -42,8 +42,18 @@ class ProcessingQueue:
 
     def start(self) -> None:
         logger.info("Starting processing queue provider=%s data_dir=%s", self.config.provider, self.config.data_dir)
+        self.reclaim_orphaned_jobs()
         self._worker.start()
         self.enqueue_existing_queued_jobs()
+
+    def reclaim_orphaned_jobs(self) -> None:
+        """Fail jobs interrupted by a previous run so they stop showing as processing."""
+        reclaimed = self.repository.reclaim_orphaned_jobs(
+            "interrupted",
+            "Summary generation was interrupted before it finished. Try again.",
+        )
+        if reclaimed:
+            logger.warning("Reclaimed %s orphaned job(s) left mid-run: %s", len(reclaimed), ", ".join(reclaimed))
 
     def stop(self) -> None:
         logger.info("Stopping processing queue")

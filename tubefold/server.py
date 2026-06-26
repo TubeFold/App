@@ -66,6 +66,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                         "readingTime": True,
                         "claudeProvider": True,
                         "usageStats": True,
+                        "watchActivity": True,
                     },
                 }
             )
@@ -96,6 +97,13 @@ class RequestHandler(BaseHTTPRequestHandler):
             if not self._authorized():
                 return
             self._send_json(self.server.repository.usage_summary())
+            return
+
+        if self.path == "/api/v1/watch-activity":
+            if not self._authorized():
+                return
+            row = self.server.repository.latest_watch_suggestion()
+            self._send_json({"suggestion": self._watch_suggestion_payload(row) if row else None})
             return
 
         match = re.fullmatch(r"/api/v1/jobs/([^/?]+)", self.path)
@@ -174,6 +182,44 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self._send_json({"jobId": job_id, "videoId": video_record_id, "status": "already_processing"})
             else:
                 self._send_json({"jobId": None, "videoId": video_record_id, "status": "already_exists"})
+            return
+
+        if self.path == "/api/v1/watch-activity":
+            data = self._read_json_body()
+            if data is None:
+                return
+            try:
+                raw_url = str(data.get("url") or data.get("canonicalURL") or "")
+                video_id = parse_youtube_video_id(str(data.get("videoId") or raw_url))
+                canonical_url = normalize_youtube_url(raw_url or video_id)
+            except ValueError:
+                logger.warning("Invalid watch activity url=%r videoId=%r", data.get("url"), data.get("videoId"))
+                self._send_error("invalid_youtube_url", "The URL is not a supported YouTube video.", HTTPStatus.BAD_REQUEST)
+                return
+            self.server.repository.record_watch_activity(
+                youtube_video_id=video_id,
+                canonical_url=canonical_url,
+                title=(str(data["title"]) if data.get("title") else None),
+                channel_name=(str(data["channelName"]) if data.get("channelName") else None),
+                thumbnail_url=(str(data["thumbnailURL"]) if data.get("thumbnailURL") else None),
+                duration_seconds=_optional_float(data.get("durationSeconds")),
+            )
+            logger.info("Watch activity recorded youtube_id=%s source=%s", video_id, data.get("source"))
+            self._send_json({"status": "recorded"})
+            return
+
+        if self.path == "/api/v1/watch-activity/dismiss":
+            data = self._read_json_body()
+            if data is None:
+                return
+            try:
+                youtube_id = parse_youtube_video_id(str(data.get("youtubeVideoID") or data.get("videoId") or ""))
+            except ValueError:
+                self._send_error("invalid_youtube_url", "A valid YouTube video id is required.", HTTPStatus.BAD_REQUEST)
+                return
+            self.server.repository.dismiss_watch_activity(youtube_id)
+            logger.info("Watch activity dismissed youtube_id=%s", youtube_id)
+            self._send_json({"status": "dismissed"})
             return
 
         if self.path == "/api/v1/provider-setup/select":
@@ -394,6 +440,21 @@ class RequestHandler(BaseHTTPRequestHandler):
             "readingTimeMinutes": reading_time_minutes,
         }
 
+    @staticmethod
+    def _watch_suggestion_payload(row: Any) -> dict[str, Any]:
+        return {
+            "youtubeVideoID": row["youtube_video_id"],
+            "canonicalURL": row["canonical_url"],
+            "title": row["title"],
+            "channelName": row["channel_name"],
+            "thumbnailURL": row["thumbnail_url"] or youtube_thumbnail_url(row["youtube_video_id"]),
+            "durationSeconds": row["duration_seconds"],
+            "watchedAt": row["watched_at"],
+            "inLibrary": row["library_video_id"] is not None,
+            "libraryVideoID": row["library_video_id"],
+            "libraryStatus": row["library_status"],
+        }
+
     def _send_cors_headers(self) -> None:
         origin = self.headers.get("Origin")
         if origin and origin_allowed(origin, self.server.config.allowed_origins):
@@ -401,6 +462,13 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Authorization,Content-Type")
+
+
+def _optional_float(value: Any) -> float | None:
+    try:
+        return float(value) if value is not None else None
+    except (TypeError, ValueError):
+        return None
 
 
 def origin_allowed(origin: str, allowed: tuple[str, ...]) -> bool:

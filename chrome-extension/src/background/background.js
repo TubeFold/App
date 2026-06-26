@@ -47,6 +47,21 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse({ ok: true, body });
       return;
     }
+    if (message?.type === "REPORT_WATCH") {
+      // Fire-and-forget: the Mac app is often closed, so swallow any failure.
+      try {
+        await apiFetch("/api/v1/watch-activity", {
+          method: "POST",
+          timeout: 2000,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...message.payload, source: "chrome-extension" })
+        });
+        sendResponse({ ok: true });
+      } catch (error) {
+        sendResponse({ ok: false, error: error.message || String(error) });
+      }
+      return;
+    }
     if (message?.type === "LOOKUP_VIDEO") {
       const youtubeId = encodeURIComponent(message.youtubeId || "");
       const body = await apiFetch(`/api/v1/videos/by-youtube-id/${youtubeId}`, { timeout: 2500 });

@@ -9,7 +9,14 @@ function formatDuration(seconds) {
 
 function setConnection(text, isError = false) {
   const element = document.getElementById("connection");
-  element.textContent = text;
+  if (!text) {
+    element.textContent = "";
+    element.classList.remove("error");
+    return;
+  }
+  // Lead with a status glyph so the connection state reads at a glance:
+  // green check when the Mac app is reachable, red cross when it isn't.
+  element.textContent = `${isError ? "❌" : "✅"} ${text}`;
   element.classList.toggle("error", isError);
 }
 

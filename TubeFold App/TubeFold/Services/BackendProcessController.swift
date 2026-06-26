@@ -60,6 +60,7 @@ final class BackendProcessController {
                 && features?.readingTime == true
                 && features?.claudeProvider == true
                 && features?.usageStats == true
+                && features?.watchActivity == true
         } catch {
             return false
         }
@@ -225,4 +226,5 @@ private struct BackendFeatures: Decodable {
     let readingTime: Bool
     let claudeProvider: Bool
     let usageStats: Bool
+    let watchActivity: Bool
 }

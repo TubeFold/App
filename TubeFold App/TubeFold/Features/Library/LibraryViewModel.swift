@@ -13,6 +13,7 @@ final class LibraryViewModel: ObservableObject {
     @Published var urlInput = ""
     @Published private(set) var isSubmitting = false
     @Published private(set) var noticeMessage: String?
+    @Published private(set) var suggestion: WatchSuggestion?
 
     private let service = LibraryService()
     private var refreshTask: Task<Void, Never>?
@@ -69,6 +70,46 @@ final class LibraryViewModel: ObservableObject {
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
+        }
+
+        await loadSuggestion()
+    }
+
+    private func loadSuggestion() async {
+        // Best-effort: a missing/old backend simply means no suggestion. Never let it
+        // clobber the main library error state.
+        do {
+            let loaded = try await service.latestWatchSuggestion()
+            if loaded != suggestion {
+                suggestion = loaded
+            }
+        } catch {
+            // Ignore — suggestion is a non-critical enhancement.
+        }
+    }
+
+    func acceptSuggestion() {
+        guard let suggestion else { return }
+        urlInput = suggestion.canonicalURL
+        submitURL()
+        dismissSuggestion()
+    }
+
+    func openSuggestion() {
+        guard let suggestion else { return }
+        if let local = videos.first(where: { $0.youtubeVideoID == suggestion.youtubeVideoID }), local.hasMarkdown {
+            openMarkdown(local)
+        } else if let url = suggestion.youtubeURL {
+            NSWorkspace.shared.open(url)
+        }
+        dismissSuggestion()
+    }
+
+    func dismissSuggestion() {
+        guard let dismissed = suggestion else { return }
+        suggestion = nil
+        Task {
+            try? await service.dismissWatchSuggestion(youtubeID: dismissed.youtubeVideoID)
         }
     }
 

@@ -63,6 +63,7 @@ class ServerTests(unittest.TestCase):
         self.assertTrue(body["backendFeatures"]["codexModelSettings"])
         self.assertTrue(body["backendFeatures"]["claudeProvider"])
         self.assertTrue(body["backendFeatures"]["usageStats"])
+        self.assertTrue(body["backendFeatures"]["watchActivity"])
 
     def test_usage_endpoint_empty_then_aggregates(self) -> None:
         empty = self.get_json("/api/v1/usage")
@@ -121,6 +122,30 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(library["videos"][0]["title"], "Test Video")
         self.assertEqual(library["videos"][0]["status"], "queued")
         self.assertEqual(library["videos"][0]["latestJobID"], first["jobId"])
+
+    def test_reclaim_orphaned_jobs_fails_interrupted_jobs(self) -> None:
+        from tubefold.models import ProcessingStatus, SummaryRequest
+
+        request = SummaryRequest.from_json({}, "dQw4w9WgXcQ", "https://youtu.be/dQw4w9WgXcQ")
+        _, video_id, job_id = self.repository.create_or_reuse(request)
+        # Simulate the worker getting interrupted mid-run (e.g. the app was quit
+        # while the provider was generating the summary).
+        self.repository.mark_status(video_id, job_id, ProcessingStatus.GENERATING_SUMMARY)
+
+        reclaimed = self.repository.reclaim_orphaned_jobs("interrupted", "stopped")
+        self.assertEqual(reclaimed, [job_id])
+
+        video = self.repository.get_video(video_id)
+        self.assertEqual(video["status"], ProcessingStatus.FAILED.value)
+        self.assertEqual(video["error_code"], "interrupted")
+        job = self.repository.get_job(job_id)
+        self.assertEqual(job["status"], ProcessingStatus.FAILED.value)
+        self.assertIsNotNone(job["finished_at"])
+
+        # A second pass finds nothing left to reclaim, and queued jobs are untouched.
+        _, _, queued_job = self.repository.create_or_reuse(request, force_regenerate=True)
+        self.assertEqual(self.repository.reclaim_orphaned_jobs("interrupted", "stopped"), [])
+        self.assertEqual(self.repository.get_job(queued_job)["status"], ProcessingStatus.QUEUED.value)
 
     def test_manual_add_without_thumbnail_gets_derived_cover(self) -> None:
         self.post_json(
@@ -202,6 +227,59 @@ class ServerTests(unittest.TestCase):
             {"outputLanguage": "   "},
         )
         self.assertEqual(blanked["state"]["outputLanguage"], "English")
+
+    def test_watch_activity_records_and_surfaces_suggestion(self) -> None:
+        empty = self.get_json("/api/v1/watch-activity")
+        self.assertIsNone(empty["suggestion"])
+
+        recorded = self.post_json(
+            "/api/v1/watch-activity",
+            {
+                "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "title": "Never Gonna Give You Up",
+                "channelName": "Rick Astley",
+                "durationSeconds": 213,
+                "source": "chrome-extension",
+            },
+        )
+        self.assertEqual(recorded["status"], "recorded")
+
+        body = self.get_json("/api/v1/watch-activity")
+        suggestion = body["suggestion"]
+        self.assertIsNotNone(suggestion)
+        self.assertEqual(suggestion["youtubeVideoID"], "dQw4w9WgXcQ")
+        self.assertEqual(suggestion["canonicalURL"], "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        self.assertEqual(suggestion["title"], "Never Gonna Give You Up")
+        self.assertEqual(suggestion["channelName"], "Rick Astley")
+        self.assertEqual(suggestion["thumbnailURL"], "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg")
+        self.assertFalse(suggestion["inLibrary"])
+        self.assertIsNone(suggestion["libraryVideoID"])
+
+    def test_watch_activity_reflects_library_membership(self) -> None:
+        self.post_json("/api/v1/watch-activity", {"url": "https://youtu.be/dQw4w9WgXcQ"})
+        created = self.post_json("/api/v1/summaries", {"url": "https://youtu.be/dQw4w9WgXcQ"})
+
+        suggestion = self.get_json("/api/v1/watch-activity")["suggestion"]
+        self.assertTrue(suggestion["inLibrary"])
+        self.assertEqual(suggestion["libraryVideoID"], created["videoId"])
+        self.assertEqual(suggestion["libraryStatus"], "queued")
+
+    def test_watch_activity_dismiss_hides_until_reopened(self) -> None:
+        self.post_json("/api/v1/watch-activity", {"url": "https://youtu.be/dQw4w9WgXcQ"})
+        self.post_json("/api/v1/watch-activity/dismiss", {"youtubeVideoID": "dQw4w9WgXcQ"})
+        self.assertIsNone(self.get_json("/api/v1/watch-activity")["suggestion"])
+
+        # Re-opening the same video resurfaces it as a fresh suggestion.
+        self.post_json("/api/v1/watch-activity", {"url": "https://youtu.be/dQw4w9WgXcQ"})
+        resurfaced = self.get_json("/api/v1/watch-activity")["suggestion"]
+        self.assertIsNotNone(resurfaced)
+        self.assertEqual(resurfaced["youtubeVideoID"], "dQw4w9WgXcQ")
+
+    def test_watch_activity_rejects_invalid_url(self) -> None:
+        with self.assertRaises(urllib.error.HTTPError) as context:
+            self.post_json("/api/v1/watch-activity", {"url": "https://example.com"})
+        self.assertEqual(context.exception.code, 400)
+        context.exception.close()
 
     def get_json(self, path: str) -> dict:
         with urllib.request.urlopen(self.base_url + path, timeout=5) as response:
