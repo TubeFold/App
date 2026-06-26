@@ -59,6 +59,7 @@ final class BackendProcessController {
                 && features?.outputLanguageSetting == true
                 && features?.readingTime == true
                 && features?.claudeProvider == true
+                && features?.usageStats == true
         } catch {
             return false
         }
@@ -223,4 +224,5 @@ private struct BackendFeatures: Decodable {
     let outputLanguageSetting: Bool
     let readingTime: Bool
     let claudeProvider: Bool
+    let usageStats: Bool
 }

@@ -62,6 +62,38 @@ class ServerTests(unittest.TestCase):
         self.assertTrue(body["backendFeatures"]["libraryRegenerate"])
         self.assertTrue(body["backendFeatures"]["codexModelSettings"])
         self.assertTrue(body["backendFeatures"]["claudeProvider"])
+        self.assertTrue(body["backendFeatures"]["usageStats"])
+
+    def test_usage_endpoint_empty_then_aggregates(self) -> None:
+        empty = self.get_json("/api/v1/usage")
+        self.assertEqual(empty["totalTokens"], 0)
+        self.assertEqual(empty["byProvider"], {})
+        self.assertIsNone(empty["codexWeekly"])
+
+        # Seed a video + two jobs with usage, one carrying a codex weekly snapshot.
+        from tubefold.models import SummaryRequest
+
+        request = SummaryRequest.from_json({}, "dQw4w9WgXcQ", "https://youtu.be/dQw4w9WgXcQ")
+        _, _, job_a = self.repository.create_or_reuse(request)
+        self.repository.set_job_usage(
+            job_a,
+            {"provider": "codex", "input_tokens": 1000, "output_tokens": 200, "total_tokens": 1200,
+             "weekly_percent": 55.0, "weekly_resets_at": 1782895766, "primary_percent": 30.0},
+        )
+        _, _, job_b = self.repository.create_or_reuse(request, force_regenerate=True)
+        self.repository.set_job_usage(
+            job_b,
+            {"provider": "claude", "input_tokens": 300, "output_tokens": 100, "total_tokens": 400, "cost_usd": 0.05},
+        )
+
+        usage = self.get_json("/api/v1/usage")
+        self.assertEqual(usage["totalTokens"], 1600)
+        self.assertEqual(usage["byProvider"]["codex"]["totalTokens"], 1200)
+        self.assertEqual(usage["byProvider"]["codex"]["jobs"], 1)
+        self.assertEqual(usage["byProvider"]["claude"]["totalTokens"], 400)
+        self.assertAlmostEqual(usage["byProvider"]["claude"]["costUsd"], 0.05)
+        self.assertEqual(usage["codexWeekly"]["usedPercent"], 55.0)
+        self.assertEqual(usage["codexWeekly"]["resetsAt"], 1782895766)
 
     def test_summary_request_creates_job_and_dedupes_active_video(self) -> None:
         request = {

@@ -113,6 +113,8 @@ struct MainStatusView: View {
 
             OutputLanguageSettingsView(viewModel: viewModel)
 
+            UsageStatsView(viewModel: viewModel)
+
             if let errorMessage = viewModel.errorMessage {
                 Label(errorMessage, systemImage: "exclamationmark.triangle")
                     .foregroundStyle(.orange)
@@ -258,6 +260,144 @@ struct OutputLanguageSettingsView: View {
             }
         }
         .settingsCard()
+    }
+}
+
+struct UsageStatsView: View {
+    @ObservedObject var viewModel: ProviderSetupViewModel
+
+    private var usage: UsageSummary { viewModel.usage ?? .empty }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Usage")
+                        .font(.headline)
+                    Text("Tokens TubeFold has spent analyzing videos with your provider CLI.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 16)
+                Button {
+                    Task { await viewModel.refreshUsage() }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.borderless)
+                .help("Refresh usage")
+            }
+
+            if usage.totalTokens == 0 {
+                Text("No analyses recorded yet. Token usage appears here after your first summary.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(UsageStatsView.formatTokens(usage.totalTokens))
+                        .font(.system(.title, design: .rounded).weight(.semibold))
+                        .monospacedDigit()
+                    Text("tokens total")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+
+                ForEach(usage.sortedProviders, id: \.name) { entry in
+                    providerRow(name: entry.name, usage: entry.usage)
+                }
+            }
+
+            if let weekly = usage.codexWeekly, let percent = weekly.usedPercent {
+                weeklyGauge(percent: percent, resetsAt: weekly.resetsAt)
+            }
+
+            if usage.byProvider["claude"] != nil {
+                SettingsHint(
+                    title: "Claude weekly limit",
+                    detail: "The Claude CLI doesn't report a weekly subscription percentage, so only spent tokens and cost are shown."
+                )
+            }
+        }
+        .settingsCard()
+    }
+
+    @ViewBuilder
+    private func providerRow(name: String, usage: UsageSummary.ProviderUsage) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(UsageStatsView.providerDisplayName(name))
+                .font(.subheadline.weight(.semibold))
+            Text("\(usage.jobs) \(usage.jobs == 1 ? "run" : "runs")")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 12)
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("\(UsageStatsView.formatTokens(usage.totalTokens)) tokens")
+                    .font(.callout)
+                    .monospacedDigit()
+                if let cost = usage.costUsd, cost > 0 {
+                    Text(String(format: "$%.2f", cost))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func weeklyGauge(percent: Double, resetsAt: Double?) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Codex weekly limit")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Text("\(Int(percent.rounded()))% used")
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(percent >= 90 ? .red : .primary)
+                    .monospacedDigit()
+            }
+            ProgressView(value: min(max(percent / 100, 0), 1))
+                .tint(percent >= 90 ? .red : (percent >= 70 ? .orange : .blue))
+            if let resets = UsageStatsView.formatReset(resetsAt) {
+                Text(resets)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.top, 4)
+    }
+
+    static func providerDisplayName(_ id: String) -> String {
+        switch id {
+        case "codex": return "Codex CLI"
+        case "claude": return "Claude Code CLI"
+        default: return id.capitalized
+        }
+    }
+
+    static func formatTokens(_ tokens: Int) -> String {
+        let value = Double(tokens)
+        if value >= 1_000_000 {
+            return String(format: "%.1fM", value / 1_000_000)
+        }
+        if value >= 1_000 {
+            return String(format: "%.1fK", value / 1_000)
+        }
+        return String(tokens)
+    }
+
+    static func formatReset(_ resetsAt: Double?) -> String? {
+        guard let resetsAt else { return nil }
+        let remaining = resetsAt - Date().timeIntervalSince1970
+        guard remaining > 0 else { return "Resets soon" }
+        let days = Int(remaining) / 86_400
+        let hours = (Int(remaining) % 86_400) / 3_600
+        if days > 0 {
+            return "Resets in \(days)d \(hours)h"
+        }
+        let minutes = (Int(remaining) % 3_600) / 60
+        return hours > 0 ? "Resets in \(hours)h \(minutes)m" : "Resets in \(minutes)m"
     }
 }
 

@@ -41,6 +41,10 @@ struct ProviderSetupService {
         )
     }
 
+    func loadUsage() async throws -> UsageSummary {
+        try await request(path: "/api/v1/usage", method: "GET", body: Optional<StringRequest>.none)
+    }
+
     func saveOutputLanguage(_ outputLanguage: String) async throws -> SaveModelSettingsResult {
         try await request(
             path: "/api/v1/provider-setup/output-language",

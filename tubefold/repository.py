@@ -70,6 +70,20 @@ class Repository:
             if column not in existing:
                 conn.execute(f"ALTER TABLE videos ADD COLUMN {column} TEXT")
 
+        job_columns = {row["name"] for row in conn.execute("PRAGMA table_info(jobs)")}
+        for column, sql_type in (
+            ("provider", "TEXT"),
+            ("input_tokens", "INTEGER"),
+            ("output_tokens", "INTEGER"),
+            ("total_tokens", "INTEGER"),
+            ("cost_usd", "REAL"),
+            ("weekly_percent", "REAL"),
+            ("weekly_resets_at", "INTEGER"),
+            ("primary_percent", "REAL"),
+        ):
+            if column not in job_columns:
+                conn.execute(f"ALTER TABLE jobs ADD COLUMN {column} {sql_type}")
+
     def get_video_by_youtube_id(self, youtube_video_id: str) -> sqlite3.Row | None:
         with self.connect() as conn:
             return conn.execute(
@@ -299,6 +313,89 @@ class Repository:
                 "UPDATE videos SET telegraph_url = ?, telegraph_path = ?, telegraph_summary_hash = ? WHERE id = ?",
                 (url, path, summary_hash, video_id),
             )
+
+    def set_job_usage(self, job_id: str, usage: dict[str, Any]) -> None:
+        """Persist the token usage + quota snapshot captured from a provider run.
+
+        ``usage`` is the parsed sidecar dict; codex carries ``weekly_percent`` etc.,
+        claude carries ``cost_usd``. Missing keys simply store NULL."""
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE jobs
+                SET provider = ?, input_tokens = ?, output_tokens = ?, total_tokens = ?,
+                    cost_usd = ?, weekly_percent = ?, weekly_resets_at = ?, primary_percent = ?
+                WHERE id = ?
+                """,
+                (
+                    usage.get("provider"),
+                    usage.get("input_tokens"),
+                    usage.get("output_tokens"),
+                    usage.get("total_tokens"),
+                    usage.get("cost_usd"),
+                    usage.get("weekly_percent"),
+                    usage.get("weekly_resets_at"),
+                    usage.get("primary_percent"),
+                    job_id,
+                ),
+            )
+
+    def usage_summary(self) -> dict[str, Any]:
+        """Aggregate token usage across all jobs that recorded any.
+
+        Returns total tokens, a per-provider breakdown (tokens/cost/job count) and
+        the freshest codex weekly-quota snapshot (the latest job carrying one)."""
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT provider,
+                       COUNT(*) AS jobs,
+                       COALESCE(SUM(input_tokens), 0) AS input_tokens,
+                       COALESCE(SUM(output_tokens), 0) AS output_tokens,
+                       COALESCE(SUM(total_tokens), 0) AS total_tokens,
+                       COALESCE(SUM(cost_usd), 0) AS cost_usd
+                FROM jobs
+                WHERE total_tokens IS NOT NULL
+                GROUP BY provider
+                """
+            ).fetchall()
+            codex_weekly = conn.execute(
+                """
+                SELECT weekly_percent, weekly_resets_at, primary_percent, finished_at
+                FROM jobs
+                WHERE weekly_percent IS NOT NULL
+                ORDER BY COALESCE(finished_at, created_at) DESC
+                LIMIT 1
+                """
+            ).fetchone()
+
+        by_provider: dict[str, Any] = {}
+        total_tokens = 0
+        for row in rows:
+            provider = row["provider"] or "unknown"
+            total_tokens += int(row["total_tokens"])
+            by_provider[provider] = {
+                "jobs": int(row["jobs"]),
+                "inputTokens": int(row["input_tokens"]),
+                "outputTokens": int(row["output_tokens"]),
+                "totalTokens": int(row["total_tokens"]),
+                "costUsd": float(row["cost_usd"]) if row["cost_usd"] else None,
+            }
+
+        weekly = None
+        if codex_weekly is not None:
+            weekly = {
+                "usedPercent": codex_weekly["weekly_percent"],
+                "resetsAt": codex_weekly["weekly_resets_at"],
+                "primaryPercent": codex_weekly["primary_percent"],
+                "capturedAt": codex_weekly["finished_at"],
+            }
+
+        return {
+            "totalTokens": total_tokens,
+            "byProvider": by_provider,
+            "codexWeekly": weekly,
+        }
 
     def mark_failed(self, video_id: str, job_id: str, code: str, message: str) -> None:
         now = utc_now()

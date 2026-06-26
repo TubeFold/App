@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import signal
 import subprocess
 import sys
 from pathlib import Path
+
+from usage_sidecar import claude_usage_from_result, write_usage_sidecar
 
 
 def main() -> int:
@@ -34,7 +37,7 @@ def main() -> int:
         command.extend(["--model", model])
     if effort:
         command.extend(["--effort", effort])
-    command.extend(["--output-format", "text"])
+    command.extend(["--output-format", "json"])
 
     # Run from an isolated temp dir so the CLI never discovers the repo's CLAUDE.md
     # or other project context; the prompt is the only input, read from stdin.
@@ -72,13 +75,38 @@ def main() -> int:
             print(stderr.strip(), file=sys.stderr)
         return process.returncode or 1
 
-    args.output_file.write_text(stdout, encoding="utf-8")
+    body, usage = parse_response(stdout)
+    args.output_file.write_text(body, encoding="utf-8")
     if not args.output_file.read_text(encoding="utf-8", errors="replace").strip():
         print("[ERROR] Claude produced no output", file=sys.stderr)
         if stderr.strip():
             print(stderr.strip(), file=sys.stderr)
         return 1
+    if usage is not None:
+        try:
+            write_usage_sidecar(args.output_file, usage)
+        except OSError:
+            pass  # usage capture is best-effort, never fatal
     return 0
+
+
+def parse_response(stdout: str) -> tuple[str, dict | None]:
+    """Pull the Markdown body and token usage out of the JSON result object.
+
+    Falls back to treating stdout as the raw body (and skipping usage) if it is
+    not the expected ``--output-format json`` object, so a CLI format change can
+    never break summary generation.
+    """
+    try:
+        result_obj = json.loads(stdout)
+    except ValueError:
+        return stdout, None
+    if not isinstance(result_obj, dict) or "result" not in result_obj:
+        return stdout, None
+    body = result_obj.get("result")
+    if not isinstance(body, str):
+        return stdout, None
+    return body, claude_usage_from_result(result_obj)
 
 
 def classify_failure(output: str) -> str:

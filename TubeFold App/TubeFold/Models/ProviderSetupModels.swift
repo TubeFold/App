@@ -240,6 +240,35 @@ extension Dictionary where Key == String, Value == JSONValue {
     }
 }
 
+struct UsageSummary: Decodable {
+    let totalTokens: Int
+    let byProvider: [String: ProviderUsage]
+    let codexWeekly: CodexWeeklyUsage?
+
+    struct ProviderUsage: Decodable {
+        let jobs: Int
+        let inputTokens: Int
+        let outputTokens: Int
+        let totalTokens: Int
+        let costUsd: Double?
+    }
+
+    struct CodexWeeklyUsage: Decodable {
+        let usedPercent: Double?
+        let resetsAt: Double?
+        let primaryPercent: Double?
+        let capturedAt: String?
+    }
+
+    var sortedProviders: [(name: String, usage: ProviderUsage)] {
+        byProvider
+            .sorted { $0.value.totalTokens > $1.value.totalTokens }
+            .map { (name: $0.key, usage: $0.value) }
+    }
+
+    static let empty = UsageSummary(totalTokens: 0, byProvider: [:], codexWeekly: nil)
+}
+
 struct StringRequest: Encodable {
     let path: String?
 }

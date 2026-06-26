@@ -65,6 +65,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                         "outputLanguageSetting": True,
                         "readingTime": True,
                         "claudeProvider": True,
+                        "usageStats": True,
                     },
                 }
             )
@@ -89,6 +90,12 @@ class RequestHandler(BaseHTTPRequestHandler):
                 return
             videos = [self._video_payload(video) for video in self.server.repository.list_videos()]
             self._send_json({"videos": videos})
+            return
+
+        if self.path == "/api/v1/usage":
+            if not self._authorized():
+                return
+            self._send_json(self.server.repository.usage_summary())
             return
 
         match = re.fullmatch(r"/api/v1/jobs/([^/?]+)", self.path)

@@ -19,6 +19,7 @@ from scripts.tubefold_lib import (
     yaml_front_matter,
     youtube_thumbnail_url,
 )
+from scripts.usage_sidecar import sidecar_path
 
 from .config import AppConfig, PROJECT_ROOT
 from .output_language import normalize_output_language
@@ -158,7 +159,7 @@ class ProcessingQueue:
         summary_file = job_dir / "summary.md"
         transcript_info = json.loads(transcript_info_json.read_text(encoding="utf-8"))
         self._render_prompt(metadata_json, transcript_file, transcript_info, prompt_file, video["canonical_url"], job_dir)
-        self._run_provider(prompt_file, provider_output, job_dir)
+        self._run_provider(prompt_file, provider_output, job_dir, job_id)
 
         response = strip_outer_markdown_fence(provider_output.read_text(encoding="utf-8", errors="replace"))
         validate_provider_response(response)
@@ -332,7 +333,7 @@ class ProcessingQueue:
             return str(selected)
         return configured
 
-    def _run_provider(self, prompt_file: Path, output_file: Path, job_dir: Path) -> None:
+    def _run_provider(self, prompt_file: Path, output_file: Path, job_dir: Path, job_id: str) -> None:
         provider_name = self._active_provider()
         provider = PROJECT_ROOT / "providers" / f"{provider_name}.sh"
         if not provider.exists():
@@ -374,6 +375,33 @@ class ProcessingQueue:
         output_chars = len(output_file.read_text(encoding="utf-8", errors="replace"))
         append_job_log(job_dir, f"provider completed provider={provider_name} output_chars={output_chars}")
         logger.info("Provider completed provider=%s output_chars=%s output=%s", provider_name, output_chars, output_file)
+        self._record_usage(output_file, job_dir, job_id)
+
+    def _record_usage(self, output_file: Path, job_dir: Path, job_id: str) -> None:
+        """Persist the provider's token-usage sidecar if it produced one.
+
+        Best-effort: a missing/garbled sidecar (e.g. the fake provider, or a CLI
+        format change) just means no usage is recorded — never fatal."""
+        usage_file = sidecar_path(output_file)
+        if not usage_file.exists():
+            return
+        try:
+            usage = json.loads(usage_file.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return
+        if not isinstance(usage, dict):
+            return
+        try:
+            self.repository.set_job_usage(job_id, usage)
+        except Exception:  # noqa: BLE001 - usage capture must not fail the job
+            logger.warning("Failed to persist usage for job=%s", job_id, exc_info=True)
+            return
+        weekly = usage.get("weekly_percent")
+        append_job_log(
+            job_dir,
+            f"usage recorded provider={usage.get('provider')} total_tokens={usage.get('total_tokens')} "
+            f"weekly_percent={weekly}",
+        )
 
     def _output_language(self) -> str:
         try:

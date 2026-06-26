@@ -20,6 +20,7 @@ final class ProviderSetupViewModel: ObservableObject {
     @Published private(set) var selectedReasoningEffort = "medium"
     @Published private(set) var outputLanguage = ProviderSetupViewModel.defaultOutputLanguage
     @Published var outputLanguageDraft = ProviderSetupViewModel.defaultOutputLanguage
+    @Published private(set) var usage: UsageSummary?
 
     static let defaultOutputLanguage = "English"
 
@@ -231,6 +232,14 @@ final class ProviderSetupViewModel: ObservableObject {
 
             hasLoadedState = true
         }
+        await refreshUsage()
+    }
+
+    /// Fetch the token-usage summary without blocking the UI with the busy spinner.
+    /// Failures leave the previous value in place (the panel just shows stale/empty data).
+    func refreshUsage() async {
+        guard let summary = try? await service.loadUsage() else { return }
+        usage = summary
     }
 
     func selectProvider(_ provider: String) async {

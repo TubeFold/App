@@ -8,6 +8,8 @@ import signal
 import subprocess
 from pathlib import Path
 
+from usage_sidecar import codex_usage_from_jsonl, write_usage_sidecar
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run Codex CLI provider with timeout")
@@ -47,6 +49,7 @@ def main() -> int:
         "--ignore-rules",
         "--color",
         "never",
+        "--json",
         "--output-last-message",
         str(args.output_file),
         "-",
@@ -92,6 +95,12 @@ def main() -> int:
     if not args.output_file.read_text(encoding="utf-8", errors="replace").strip():
         print("[ERROR] Codex output file is empty", file=os.sys.stderr)
         return 1
+    usage = codex_usage_from_jsonl(stdout)
+    if usage is not None:
+        try:
+            write_usage_sidecar(args.output_file, usage)
+        except OSError:
+            pass  # usage capture is best-effort, never fatal
     return 0
 
 
