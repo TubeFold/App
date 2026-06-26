@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import re
+import shutil
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from socketserver import ThreadingMixIn
@@ -67,6 +68,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                         "claudeProvider": True,
                         "usageStats": True,
                         "watchActivity": True,
+                        "libraryDelete": True,
                     },
                 }
             )
@@ -358,6 +360,29 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         self._send_error("not_found", "Endpoint was not found.", HTTPStatus.NOT_FOUND)
 
+    def do_DELETE(self) -> None:
+        logger.info("DELETE path=%s origin=%s", self.path, self.headers.get("Origin"))
+        if not self._authorized():
+            return
+
+        match = re.fullmatch(r"/api/v1/videos/([^/?]+)", self.path)
+        if match:
+            video_id = match.group(1)
+            youtube_id = self.server.repository.delete_video(video_id)
+            if youtube_id is None:
+                logger.warning("Delete requested for missing video=%s", video_id)
+                self._send_error("not_found", "Video was not found.", HTTPStatus.NOT_FOUND)
+                return
+            # Best-effort artifact cleanup; a missing dir is fine. The worker tolerates a
+            # vanished video row (it skips queued jobs whose video is gone), so deleting
+            # mid-processing is safe.
+            shutil.rmtree(self.server.config.videos_dir / youtube_id, ignore_errors=True)
+            logger.info("Deleted video local_video_id=%s youtube_id=%s", video_id, youtube_id)
+            self._send_json({"status": "deleted", "videoId": video_id})
+            return
+
+        self._send_error("not_found", "Endpoint was not found.", HTTPStatus.NOT_FOUND)
+
     def _read_json_body(self) -> dict[str, Any] | None:
         content_type = self.headers.get("Content-Type", "")
         if "application/json" not in content_type:
@@ -460,7 +485,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         if origin and origin_allowed(origin, self.server.config.allowed_origins):
             self.send_header("Access-Control-Allow-Origin", origin)
             self.send_header("Vary", "Origin")
-        self.send_header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Authorization,Content-Type")
 
 

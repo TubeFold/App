@@ -78,6 +78,24 @@ def strip_front_matter(markdown: str) -> str:
     return _FRONT_MATTER_RE.sub("", markdown.lstrip("﻿"), count=1).lstrip("\n")
 
 
+_LEADING_H1_RE = re.compile(r"#[ \t]+\S[^\n]*\n?")
+
+
+def strip_leading_title(markdown: str) -> str:
+    """Drop a leading top-level ``# Title`` heading from a summary body.
+
+    Telegraph sets the page title itself, so the body's first heading (the
+    pipeline always opens with ``# {{TITLE}}``) would just render a duplicate.
+    Only a single-``#`` heading at the very top is removed; section headings
+    (``##`` and deeper) are left untouched.
+    """
+    head = markdown.lstrip("\n")
+    match = _LEADING_H1_RE.match(head)
+    if match:
+        return head[match.end():].lstrip("\n")
+    return markdown
+
+
 def _inline_nodes(text: str) -> list[Any]:
     """Convert a single line of inline Markdown into a list of Telegraph nodes."""
     if not text:
@@ -223,55 +241,56 @@ def _content_within_limit(content: list[Any]) -> list[Any]:
     return [notice]
 
 
-def _format_watch_duration(duration_seconds: Any) -> str | None:
-    """Human "N min" / "Hh MMm" label for the video runtime, or ``None`` if unknown."""
+def _watch_minutes_label(duration_seconds: Any) -> str | None:
+    """``N min watching`` for the video runtime, or ``None`` if unknown."""
     try:
         total = int(round(float(duration_seconds)))
     except (TypeError, ValueError):
         return None
     if total <= 0:
         return None
-    if total >= 3600:
-        hours, remainder = divmod(total, 3600)
-        minutes = remainder // 60
-        return f"{hours}h {minutes:02d}m"
-    minutes = max(1, round(total / 60))
-    return f"{minutes} min"
+    return f"{max(1, round(total / 60))} min watching"
 
 
-def build_article_content(
-    summary_markdown: str,
-    video_url: str,
-    channel: str | None,
-    duration_seconds: Any = None,
-) -> list[Any]:
-    """Assemble the full Telegraph content: a one-line source header, a rule, then
-    the summary.
+def build_article_content(summary_markdown: str, duration_seconds: Any = None) -> list[Any]:
+    """Assemble the Telegraph content: the summary body followed by a single
+    credit footer.
 
-    The header puts the time trade-off on a single line — the video link with its
-    runtime *or* how long the summary is to read — e.g.::
+    The body is stripped of its front matter, its leading ``# Title`` (Telegraph
+    sets the page title itself) and the ``.md`` credit footer, then a richer
+    credit is appended::
 
-        ▶ Watch on YouTube · 29 min  or  4 min read summary
+        Generated with TubeFold (11 min watching → 3 min reading)
+
+    ``TubeFold`` links to the project site; the watch→read line frames the time
+    the summary saves. The link back to the video lives in the page byline (the
+    publisher passes the channel/URL as ``author_name``/``author_url``).
     """
-    from .reading_time import reading_minutes_for_markdown, reading_time_label
+    from scripts.tubefold_lib import PROJECT_NAME, PROJECT_URL, strip_tubefold_footer
+    from .reading_time import reading_minutes_for_markdown
 
-    body = markdown_to_nodes(strip_front_matter(summary_markdown))
+    body_markdown = strip_tubefold_footer(strip_leading_title(strip_front_matter(summary_markdown)))
+    body = markdown_to_nodes(body_markdown)
 
-    header_children: list[Any] = [
-        {"tag": "a", "attrs": {"href": video_url}, "children": ["▶ Watch on YouTube"]},
-    ]
-    read_label = reading_time_label(reading_minutes_for_markdown(summary_markdown))
-    watch_duration = _format_watch_duration(duration_seconds)
-    if watch_duration:
-        header_children.append(f" · {watch_duration}  or  {read_label} summary")
-    else:
-        header_children.append(f" · {read_label} summary")
+    read_label = f"{reading_minutes_for_markdown(summary_markdown)} min reading"
+    watch_label = _watch_minutes_label(duration_seconds)
+    time_note = f" ({watch_label} → {read_label})" if watch_label else f" ({read_label})"
 
-    content: list[Any] = [
-        {"tag": "p", "children": header_children},
-        {"tag": "hr"},
-        *body,
-    ]
+    footer = {
+        "tag": "p",
+        "children": [
+            {
+                "tag": "em",
+                "children": [
+                    "Generated with ",
+                    {"tag": "a", "attrs": {"href": PROJECT_URL}, "children": [PROJECT_NAME]},
+                    time_note,
+                ],
+            }
+        ],
+    }
+
+    content: list[Any] = [*body, {"tag": "hr"}, footer]
     return _content_within_limit(content)
 
 
@@ -438,7 +457,7 @@ class TelegraphPublisher:
         channel = _row_get(video, "channel_name") or ""
         title = _row_get(video, "title") or _row_get(video, "youtube_video_id") or "YouTube summary"
         duration_seconds = _row_get(video, "duration_seconds")
-        content = build_article_content(summary, video_url, channel, duration_seconds)
+        content = build_article_content(summary, duration_seconds)
 
         if cached_url and cached_path:
             self.client.edit_page(

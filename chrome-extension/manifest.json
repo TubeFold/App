@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TubeFold",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Send the current YouTube video to the local TubeFold app.",
   "permissions": ["activeTab", "storage", "tabs"],
   "host_permissions": [

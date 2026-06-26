@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LibraryView: View {
     @StateObject private var viewModel = LibraryViewModel()
+    @State private var videoPendingDeletion: LibraryVideo?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -27,14 +28,25 @@ struct LibraryView: View {
             } else if viewModel.videos.isEmpty {
                 emptyState
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(viewModel.videos) { video in
-                            LibraryVideoRow(video: video, viewModel: viewModel)
+                List {
+                    ForEach(viewModel.videos) { video in
+                        LibraryVideoRow(video: video, viewModel: viewModel) {
+                            videoPendingDeletion = video
+                        }
+                        .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                videoPendingDeletion = video
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
                         }
                     }
-                    .padding(.bottom, 24)
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
                 .refreshable {
                     await viewModel.load(showSpinner: true)
                 }
@@ -42,6 +54,22 @@ struct LibraryView: View {
         }
         .padding(32)
         .navigationTitle("Library")
+        .confirmationDialog(
+            "Delete this video?",
+            isPresented: Binding(
+                get: { videoPendingDeletion != nil },
+                set: { if !$0 { videoPendingDeletion = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: videoPendingDeletion
+        ) { video in
+            Button("Delete", role: .destructive) {
+                viewModel.deleteVideo(video)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { video in
+            Text("“\(video.displayTitle)” and its generated summary will be removed from your Library. This can't be undone.")
+        }
         .task {
             viewModel.startAutoRefresh()
         }
@@ -226,6 +254,7 @@ struct SuggestionBanner: View {
 struct LibraryVideoRow: View {
     let video: LibraryVideo
     @ObservedObject var viewModel: LibraryViewModel
+    let onDelete: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
@@ -281,27 +310,6 @@ struct LibraryVideoRow: View {
                     }
 
                     Button {
-                        viewModel.openMarkdown(video)
-                    } label: {
-                        Label("Summary", systemImage: "doc.text")
-                    }
-                    .disabled(!video.hasMarkdown)
-
-                    Button {
-                        viewModel.revealMarkdown(video)
-                    } label: {
-                        Label("Show File", systemImage: "folder")
-                    }
-                    .disabled(!video.hasMarkdown)
-
-                    Button {
-                        viewModel.saveMarkdownCopy(video)
-                    } label: {
-                        Label("Save Markdown", systemImage: "square.and.arrow.down")
-                    }
-                    .disabled(!video.hasMarkdown)
-
-                    Button {
                         viewModel.publishToTelegraph(video)
                     } label: {
                         if viewModel.isPublishing(video) {
@@ -309,10 +317,39 @@ struct LibraryVideoRow: View {
                         } else if video.isPublishedToTelegraph {
                             Label("Open Telegraph", systemImage: "paperplane.fill")
                         } else {
-                            Label("Share to Telegraph", systemImage: "paperplane")
+                            Label("Read in Telegraph", systemImage: "paperplane")
                         }
                     }
+                    .buttonStyle(.borderedProminent)
                     .disabled(!video.hasMarkdown || viewModel.isPublishing(video))
+
+                    Menu {
+                        Button {
+                            viewModel.revealMarkdown(video)
+                        } label: {
+                            Label("Show File", systemImage: "folder")
+                        }
+                        .disabled(!video.hasMarkdown)
+
+                        Button {
+                            viewModel.saveMarkdownCopy(video)
+                        } label: {
+                            Label("Save Markdown", systemImage: "square.and.arrow.down")
+                        }
+                        .disabled(!video.hasMarkdown)
+
+                        Divider()
+
+                        Button(role: .destructive) {
+                            onDelete()
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    } label: {
+                        Label("More", systemImage: "ellipsis")
+                    }
+                    .menuIndicator(.hidden)
+                    .fixedSize()
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -321,6 +358,13 @@ struct LibraryVideoRow: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .contextMenu {
+            Button(role: .destructive) {
+                onDelete()
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
     }
 
     @ViewBuilder

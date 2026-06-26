@@ -27,6 +27,7 @@ from tubefold_lib import (  # noqa: E402
     parse_youtube_video_id,
     processed_at_now,
     strip_outer_markdown_fence,
+    tubefold_footer_markdown,
     unique_markdown_path,
     validate_provider_response,
     yaml_front_matter,
@@ -427,7 +428,7 @@ def build_markdown(
     front_matter = yaml_front_matter(
         metadata
     )
-    return front_matter + response.strip() + "\n"
+    return front_matter + response.strip() + "\n" + tubefold_footer_markdown()
 
 
 if __name__ == "__main__":

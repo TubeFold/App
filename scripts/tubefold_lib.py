@@ -248,6 +248,35 @@ def render_template(template_text: str, values: dict[str, Any]) -> str:
     return rendered
 
 
+PROJECT_NAME = "TubeFold"
+PROJECT_URL = "https://tubefold.com"
+
+
+def tubefold_footer_markdown() -> str:
+    """A light "made with TubeFold" credit appended to every saved ``.md``.
+
+    Rendered as a horizontal rule followed by an italic one-liner. Telegraph does
+    *not* inherit this — ``telegraph.build_article_content`` strips it (via
+    :func:`strip_tubefold_footer`) and renders its own richer credit that also
+    carries the watch→read time. Keeping the marker text here keeps the writer
+    and the stripper in sync."""
+    return f"\n---\n\n_Generated with [{PROJECT_NAME}]({PROJECT_URL})_\n"
+
+
+# Matches the trailing block produced by ``tubefold_footer_markdown`` — an
+# optional rule then an italic "Generated with [label](href)" credit line at the
+# very end of the document. Label/href are matched generically so re-branding
+# the credit doesn't break the stripper.
+_FOOTER_STRIP_RE = re.compile(
+    r"\n*-{3,}[ \t]*\n+_Generated with \[[^\]]+\]\([^)]+\)_[ \t]*\n*\Z"
+)
+
+
+def strip_tubefold_footer(markdown: str) -> str:
+    """Remove a trailing TubeFold credit footer, if present (no-op otherwise)."""
+    return _FOOTER_STRIP_RE.sub("", markdown)
+
+
 def strip_outer_markdown_fence(text: str) -> str:
     stripped = text.strip()
     match = re.fullmatch(r"```(?:markdown|md)?[ \t]*\n(?P<body>.*)\n```[ \t]*", stripped, re.DOTALL | re.IGNORECASE)

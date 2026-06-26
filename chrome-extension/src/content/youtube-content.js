@@ -83,5 +83,9 @@ function reportWatch() {
   }, 1500);
 }
 
+// Print the running version so you can confirm at a glance (YouTube page console)
+// that the newest content script is actually injected into this tab.
+console.info(`[TubeFold] content script v${chrome.runtime.getManifest().version} loaded`);
+
 reportWatch();
 document.addEventListener("yt-navigate-finish", reportWatch);

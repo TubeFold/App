@@ -243,4 +243,19 @@ final class LibraryViewModel: ObservableObject {
             }
         }
     }
+
+    func deleteVideo(_ video: LibraryVideo) {
+        // Optimistically drop the row so the deletion feels instant; the next refresh
+        // reconciles with the backend (and restores it if the call failed).
+        videos.removeAll { $0.id == video.id }
+        Task {
+            do {
+                try await service.delete(videoID: video.id)
+                await load(showSpinner: false)
+            } catch {
+                errorMessage = error.localizedDescription
+                await load(showSpinner: false)
+            }
+        }
+    }
 }

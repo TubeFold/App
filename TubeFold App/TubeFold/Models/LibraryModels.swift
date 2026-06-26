@@ -15,6 +15,11 @@ struct PublishTelegraphResponse: Decodable {
     let status: String
 }
 
+struct DeleteVideoResponse: Decodable {
+    let status: String
+    let videoId: String
+}
+
 struct CreateSummaryRequest: Encodable {
     let url: String
     let source: String

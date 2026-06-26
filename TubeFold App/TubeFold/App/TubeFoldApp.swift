@@ -9,6 +9,13 @@ struct TubeFoldApp: App {
         WindowGroup {
             ContentView()
                 .frame(minWidth: 900, minHeight: 620)
+                .onOpenURL { url in
+                    // Any tubefold:// link (e.g. the extension's "Open App" button)
+                    // just brings the app and its window to the front.
+                    guard url.scheme == "tubefold" else { return }
+                    NSApp.activate(ignoringOtherApps: true)
+                    NSApp.windows.first(where: { $0.canBecomeMain })?.makeKeyAndOrderFront(nil)
+                }
         }
         .windowStyle(.titleBar)
     }
@@ -17,7 +24,24 @@ struct TubeFoldApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // If another copy of TubeFold is already running (e.g. an installed build
+        // while LaunchServices opened a tubefold:// link against a different bundle
+        // path), focus that one and bail instead of standing up a second instance.
+        if activateRunningInstanceIfPresent() { return }
         MenuBarController.shared.start()
+    }
+
+    private func activateRunningInstanceIfPresent() -> Bool {
+        let current = NSRunningApplication.current
+        guard let bundleID = current.bundleIdentifier else { return false }
+        let others = NSRunningApplication
+            .runningApplications(withBundleIdentifier: bundleID)
+            .filter { $0.processIdentifier != current.processIdentifier && !$0.isTerminated }
+        guard let existing = others.first else { return false }
+        existing.activate(options: [.activateAllWindows])
+        // Exit hard so the redundant instance never touches the menu bar or backend
+        // the running instance already owns.
+        exit(0)
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {

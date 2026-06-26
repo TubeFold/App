@@ -137,6 +137,19 @@ class Repository:
         with self.connect() as conn:
             return conn.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
 
+    def delete_video(self, video_id: str) -> str | None:
+        """Delete a video and all of its jobs. Returns the video's youtube_video_id
+        (so callers can clean up on-disk artifacts), or None if it didn't exist."""
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT youtube_video_id FROM videos WHERE id = ?", (video_id,)
+            ).fetchone()
+            if row is None:
+                return None
+            conn.execute("DELETE FROM jobs WHERE video_id = ?", (video_id,))
+            conn.execute("DELETE FROM videos WHERE id = ?", (video_id,))
+            return row["youtube_video_id"]
+
     def latest_active_job_for_video(self, video_id: str) -> sqlite3.Row | None:
         placeholders = ",".join("?" for _ in ACTIVE_STATUSES)
         with self.connect() as conn:
@@ -236,8 +249,9 @@ class Repository:
     ) -> None:
         """Remember the most recently opened YouTube video so the app can suggest it.
 
-        Re-opening a video refreshes ``watched_at`` and clears any prior dismissal, so a
-        video the user dismissed earlier becomes a fresh suggestion when they return to it."""
+        Re-opening a video refreshes ``watched_at`` but **preserves any prior dismissal**:
+        once the user closes a suggestion with the X it stays hidden for good, even if they
+        watch the video again."""
         now = utc_now()
         with self.connect() as conn:
             conn.execute(
@@ -253,18 +267,22 @@ class Repository:
                     channel_name = COALESCE(NULLIF(excluded.channel_name, ''), watch_activity.channel_name),
                     thumbnail_url = COALESCE(excluded.thumbnail_url, watch_activity.thumbnail_url),
                     duration_seconds = COALESCE(excluded.duration_seconds, watch_activity.duration_seconds),
-                    watched_at = excluded.watched_at,
-                    dismissed_at = NULL
+                    watched_at = excluded.watched_at
                 """,
                 (youtube_video_id, canonical_url, title, channel_name, thumbnail_url, duration_seconds, now),
             )
 
     def latest_watch_suggestion(self) -> sqlite3.Row | None:
         """Newest non-dismissed watched video, joined to the library so the caller knows
-        whether it has already been added (and the local video id / status if so)."""
+        whether it has already been added (and the local video id / status if so).
+
+        A video that is currently being summarized (any active status) is skipped — once
+        the user has kicked off a job there is nothing to suggest, so we fall through to the
+        next watched video instead."""
+        placeholders = ",".join("?" for _ in ACTIVE_STATUSES)
         with self.connect() as conn:
             return conn.execute(
-                """
+                f"""
                 SELECT
                     watch_activity.*,
                     videos.id AS library_video_id,
@@ -272,9 +290,11 @@ class Repository:
                 FROM watch_activity
                 LEFT JOIN videos ON videos.youtube_video_id = watch_activity.youtube_video_id
                 WHERE watch_activity.dismissed_at IS NULL
+                  AND (videos.status IS NULL OR videos.status NOT IN ({placeholders}))
                 ORDER BY watch_activity.watched_at DESC
                 LIMIT 1
-                """
+                """,
+                tuple(ACTIVE_STATUSES),
             ).fetchone()
 
     def dismiss_watch_activity(self, youtube_video_id: str) -> None:

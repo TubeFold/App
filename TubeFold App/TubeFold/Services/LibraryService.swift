@@ -38,6 +38,10 @@ struct LibraryService {
         try await request(path: "/api/v1/videos/\(videoID)/publish-telegraph", method: "POST")
     }
 
+    func delete(videoID: String) async throws {
+        let _: DeleteVideoResponse = try await request(path: "/api/v1/videos/\(videoID)", method: "DELETE")
+    }
+
     private func request<Response: Decodable>(path: String, method: String = "GET") async throws -> Response {
         try await request(path: path, method: method, body: Optional<CreateSummaryRequest>.none)
     }

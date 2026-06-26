@@ -64,6 +64,7 @@ class ServerTests(unittest.TestCase):
         self.assertTrue(body["backendFeatures"]["claudeProvider"])
         self.assertTrue(body["backendFeatures"]["usageStats"])
         self.assertTrue(body["backendFeatures"]["watchActivity"])
+        self.assertTrue(body["backendFeatures"]["libraryDelete"])
 
     def test_usage_endpoint_empty_then_aggregates(self) -> None:
         empty = self.get_json("/api/v1/usage")
@@ -256,24 +257,33 @@ class ServerTests(unittest.TestCase):
         self.assertIsNone(suggestion["libraryVideoID"])
 
     def test_watch_activity_reflects_library_membership(self) -> None:
+        from tubefold.models import ProcessingStatus
+
         self.post_json("/api/v1/watch-activity", {"url": "https://youtu.be/dQw4w9WgXcQ"})
         created = self.post_json("/api/v1/summaries", {"url": "https://youtu.be/dQw4w9WgXcQ"})
+        # A ready video still surfaces (so the banner can offer "Open").
+        self.repository.mark_status(created["videoId"], created["jobId"], ProcessingStatus.READY)
 
         suggestion = self.get_json("/api/v1/watch-activity")["suggestion"]
         self.assertTrue(suggestion["inLibrary"])
         self.assertEqual(suggestion["libraryVideoID"], created["videoId"])
-        self.assertEqual(suggestion["libraryStatus"], "queued")
+        self.assertEqual(suggestion["libraryStatus"], "ready")
 
-    def test_watch_activity_dismiss_hides_until_reopened(self) -> None:
+    def test_watch_activity_skips_video_being_processed(self) -> None:
+        # Once a watched video is queued/processing there is nothing left to suggest,
+        # so it drops out of the banner instead of sitting there redundantly.
+        self.post_json("/api/v1/watch-activity", {"url": "https://youtu.be/dQw4w9WgXcQ"})
+        self.post_json("/api/v1/summaries", {"url": "https://youtu.be/dQw4w9WgXcQ"})
+        self.assertIsNone(self.get_json("/api/v1/watch-activity")["suggestion"])
+
+    def test_watch_activity_dismiss_is_permanent(self) -> None:
         self.post_json("/api/v1/watch-activity", {"url": "https://youtu.be/dQw4w9WgXcQ"})
         self.post_json("/api/v1/watch-activity/dismiss", {"youtubeVideoID": "dQw4w9WgXcQ"})
         self.assertIsNone(self.get_json("/api/v1/watch-activity")["suggestion"])
 
-        # Re-opening the same video resurfaces it as a fresh suggestion.
+        # Re-watching a dismissed video must NOT resurface it — the X hides it for good.
         self.post_json("/api/v1/watch-activity", {"url": "https://youtu.be/dQw4w9WgXcQ"})
-        resurfaced = self.get_json("/api/v1/watch-activity")["suggestion"]
-        self.assertIsNotNone(resurfaced)
-        self.assertEqual(resurfaced["youtubeVideoID"], "dQw4w9WgXcQ")
+        self.assertIsNone(self.get_json("/api/v1/watch-activity")["suggestion"])
 
     def test_watch_activity_rejects_invalid_url(self) -> None:
         with self.assertRaises(urllib.error.HTTPError) as context:
@@ -281,8 +291,38 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(context.exception.code, 400)
         context.exception.close()
 
+    def test_delete_video_removes_row_jobs_and_artifacts(self) -> None:
+        from tubefold.models import SummaryRequest
+
+        request = SummaryRequest.from_json({}, "dQw4w9WgXcQ", "https://youtu.be/dQw4w9WgXcQ")
+        _, video_id, job_id = self.repository.create_or_reuse(request)
+        # Seed an on-disk artifact dir so we can confirm it gets cleaned up.
+        video_dir = self.server.config.videos_dir / "dQw4w9WgXcQ"
+        video_dir.mkdir(parents=True, exist_ok=True)
+        (video_dir / "summary.md").write_text("# hi", encoding="utf-8")
+
+        result = self.delete_json(f"/api/v1/videos/{video_id}")
+        self.assertEqual(result["status"], "deleted")
+        self.assertEqual(result["videoId"], video_id)
+
+        self.assertIsNone(self.repository.get_video(video_id))
+        self.assertIsNone(self.repository.get_job(job_id))
+        self.assertFalse(video_dir.exists())
+        self.assertEqual(self.get_json("/api/v1/videos")["videos"], [])
+
+    def test_delete_missing_video_returns_404(self) -> None:
+        with self.assertRaises(urllib.error.HTTPError) as context:
+            self.delete_json("/api/v1/videos/does-not-exist")
+        self.assertEqual(context.exception.code, 404)
+        context.exception.close()
+
     def get_json(self, path: str) -> dict:
         with urllib.request.urlopen(self.base_url + path, timeout=5) as response:
+            return json.loads(response.read().decode("utf-8"))
+
+    def delete_json(self, path: str) -> dict:
+        request = urllib.request.Request(self.base_url + path, method="DELETE")
+        with urllib.request.urlopen(request, timeout=5) as response:
             return json.loads(response.read().decode("utf-8"))
 
     def post_json(self, path: str, payload: dict) -> dict:

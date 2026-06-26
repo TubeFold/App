@@ -98,9 +98,13 @@ function renderVideo(context, library = { exists: false }) {
     <p class="meta"></p>
     <div class="actions">
       <button id="create" class="primary">Create Summary</button>
+      <button id="openApp">Open App</button>
       ${isReady ? `<button id="publishTelegraph">Share to Telegraph</button>` : ""}
     </div>
   `);
+  document.getElementById("openApp").addEventListener("click", () => {
+    chrome.runtime.sendMessage({ type: "OPEN_MAC_APP", url: "tubefold://open" });
+  });
   document.querySelector(".title").textContent = context.title || context.videoId;
   document.querySelector(".meta").textContent = [context.channelName, formatDuration(context.durationSeconds)].filter(Boolean).join(" · ");
   document.getElementById("create").addEventListener("click", async () => {
@@ -167,7 +171,12 @@ function renderError(message, context) {
   document.getElementById("retry").addEventListener("click", () => renderVideo(context));
 }
 
+function showVersion() {
+  document.getElementById("version").textContent = `v${chrome.runtime.getManifest().version}`;
+}
+
 async function init() {
+  showVersion();
   const tab = await activeTab();
   const context = await getContext(tab);
   if (!context?.isVideo) {

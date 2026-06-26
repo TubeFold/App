@@ -15,6 +15,7 @@ from scripts.tubefold_lib import (
     model_label,
     processed_at_now,
     strip_outer_markdown_fence,
+    tubefold_footer_markdown,
     validate_provider_response,
     yaml_front_matter,
     youtube_thumbnail_url,
@@ -515,7 +516,7 @@ class ProcessingQueue:
         front_matter = yaml_front_matter(
             metadata
         )
-        return front_matter + response.strip() + "\n"
+        return front_matter + response.strip() + "\n" + tubefold_footer_markdown()
 
 
 def transcript_language_label(transcript_info: dict[str, Any]) -> str:

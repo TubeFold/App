@@ -122,40 +122,54 @@ class MarkdownConversionTests(unittest.TestCase):
         self.assertFalse(tags & {"h1", "h2"})
         self.assertEqual(tags, {"h3", "h4"})
 
-    def test_article_content_has_source_header(self) -> None:
-        content = build_article_content("# Summary\n\nBody.", "https://youtu.be/abc", "Some Channel")
-        self.assertEqual(content[0]["tag"], "p")
-        link = content[0]["children"][0]
+    def test_body_starts_immediately_no_top_header(self) -> None:
+        # No "N min read summary" header and no rule above the body anymore.
+        content = build_article_content("# Summary\n\nBody.")
+        self.assertEqual(content[0], {"tag": "p", "children": ["Body."]})
+        self.assertNotIn("read summary", json.dumps(content, ensure_ascii=False))
+
+    def test_credit_footer_carries_watch_and_read_time(self) -> None:
+        content = build_article_content("# Summary\n\nBody.", duration_seconds=660)
+        footer = content[-1]
+        self.assertEqual(content[-2], {"tag": "hr"})
+        em = footer["children"][0]
+        self.assertEqual(em["tag"], "em")
+        link = em["children"][1]
         self.assertEqual(link["tag"], "a")
-        self.assertEqual(link["attrs"]["href"], "https://youtu.be/abc")
-        # One header line, then the rule.
-        self.assertEqual(content[1], {"tag": "hr"})
+        self.assertEqual(link["attrs"]["href"], "https://tubefold.com")
+        self.assertEqual(link["children"], ["TubeFold"])
+        note = em["children"][2]
+        self.assertIn("11 min watching", note)
+        self.assertIn("→", note)
+        self.assertIn("min reading", note)
 
-    def test_reading_time_is_on_the_header_line(self) -> None:
-        content = build_article_content("# Summary\n\nBody.", "https://youtu.be/abc", "Some Channel")
-        header_text = "".join(part for part in content[0]["children"] if isinstance(part, str))
-        self.assertIn("min read summary", header_text)
+    def test_credit_footer_omits_watch_time_when_duration_unknown(self) -> None:
+        content = build_article_content("# Summary\n\nBody.")
+        note = content[-1]["children"][0]["children"][2]
+        self.assertNotIn("watching", note)
+        self.assertIn("min reading", note)
 
-    def test_header_combines_watch_and_read_on_one_line(self) -> None:
-        content = build_article_content(
-            "# Summary\n\nBody.", "https://youtu.be/abc", "Some Channel", duration_seconds=1380
-        )
-        header_text = "".join(part for part in content[0]["children"] if isinstance(part, str))
-        self.assertIn("23 min", header_text)
-        self.assertIn("or", header_text)
-        self.assertIn("min read summary", header_text)
-        # The combined line replaces the old separate reading-time paragraph.
-        self.assertEqual(content[1], {"tag": "hr"})
+    def test_md_credit_footer_is_stripped_not_duplicated(self) -> None:
+        # The .md credit footer must not show up verbatim — the rich one replaces it.
+        from scripts.tubefold_lib import tubefold_footer_markdown
 
-    def test_header_shows_only_read_time_when_duration_unknown(self) -> None:
-        content = build_article_content("# Summary\n\nBody.", "https://youtu.be/abc", "Some Channel")
-        header_text = "".join(part for part in content[0]["children"] if isinstance(part, str))
-        self.assertIn("min read summary", header_text)
-        self.assertNotIn(" or ", header_text)
+        md = "# Summary\n\n## Кратко\n\nText." + "\n" + tubefold_footer_markdown()
+        content = build_article_content(md)
+        rendered = json.dumps(content, ensure_ascii=False)
+        # Exactly one "Generated with" credit (the rich footer), not two.
+        self.assertEqual(rendered.count("Generated with"), 1)
+        self.assertEqual(content[0], {"tag": "h3", "children": ["Кратко"]})
+
+    def test_leading_title_is_dropped_from_body(self) -> None:
+        # Telegraph sets the page title, so the body's "# Title" must not repeat it.
+        content = build_article_content("# Switch 2 - После года\n\n## Кратко\n\nText.")
+        self.assertEqual(content[0], {"tag": "h3", "children": ["Кратко"]})
+        body = content[:-2]  # everything before the rule + credit footer
+        self.assertNotIn("Switch 2", json.dumps(body, ensure_ascii=False))
 
     def test_content_truncated_under_64kb(self) -> None:
         huge = "\n\n".join(f"Paragraph {i} " + "word " * 200 for i in range(400))
-        content = build_article_content(huge, "https://youtu.be/abc", "Channel")
+        content = build_article_content(huge)
         size = len(json.dumps(content, ensure_ascii=False).encode("utf-8"))
         self.assertLessEqual(size, MAX_CONTENT_BYTES)
         self.assertIn("truncated", json.dumps(content[-1], ensure_ascii=False))
