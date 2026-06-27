@@ -78,6 +78,29 @@ def strip_front_matter(markdown: str) -> str:
     return _FRONT_MATTER_RE.sub("", markdown.lstrip("﻿"), count=1).lstrip("\n")
 
 
+def front_matter_value(markdown: str, key: str) -> str:
+    """Read a single scalar value from a summary's leading YAML front matter.
+
+    Values are written by ``yaml_front_matter`` as JSON scalars (strings are
+    quoted), so a quoted value is JSON-decoded; anything else is returned
+    verbatim. Returns ``""`` when there is no front matter or no such key.
+    """
+    match = _FRONT_MATTER_RE.match(markdown.lstrip("﻿"))
+    if not match:
+        return ""
+    pattern = re.compile(rf"^{re.escape(key)}:[ \t]*(.*)$", re.MULTILINE)
+    found = pattern.search(match.group(0))
+    if not found:
+        return ""
+    raw = found.group(1).strip()
+    if raw.startswith('"'):
+        try:
+            return str(json.loads(raw))
+        except json.JSONDecodeError:
+            return raw
+    return raw
+
+
 _LEADING_H1_RE = re.compile(r"#[ \t]+\S[^\n]*\n?")
 
 
@@ -276,16 +299,24 @@ def build_article_content(summary_markdown: str, duration_seconds: Any = None) -
     watch_label = _watch_minutes_label(duration_seconds)
     time_note = f" ({watch_label} → {read_label})" if watch_label else f" ({read_label})"
 
+    credit_children: list[Any] = [
+        "Generated with ",
+        {"tag": "a", "attrs": {"href": PROJECT_URL}, "children": [PROJECT_NAME]},
+        time_note,
+    ]
+    # A second, lighter line crediting the model that wrote the summary. The
+    # model lives in the summary's own front matter (set by the pipeline).
+    model = front_matter_value(summary_markdown, "model")
+    if model:
+        credit_children.append({"tag": "br"})
+        credit_children.append(f"Summarized by {model}")
+
     footer = {
         "tag": "p",
         "children": [
             {
                 "tag": "em",
-                "children": [
-                    "Generated with ",
-                    {"tag": "a", "attrs": {"href": PROJECT_URL}, "children": [PROJECT_NAME]},
-                    time_note,
-                ],
+                "children": credit_children,
             }
         ],
     }

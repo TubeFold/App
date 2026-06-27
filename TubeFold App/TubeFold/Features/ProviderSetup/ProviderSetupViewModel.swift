@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import Foundation
 
@@ -111,6 +112,28 @@ final class ProviderSetupViewModel: ObservableObject {
 
     var outputDirectorySummary: String {
         setupState?.preferredOutputDirectory ?? "Default summaries folder"
+    }
+
+    /// Resolved on-disk location where summaries are saved. Falls back to the
+    /// default `~/Library/Application Support/TubeFold/exports` folder when the
+    /// backend hasn't reported a preferred directory yet.
+    var outputDirectoryURL: URL {
+        if let path = setupState?.preferredOutputDirectory, !path.isEmpty {
+            return URL(fileURLWithPath: (path as NSString).expandingTildeInPath, isDirectory: true)
+        }
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support", isDirectory: true)
+        return appSupport
+            .appendingPathComponent("TubeFold", isDirectory: true)
+            .appendingPathComponent("exports", isDirectory: true)
+    }
+
+    /// Open the summaries folder in Finder, creating it first if it doesn't
+    /// exist yet (e.g. before the first summary has been saved).
+    func revealOutputDirectory() {
+        let url = outputDirectoryURL
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 
     var primaryButtonTitle: String {

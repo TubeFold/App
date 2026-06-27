@@ -143,6 +143,23 @@ class MarkdownConversionTests(unittest.TestCase):
         self.assertIn("→", note)
         self.assertIn("min reading", note)
 
+    def test_credit_footer_carries_model_from_front_matter(self) -> None:
+        md = (
+            "---\n"
+            'model: "codex gpt-5.4-mini (effort: medium)"\n'
+            "---\n\n"
+            "# Summary\n\nBody."
+        )
+        content = build_article_content(md)
+        children = content[-1]["children"][0]["children"]
+        self.assertIn({"tag": "br"}, children)
+        self.assertIn("Summarized by codex gpt-5.4-mini (effort: medium)", children)
+
+    def test_credit_footer_omits_model_when_absent(self) -> None:
+        content = build_article_content("# Summary\n\nBody.")
+        rendered = json.dumps(content, ensure_ascii=False)
+        self.assertNotIn("Summarized by", rendered)
+
     def test_credit_footer_omits_watch_time_when_duration_unknown(self) -> None:
         content = build_article_content("# Summary\n\nBody.")
         note = content[-1]["children"][0]["children"][2]

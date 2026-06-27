@@ -304,18 +304,24 @@ struct LibraryVideoRow: View {
                         }
                     }
 
-                    Button {
-                        viewModel.publishToTelegraph(video)
-                    } label: {
-                        if viewModel.isPublishing(video) {
-                            Label("Publishing…", systemImage: "paperplane")
-                        } else if video.isPublishedToTelegraph {
-                            Label("Open Telegraph", systemImage: "paperplane.fill")
-                        } else {
-                            Label("Read in Telegraph", systemImage: "paperplane")
+                    // Only surface Telegraph once the summary is ready — while a job is
+                    // still running there's nothing to publish, so the button stays hidden
+                    // and fades in when the summary lands instead of sitting there disabled.
+                    if video.hasMarkdown {
+                        Button {
+                            viewModel.publishToTelegraph(video)
+                        } label: {
+                            if viewModel.isPublishing(video) {
+                                Label("Publishing…", systemImage: "paperplane")
+                            } else if video.isPublishedToTelegraph {
+                                Label("Open Telegraph", systemImage: "paperplane.fill")
+                            } else {
+                                Label("Read in Telegraph", systemImage: "paperplane")
+                            }
                         }
+                        .disabled(viewModel.isPublishing(video))
+                        .transition(.opacity.combined(with: .move(edge: .leading)))
                     }
-                    .disabled(!video.hasMarkdown || viewModel.isPublishing(video))
 
                     Button {
                         viewModel.openYouTube(video)
@@ -361,6 +367,7 @@ struct LibraryVideoRow: View {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
+                .animation(.easeInOut(duration: 0.25), value: video.hasMarkdown)
             }
         }
         .padding(16)
@@ -504,12 +511,16 @@ struct MetadataLabel: View {
 private func formatDuration(_ seconds: Double?) -> String {
     guard let seconds, seconds > 0 else { return "Unknown length" }
     let total = Int(seconds.rounded())
-    let minutes = total / 60
-    let remainingSeconds = total % 60
+    let minutes = max(1, (total + 59) / 60)
     if minutes >= 60 {
-        return "\(minutes / 60)h \(minutes % 60)m"
+        let hours = minutes / 60
+        let remainingMinutes = minutes % 60
+        if remainingMinutes == 0 {
+            return "\(hours) hr watch"
+        }
+        return "\(hours) hr \(remainingMinutes) min watch"
     }
-    return "\(minutes):\(String(format: "%02d", remainingSeconds))"
+    return "\(minutes) min watch"
 }
 
 private func formatDate(_ value: String) -> String {

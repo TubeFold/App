@@ -11,6 +11,7 @@ struct AboutView: View {
         AboutLink(title: "GitHub", systemImage: "chevron.left.forwardslash.chevron.right", url: "https://github.com/TubeFold"),
         AboutLink(title: "Website", systemImage: "globe", url: "https://tubefold.github.io/"),
         AboutLink(title: "Report an issue", systemImage: "exclamationmark.bubble", url: "https://github.com/TubeFold/App/issues"),
+        AboutLink(title: "Feedback", systemImage: "envelope", url: "mailto:tubefold@proton.me"),
     ]
 
     var body: some View {

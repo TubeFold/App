@@ -103,7 +103,7 @@ class ProcessingTests(unittest.TestCase):
                 "# Summary",
             )
 
-            self.assertIn('model: "codex gpt-5.5 (effort: high)"', markdown)
+            self.assertIn('model: "Codex GPT-5.5 (effort: high)"', markdown)
 
     def test_claude_selection_drives_markdown_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -142,7 +142,7 @@ class ProcessingTests(unittest.TestCase):
                 "# Summary",
             )
 
-            self.assertIn('model: "claude opus (effort: high)"', markdown)
+            self.assertIn('model: "Claude Opus 4.8 (effort: high)"', markdown)
 
 
 if __name__ == "__main__":

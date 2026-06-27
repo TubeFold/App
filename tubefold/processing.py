@@ -489,8 +489,16 @@ class ProcessingQueue:
     def _build_markdown(self, fields: dict[str, Any], transcript_info: dict[str, Any], response: str) -> str:
         provider_name = self._active_provider()
         settings = self._provider_settings(provider_name)
-        if provider_name in DESCRIPTORS and settings["model"]:
-            model = model_label(provider_name, settings["model"], settings["reasoning_effort"])
+        descriptor = DESCRIPTORS.get(provider_name)
+        if descriptor is not None and settings["model"]:
+            # Prefer the option's display label (e.g. "Haiku 4.5") over the raw
+            # CLI model id (e.g. "haiku") so the version is visible. Claude's ids
+            # are version-less aliases; Codex ids already carry the version.
+            model_display = next(
+                (o["label"] for o in descriptor.model_options if o["id"] == settings["model"]),
+                settings["model"],
+            )
+            model = model_label(provider_name.capitalize(), model_display, settings["reasoning_effort"])
         else:
             model = provider_name
 
