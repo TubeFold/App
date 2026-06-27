@@ -28,28 +28,21 @@ struct LibraryView: View {
             } else if viewModel.videos.isEmpty {
                 emptyState
             } else {
-                List {
-                    ForEach(viewModel.videos) { video in
-                        LibraryVideoRow(video: video, viewModel: viewModel) {
-                            videoPendingDeletion = video
-                        }
-                        .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(role: .destructive) {
+                // ScrollView + LazyVStack (not List) so the row cards sit flush at the
+                // same leading inset as the header and the add bar — macOS List adds an
+                // intrinsic horizontal inset that .contentMargins/.listRowInsets can't
+                // fully remove. Delete still lives in the row's context menu and More menu.
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(viewModel.videos) { video in
+                            LibraryVideoRow(video: video, viewModel: viewModel) {
                                 videoPendingDeletion = video
-                            } label: {
-                                Label("Delete", systemImage: "trash")
                             }
                         }
                     }
+                    .padding(.vertical, 4)
                 }
-                .listStyle(.plain)
                 .scrollContentBackground(.hidden)
-                .refreshable {
-                    await viewModel.load(showSpinner: true)
-                }
             }
         }
         .padding(32)

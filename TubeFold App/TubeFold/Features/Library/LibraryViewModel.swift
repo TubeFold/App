@@ -199,7 +199,7 @@ final class LibraryViewModel: ObservableObject {
         // `UTType.markdown` is macOS 27+; build the standard Markdown UTI by hand
         // so the deployment target can stay at macOS 26.
         panel.allowedContentTypes = [UTType(filenameExtension: "md") ?? .plainText]
-        panel.nameFieldStringValue = sourceURL.lastPathComponent
+        panel.nameFieldStringValue = Self.suggestedMarkdownFilename(for: video, fallback: sourceURL)
         panel.canCreateDirectories = true
 
         if panel.runModal() == .OK, let destinationURL = panel.url {
@@ -212,6 +212,20 @@ final class LibraryViewModel: ObservableObject {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+
+    /// Default Save-panel filename: "[TubeFold Summary] <video title>.md", sanitized
+    /// for the filesystem. Falls back to the source file's name if there's no title.
+    static func suggestedMarkdownFilename(for video: LibraryVideo, fallback: URL) -> String {
+        let title = video.displayTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty else { return fallback.lastPathComponent }
+        let sanitized = title
+            .replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: ":", with: "-")
+            .replacingOccurrences(of: "\n", with: " ")
+        let base = "[TubeFold Summary] \(sanitized)"
+        // Keep well under the 255-byte filename limit, leaving room for ".md".
+        return "\(String(base.prefix(200))).md"
     }
 
     func isPublishing(_ video: LibraryVideo) -> Bool {
