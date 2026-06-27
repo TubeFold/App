@@ -2,20 +2,15 @@
 
 # ▶︎ TubeFold
 
-**Любое YouTube-видео → чистый Markdown-конспект.**
-Работает через подписку на твой `codex` или `claude` CLI — **без API-ключей и оплаты по токенам.**
+**YouTube-видео → чистое Markdown-саммари.**
+
+Работает через подписку `codex` или `claude` **без API-ключей и оплаты по токенам.**
 
 [![Release](https://img.shields.io/github/v/release/TubeFold/App?color=ff3b30&label=release&style=flat-square)](https://github.com/TubeFold/App/releases/latest)
 ![macOS](https://img.shields.io/badge/macOS-26%2B-000?logo=apple&logoColor=white&style=flat-square)
 ![Swift](https://img.shields.io/badge/SwiftUI-f05138?logo=swift&logoColor=white&style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3776ab?logo=python&logoColor=white&style=flat-square)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
-
-```sh
-brew install --cask tubefold/tap/tubefold
-```
-
-или [скачать TubeFold.zip](https://github.com/TubeFold/App/releases/latest/download/TubeFold.zip) напрямую · macOS, нотаризовано, с авто-апдейтом
 
 </div>
 
@@ -31,10 +26,10 @@ brew install --cask tubefold/tap/tubefold
 
 | | |
 |---|---|
-| 🔑 **Твоя подписка, а не API** | Под капотом локальный `codex` или `claude`. Модель не видит API-ключа — всё на тарифе, за который ты уже платишь. |
-| 🖥 **Нативное macOS-приложение** | Нотаризованная Developer ID-сборка со встроенным Python-бэкендом. Ставится и работает из коробки. |
+| 🔑 **Твоя подписка, а не API** | Под капотом локальный `codex` или `claude`, за который ты уже платишь. |
+| 🖥 **Нативное macOS-приложение** | Нотаризованная сборка со встроенным Python-бэкендом. Ставится и работает из коробки. |
 | 📝 **Чистый Markdown на выходе** | Транскрипт на вход → структурированный конспект на выход. |
-| 🧩 **Chrome-расширение** | Кнопка прямо на странице YouTube + подсказки «суммировать это» по истории просмотров. |
+| 🧩 **Chrome-расширение** | Кнопка прямо на странице YouTube. |
 | 📤 **Публикация в Telegraph** | Один клик — и конспект живёт публичной статьёй со ссылкой. |
 
 ## 🚀 Установка
@@ -42,6 +37,9 @@ brew install --cask tubefold/tap/tubefold
 ```sh
 brew install --cask tubefold/tap/tubefold
 ```
+
+или [скачать TubeFold.zip](https://github.com/TubeFold/App/releases/latest/download/TubeFold.zip) напрямую
+
 
 ## ⚡️ Как это работает
 
