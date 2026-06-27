@@ -28,12 +28,6 @@ struct AboutView: View {
                     Text(AboutInfo.versionLine)
                         .font(.callout)
                         .foregroundStyle(.secondary)
-                    Text(AboutInfo.tagline)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: 400)
-                        .padding(.top, 6)
                 }
 
                 VStack(spacing: 10) {
@@ -62,11 +56,6 @@ struct AboutView: View {
                     .disabled(!updater.canCheckForUpdates)
                 }
 
-                Text(AboutInfo.copyright)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 8)
-
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity)
@@ -87,16 +76,6 @@ private struct AboutLink: Identifiable {
 /// Static facts pulled from the bundle so the screen never drifts from the build.
 enum AboutInfo {
     static let appName = "TubeFold"
-
-    static let tagline = """
-    Fold long YouTube videos into clean, structured Markdown summaries.
-
-    TubeFold pulls the transcript and runs it through your own codex or claude CLI \
-    subscription — locally, with no API keys and no per-token billing. Only the \
-    final summary is kept, ready to drop into your notes or knowledge base.
-    """
-
-    static let copyright = "© 2026 · MIT License"
 
     static var versionLine: String {
         let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
