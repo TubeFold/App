@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Entitlements for the EMBEDDED Python interpreter (TubeFoldBackend/Runtime),
+	  not the SwiftUI app. The app keeps its own TubeFold.entitlements.
+
+	  Hardened runtime is required for notarization, but it also blocks the
+	  interpreter from loading third-party .so/.dylib that were built/signed by
+	  someone other than us. These two relaxations are the standard, minimal set
+	  for shipping a notarized embedded CPython:
+	-->
+
+	<!-- Load the .so/.dylib that ship inside our wheels (different/no Team ID). -->
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+
+	<!-- CPython + some C extensions allocate executable memory (ctypes, etc.). -->
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
+</dict>
+</plist>
