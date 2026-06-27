@@ -101,6 +101,12 @@ The SwiftUI app (`TubeFold App/`) **embeds the entire Python backend and a frame
 
 Because client and server ship together but can drift, `BackendProcessController` treats `/health` as a **compatibility gate**: it only reuses a running helper when `apiVersion == 1` **and every flag in `backendFeatures` is true**. Otherwise it kills the stale/incompatible helper and relaunches. **If you add a `backendFeatures` flag in `server.py`, update the Swift check in `BackendProcessController.swift` (and vice-versa) or the app will reject its own backend.** (Current flags: `codexModelSettings`, `libraryRegenerate`, `unlimitedTranscripts`, `telegraphPublish`, `outputLanguageSetting`, `readingTime`, `claudeProvider`, `usageStats`, `watchActivity`, `libraryDelete`.)
 
+### Auto-update (Sparkle)
+
+The app ships [Sparkle 2](https://sparkle-project.org) (SPM dependency, pinned `>= 2.9.0`) for in-place updates outside the Mac App Store. `UpdaterController` (`Services/UpdaterController.swift`) owns a single `SPUStandardUpdaterController`, started eagerly from `AppDelegate` so the automatic background check runs; the menu-bar "Check for Updates…" item calls it manually. Config lives in `Info.plist`: `SUFeedURL` → `https://github.com/TubeFold/App/releases/latest/download/appcast.xml`, `SUPublicEDKey` (the EdDSA public key), `SUEnableAutomaticChecks`. Hardened Runtime (Release-only) is required and already on; Sparkle.framework signs as part of the Developer ID archive/export — no extra release-script handling (unlike the embedded Python in `Contents/Resources`).
+
+**Releasing an update:** bump `MARKETING_VERSION` + `CURRENT_PROJECT_VERSION`, run `scripts/release-macos.sh` (notarized zip), then `scripts/generate-appcast.sh` (EdDSA-signs the zip → `build/release/appcast.xml`). Upload **both** `TubeFold.zip` and `appcast.xml` to the GitHub release tagged `v<version>`. The **EdDSA private key** lives in the login keychain (created once via Sparkle's `generate_keys`) — back it up; losing it means no client can verify future updates. For CI, pass it as the `SPARKLE_ED_PRIVATE_KEY` secret (consumed by `generate-appcast.sh`).
+
 ### Chrome extension (`chrome-extension/`)
 
 MV3 extension that POSTs the active YouTube tab to `http://127.0.0.1:43821` (see `src/shared/constants.js`). Load unpacked from `chrome://extensions` for development.

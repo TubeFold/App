@@ -28,6 +28,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // while LaunchServices opened a tubefold:// link against a different bundle
         // path), focus that one and bail instead of standing up a second instance.
         if activateRunningInstanceIfPresent() { return }
+        // Start Sparkle: kicks off the automatic background update check and keeps
+        // the updater alive for the manual "Check for Updates…" menu item.
+        _ = UpdaterController.shared
         MenuBarController.shared.start()
     }
 

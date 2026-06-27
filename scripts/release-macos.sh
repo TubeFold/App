@@ -145,3 +145,4 @@ log "Packaging final artifact…"
 
 log "Done."
 printf '\n  App: %s\n  Zip: %s\n' "$app_path" "$dist_zip"
+printf '\n  Next — generate the Sparkle appcast, then upload both to the release:\n    ./scripts/generate-appcast.sh\n'

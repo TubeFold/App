@@ -196,7 +196,9 @@ final class LibraryViewModel: ObservableObject {
     func saveMarkdownCopy(_ video: LibraryVideo) {
         guard let sourceURL = video.markdownURL else { return }
         let panel = NSSavePanel()
-        panel.allowedContentTypes = [.markdown]
+        // `UTType.markdown` is macOS 27+; build the standard Markdown UTI by hand
+        // so the deployment target can stay at macOS 26.
+        panel.allowedContentTypes = [UTType(filenameExtension: "md") ?? .plainText]
         panel.nameFieldStringValue = sourceURL.lastPathComponent
         panel.canCreateDirectories = true
 

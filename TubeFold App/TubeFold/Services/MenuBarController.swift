@@ -267,6 +267,11 @@ final class MenuBarController: NSObject {
 
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Refresh", action: #selector(refreshFromMenu), keyEquivalent: ""))
+
+        let checkForUpdates = NSMenuItem(title: "Check for Updates…", action: #selector(checkForUpdatesFromMenu), keyEquivalent: "")
+        checkForUpdates.isEnabled = UpdaterController.shared.canCheckForUpdates
+        menu.addItem(checkForUpdates)
+
         menu.items.forEach { $0.target = self }
         statusItem.menu = menu
     }
@@ -288,6 +293,10 @@ final class MenuBarController: NSObject {
 
     @objc private func refreshFromMenu() {
         refresh()
+    }
+
+    @objc private func checkForUpdatesFromMenu() {
+        UpdaterController.shared.checkForUpdates()
     }
 
     @objc private func pollFromTimer() {
