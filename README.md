@@ -75,10 +75,12 @@ Provider `claude` запускает:
 claude --print \
   --model "$CLAUDE_MODEL" \
   --effort "$CLAUDE_REASONING_EFFORT" \
-  --output-format text
+  --output-format json
 ```
 
-Промпт передается через stdin, ответ забирается из stdout. `claude` запускается из отдельной временной директории (чтобы CLI не подхватил `CLAUDE.md` из репозитория) и использует подписку пользователя (OAuth/keychain), а не API-ключ.
+Промпт передается через stdin, текст ответа парсится из JSON-объекта результата в stdout. `claude` запускается из отдельной временной директории (чтобы CLI не подхватил `CLAUDE.md` из репозитория) и использует подписку пользователя (OAuth/keychain), а не API-ключ.
+
+Оба first-class провайдера дополнительно пишут token usage в сайдкар `<output_file>.usage.json` (для Codex — ещё и снимок недельной квоты `rate_limits`). Это best-effort: отсутствие или повреждение сайдкара не ломает задачу, просто usage не записывается.
 
 ## Установка
 
@@ -97,7 +99,7 @@ python3 -m pip install -r requirements.txt
 - проверит `python3`, `youtube-transcript-api` и наличие хотя бы одного CLI провайдера (`codex` или `claude`);
 - создаст `~/.config/tubefold/config.env`, если его еще нет;
 - сделает скрипты исполняемыми;
-- создаст symlink `~/.local/bin/tubefold`.
+- создаст symlinks `~/.local/bin/tubefold` и `~/.local/bin/tubefold-server`.
 
 Если `~/.local/bin` не в `PATH`, добавьте его в shell profile.
 
@@ -124,6 +126,7 @@ python3 -m pip install -r requirements.txt
 PROVIDER="codex"            # или "claude"
 OUTPUT_DIR="$HOME/Documents/YouTube Summaries"
 PROMPT_TEMPLATE="detailed-summary.md"
+OUTPUT_LANGUAGE="English"   # язык саммари; подставляется в шаблон как {{OUTPUT_LANGUAGE}}
 PREFERRED_TRANSCRIPT_LANGS="pl,ru,en"
 ALLOW_ANY_TRANSCRIPT_LANGUAGE="true"
 OPEN_AFTER_SAVE="false"
@@ -141,6 +144,14 @@ LOG_LEVEL="info"
 ```bash
 tubefold "https://youtu.be/dQw4w9WgXcQ" --provider claude --claude-model opus --claude-effort high
 ```
+
+Язык саммари задаётся `OUTPUT_LANGUAGE` или флагом `--language` (по умолчанию `English`), он не зависит от языка субтитров:
+
+```bash
+tubefold "https://youtu.be/dQw4w9WgXcQ" --language Russian
+```
+
+Легаси-ключи `SUBTITLE_LANGS` / `ALLOW_ANY_SUBTITLE_LANGUAGE` мапятся на `*_TRANSCRIPT_*`, а `SUMMARY_LANGUAGE` — на `OUTPUT_LANGUAGE`.
 
 ## Ручной запуск
 
@@ -248,18 +259,27 @@ tubefold-server --provider fake
 Endpoints:
 
 ```text
-GET  http://127.0.0.1:43821/health
-GET  http://127.0.0.1:43821/api/v1/provider-setup
-POST http://127.0.0.1:43821/api/v1/provider-setup/select            # {"provider":"codex"|"claude"}
-POST http://127.0.0.1:43821/api/v1/provider-setup/{codex|claude}/detect
-POST http://127.0.0.1:43821/api/v1/provider-setup/{codex|claude}/test
-POST http://127.0.0.1:43821/api/v1/provider-setup/{codex|claude}/model
-POST http://127.0.0.1:43821/api/v1/provider-setup/complete
-POST http://127.0.0.1:43821/api/v1/summaries
-GET  http://127.0.0.1:43821/api/v1/jobs/{jobId}
-GET  http://127.0.0.1:43821/api/v1/videos/by-youtube-id/{youtubeVideoId}
-POST http://127.0.0.1:43821/api/v1/videos/{videoId}/regenerate
+GET    http://127.0.0.1:43821/health
+GET    http://127.0.0.1:43821/api/v1/provider-setup
+POST   http://127.0.0.1:43821/api/v1/provider-setup/select            # {"provider":"codex"|"claude"}
+POST   http://127.0.0.1:43821/api/v1/provider-setup/{codex|claude}/detect
+POST   http://127.0.0.1:43821/api/v1/provider-setup/{codex|claude}/test
+POST   http://127.0.0.1:43821/api/v1/provider-setup/{codex|claude}/model
+POST   http://127.0.0.1:43821/api/v1/provider-setup/complete
+POST   http://127.0.0.1:43821/api/v1/provider-setup/output-language   # {"outputLanguage":"English"}
+POST   http://127.0.0.1:43821/api/v1/summaries
+GET    http://127.0.0.1:43821/api/v1/jobs/{jobId}
+GET    http://127.0.0.1:43821/api/v1/videos
+GET    http://127.0.0.1:43821/api/v1/videos/by-youtube-id/{youtubeVideoId}
+POST   http://127.0.0.1:43821/api/v1/videos/{videoId}/regenerate
+POST   http://127.0.0.1:43821/api/v1/videos/{videoId}/publish-telegraph
+DELETE http://127.0.0.1:43821/api/v1/videos/{videoId}
+GET    http://127.0.0.1:43821/api/v1/usage
+POST   http://127.0.0.1:43821/api/v1/watch-activity
+POST   http://127.0.0.1:43821/api/v1/watch-activity/dismiss
 ```
+
+`GET /api/v1/videos` отдаёт библиотеку (включая `readingTimeMinutes` для готовых видео). `publish-telegraph` публикует/обновляет анонимную статью в Telegraph (одна статья на видео). `usage` возвращает агрегированную статистику token usage по собственным запускам TubeFold. `watch-activity` принимает от extension сведения о просмотренных на YouTube видео и используется для подсказок «суммировать это видео».
 
 Provider setup endpoints implement the backend for the onboarding wizard (`{provider}` is `codex` or `claude`):
 
@@ -293,7 +313,10 @@ TubeFold App/TubeFold.xcodeproj
 - connection test через `POST /api/v1/provider-setup/{codex|claude}/test`;
 - сохранение завершённого setup через `POST /api/v1/provider-setup/complete`.
 - главный экран статуса провайдера: `Installed`, `Signed in`, `Ready`;
-- repair flow: если сохранённый путь провайдера сломан или connection test больше не проходит, setup помечается incomplete и app открывает нужный шаг wizard.
+- repair flow: если сохранённый путь провайдера сломан или connection test больше не проходит, setup помечается incomplete и app открывает нужный шаг wizard;
+- библиотека обработанных видео с регенерацией, удалением и публикацией в Telegraph, плюс оценкой времени чтения;
+- настройка языка саммари (`Output language`) и карточка Usage со статистикой токенов (для Codex — недельная квота, для Claude — токены и стоимость);
+- подсказки на основе watch-активности: extension сообщает о просмотренных видео, app предлагает их суммировать.
 
 Перед запуском app вручную поднимать `tubefold-server` не нужно. Xcode build phase `Embed Python Backend` копирует в app bundle `bin/`, `tubefold/`, `scripts/`, `providers/`, `prompts/`, `config/`, `requirements.txt`, Python framework, interpreter и Python dependencies. Для текущей direct-distribution сборки App Sandbox выключен, потому что приложение запускает локальный helper-процесс и может использовать выбранный пользователем Codex executable после перезапуска.
 
@@ -351,7 +374,7 @@ Chrome Extension находится в `chrome-extension/`. Установка d
 python3 -m unittest discover -s tests
 ```
 
-Тесты покрывают разбор YouTube URL, выбор transcript language, объединение `snippet.text`, безопасные имена файлов и end-to-end pipeline с fake provider. Настоящий Codex в автоматических тестах не вызывается.
+Тесты покрывают разбор YouTube URL, выбор transcript language, объединение `snippet.text`, безопасные имена файлов, рендер языка вывода, Telegraph/reading-time, usage-сайдкары и end-to-end pipeline с fake provider. Настоящий Codex/Claude в автоматических тестах не вызывается.
 
 Manual smoke test с Codex:
 
@@ -386,18 +409,14 @@ tubefold "https://youtu.be/dQw4w9WgXcQ" --verbose
 
 - Не обрабатываются плейлисты.
 - Нет Whisper fallback.
-- Нет OpenAI API provider.
-- Нет Claude Code provider.
-- Нет GUI-приложения.
-- Нет очереди задач.
-- Chunked summarization пока не реализован.
+- Нет HTTP API провайдера модели (только локальные CLI по подписке).
+- Chunked summarization пока не реализован — длинные транскрипты отправляются целиком.
 
 ## Будущее развитие
 
-- `providers/claude-code.sh`.
 - ChatGPT Desktop provider через UI automation.
 - Chunked summarization для длинных видео.
 - Whisper fallback при отсутствии субтитров.
 - Несколько prompt templates.
 - Obsidian URI/vault integration.
-- История обработанных видео и дедупликация.
+- Notarized упаковка macOS-приложения.
