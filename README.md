@@ -33,13 +33,11 @@ brew install --cask tubefold/tap/tubefold
 |---|---|
 | 🔑 **Твоя подписка, а не API** | Под капотом локальный `codex` или `claude`. Модель не видит API-ключа — всё на тарифе, за который ты уже платишь. |
 | 🖥 **Нативное macOS-приложение** | Нотаризованная Developer ID-сборка со встроенным Python-бэкендом. Ставится и работает из коробки. |
-| 📝 **Чистый Markdown на выходе** | Транскрипт на вход → структурированный конспект с YAML front matter на выход. |
+| 📝 **Чистый Markdown на выходе** | Транскрипт на вход → структурированный конспект на выход. |
 | 🧩 **Chrome-расширение** | Кнопка прямо на странице YouTube + подсказки «суммировать это» по истории просмотров. |
 | 📤 **Публикация в Telegraph** | Один клик — и конспект живёт публичной статьёй со ссылкой. |
 
 ## 🚀 Установка
-
-**Рекомендуемый способ — Homebrew:**
 
 ```sh
 brew install --cask tubefold/tap/tubefold
@@ -50,17 +48,12 @@ brew install --cask tubefold/tap/tubefold
 ```text
 YouTube URL
   → video ID
-  → метаданные (yt-dlp, опционально)
+  → метаданные (yt-dlp)
   → транскрипт (youtube-transcript-api)
   → prompt-шаблон
-  → провайдер (локальный codex/claude CLI)
-  → Markdown + YAML front matter
+  → провайдер (локальный codex/claude)
+  → готовое Markdown саммари
 ```
-
-1. **Кидаешь ссылку** на видео.
-2. TubeFold **тянет транскрипт** и оборачивает его в summary-промпт.
-3. **Твоя модель крутится локально** — берётся только финальное сообщение.
-4. **Получаешь Markdown-конспект** — сохраняй или делись через [Telegrapth](https://telegra.ph/).
 
 ## 🗺 Roadmap
 
@@ -70,8 +63,4 @@ YouTube URL
 
 ## 📄 Лицензия
 
-[MIT](LICENSE) © 2026 Bogdan Bystritskiy
-
-<div align="center">
-<sub><a href="https://github.com/TubeFold">github.com/TubeFold</a> · собрано вне Mac App Store, подписано и нотаризовано Developer ID</sub>
-</div>
+[MIT](LICENSE)
