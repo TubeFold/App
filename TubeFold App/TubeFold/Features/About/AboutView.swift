@@ -27,16 +27,12 @@ struct AboutView: View {
                     Text(AboutInfo.versionLine)
                         .font(.callout)
                         .foregroundStyle(.secondary)
-                    if let built = AboutInfo.buildLine {
-                        Text(built)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
                     Text(AboutInfo.tagline)
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
-                        .padding(.top, 2)
+                        .frame(maxWidth: 400)
+                        .padding(.top, 6)
                 }
 
                 VStack(spacing: 10) {
@@ -91,25 +87,20 @@ private struct AboutLink: Identifiable {
 enum AboutInfo {
     static let appName = "TubeFold"
 
-    static let tagline = "Fold long videos into clean Markdown — powered by your own provider CLI."
+    static let tagline = """
+    Fold long YouTube videos into clean, structured Markdown summaries.
 
-    static let copyright = "© 2026 Bogdan Bystritskiy · MIT License"
+    TubeFold pulls the transcript and runs it through your own codex or claude CLI \
+    subscription — locally, with no API keys and no per-token billing. Only the \
+    final summary is kept, ready to drop into your notes or knowledge base.
+    """
+
+    static let copyright = "© 2026 · MIT License"
 
     static var versionLine: String {
         let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
         return "Version \(short) (\(build))"
-    }
-
-    /// Best-effort build timestamp from the executable's creation date.
-    static var buildLine: String? {
-        guard
-            let url = Bundle.main.executableURL,
-            let date = try? url.resourceValues(forKeys: [.creationDateKey]).creationDate
-        else { return nil }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d MMM yyyy 'at' HH:mm"
-        return "Built \(formatter.string(from: date))"
     }
 }
 
