@@ -320,7 +320,7 @@ struct UsageStatsView: View {
             if usage.byProvider["claude"] != nil {
                 SettingsHint(
                     title: "Claude weekly limit",
-                    detail: "The Claude CLI doesn't report a weekly subscription percentage, so only spent tokens and cost are shown."
+                    detail: "The Claude CLI doesn't report a weekly subscription percentage, so only spent tokens are shown."
                 )
             }
         }
@@ -336,17 +336,9 @@ struct UsageStatsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer(minLength: 12)
-            VStack(alignment: .trailing, spacing: 2) {
-                Text("\(UsageStatsView.formatTokens(usage.totalTokens)) tokens")
-                    .font(.callout)
-                    .monospacedDigit()
-                if let cost = usage.costUsd, cost > 0 {
-                    Text(String(format: "$%.2f", cost))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-            }
+            Text("\(UsageStatsView.formatTokens(usage.totalTokens)) tokens")
+                .font(.callout)
+                .monospacedDigit()
         }
     }
 

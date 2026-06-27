@@ -304,12 +304,6 @@ struct LibraryVideoRow: View {
                     }
 
                     Button {
-                        viewModel.openYouTube(video)
-                    } label: {
-                        Label("YouTube", systemImage: "play.rectangle")
-                    }
-
-                    Button {
                         viewModel.publishToTelegraph(video)
                     } label: {
                         if viewModel.isPublishing(video) {
@@ -320,8 +314,13 @@ struct LibraryVideoRow: View {
                             Label("Read in Telegraph", systemImage: "paperplane")
                         }
                     }
-                    .buttonStyle(.borderedProminent)
                     .disabled(!video.hasMarkdown || viewModel.isPublishing(video))
+
+                    Button {
+                        viewModel.openYouTube(video)
+                    } label: {
+                        Label("YouTube", systemImage: "play.rectangle")
+                    }
 
                     Menu {
                         Button {
