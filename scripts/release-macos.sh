@@ -143,6 +143,11 @@ spctl -a -vvv --type exec "$app_path"
 log "Packaging final artifact…"
 /usr/bin/ditto -c -k --keepParent "$app_path" "$dist_zip"
 
+# Drop the intermediate notary zip so it doesn't linger next to the shippable
+# one — generate_appcast scans this directory and rejects two archives with the
+# same bundle version as "duplicate updates".
+rm -f "$notary_zip"
+
 log "Done."
 printf '\n  App: %s\n  Zip: %s\n' "$app_path" "$dist_zip"
 printf '\n  Next — generate the Sparkle appcast, then upload both to the release:\n    ./scripts/generate-appcast.sh\n'

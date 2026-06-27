@@ -68,9 +68,11 @@ else
 fi
 
 # --- Generate --------------------------------------------------------------
+# ${arr[@]+...} guards against "unbound variable" when key_args is empty
+# (keychain mode) under set -u on macOS's bash 3.2.
 "$tools_dir/generate_appcast" \
   --download-url-prefix "$TUBEFOLD_DOWNLOAD_URL_PREFIX" \
-  "${key_args[@]}" \
+  ${key_args[@]+"${key_args[@]}"} \
   "$build_dir"
 
 log "Wrote $build_dir/appcast.xml"
