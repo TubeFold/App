@@ -249,7 +249,7 @@ def render_template(template_text: str, values: dict[str, Any]) -> str:
 
 
 PROJECT_NAME = "TubeFold"
-PROJECT_URL = "https://tubefold.github.io/Site/"
+PROJECT_URL = "https://tubefold.github.io/"
 
 
 def tubefold_footer_markdown() -> str:
