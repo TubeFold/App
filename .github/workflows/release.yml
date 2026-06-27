@@ -13,9 +13,12 @@ name: Release
 #                                  (export from Keychain Access, then
 #                                   `base64 -i cert.p12 | pbcopy`)
 #   DEVELOPER_ID_CERT_PASSWORD   password set when exporting that .p12
-#   NOTARY_KEY_P8                base64 of the App Store Connect API key (.p8)
-#   NOTARY_KEY_ID                the key's Key ID
-#   NOTARY_ISSUER                the API key's Issuer UUID
+#   NOTARY_APPLE_ID              Apple ID email of the developer account
+#   NOTARY_APP_PASSWORD          app-specific password from appleid.apple.com
+#                                  (xxxx-xxxx-xxxx-xxxx) — simplest notary auth,
+#                                  no App Store Connect API key / Paid Apps
+#                                  agreement required. The team id comes from
+#                                  the TUBEFOLD_TEAM_ID env above.
 #   SPARKLE_ED_PRIVATE_KEY       the Sparkle EdDSA private key string
 #                                  (export once: `generate_keys -x key.txt`)
 #   HOMEBREW_TAP_TOKEN           PAT (or fine-grained token) with contents:write
@@ -81,16 +84,9 @@ jobs:
 
       - name: Build, sign, notarize, staple
         env:
-          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
-          TUBEFOLD_NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
-          TUBEFOLD_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
-        run: |
-          set -euo pipefail
-          key_path="$RUNNER_TEMP/notary.p8"
-          echo "$NOTARY_KEY_P8" | base64 --decode > "$key_path"
-          export TUBEFOLD_NOTARY_KEY="$key_path"
-          ./scripts/release-macos.sh
-          rm -f "$key_path"
+          TUBEFOLD_NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
+          TUBEFOLD_NOTARY_APP_PASSWORD: ${{ secrets.NOTARY_APP_PASSWORD }}
+        run: ./scripts/release-macos.sh
 
       - name: Generate signed appcast
         env:

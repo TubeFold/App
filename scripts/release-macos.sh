@@ -15,10 +15,16 @@
 # Notarization auth — provide ONE of:
 #   TUBEFOLD_NOTARY_PROFILE     keychain profile name created once via
 #                               `xcrun notarytool store-credentials` (best locally)
-#   -- or the App Store Connect API key trio (best for CI) --
+#   -- or the App Store Connect API key trio --
 #   TUBEFOLD_NOTARY_KEY         path to the .p8 key file
 #   TUBEFOLD_NOTARY_KEY_ID      key id
 #   TUBEFOLD_NOTARY_ISSUER      issuer uuid
+#   -- or an Apple ID + app-specific password (simplest for CI; no API key /
+#      Paid Apps agreement needed, just an app-specific password from
+#      appleid.apple.com) --
+#   TUBEFOLD_NOTARY_APPLE_ID       Apple ID email of the account
+#   TUBEFOLD_NOTARY_APP_PASSWORD   app-specific password (xxxx-xxxx-xxxx-xxxx)
+#   (team id comes from TUBEFOLD_TEAM_ID above)
 #
 # Optional:
 #   TUBEFOLD_SCHEME             default: TubeFold
@@ -57,8 +63,10 @@ if [[ -n "${TUBEFOLD_NOTARY_PROFILE:-}" ]]; then
   notary_auth=(--keychain-profile "$TUBEFOLD_NOTARY_PROFILE")
 elif [[ -n "${TUBEFOLD_NOTARY_KEY:-}" && -n "${TUBEFOLD_NOTARY_KEY_ID:-}" && -n "${TUBEFOLD_NOTARY_ISSUER:-}" ]]; then
   notary_auth=(--key "$TUBEFOLD_NOTARY_KEY" --key-id "$TUBEFOLD_NOTARY_KEY_ID" --issuer "$TUBEFOLD_NOTARY_ISSUER")
+elif [[ -n "${TUBEFOLD_NOTARY_APPLE_ID:-}" && -n "${TUBEFOLD_NOTARY_APP_PASSWORD:-}" ]]; then
+  notary_auth=(--apple-id "$TUBEFOLD_NOTARY_APPLE_ID" --password "$TUBEFOLD_NOTARY_APP_PASSWORD" --team-id "$TUBEFOLD_TEAM_ID")
 else
-  die "Provide notary auth: TUBEFOLD_NOTARY_PROFILE, or the TUBEFOLD_NOTARY_KEY/KEY_ID/ISSUER trio."
+  die "Provide notary auth: TUBEFOLD_NOTARY_PROFILE, the TUBEFOLD_NOTARY_KEY/KEY_ID/ISSUER trio, or TUBEFOLD_NOTARY_APPLE_ID + TUBEFOLD_NOTARY_APP_PASSWORD."
 fi
 
 # Resolve the Developer ID Application identity. The embed build phase signs the
