@@ -150,6 +150,17 @@ class Repository:
             conn.execute("DELETE FROM videos WHERE id = ?", (video_id,))
             return row["youtube_video_id"]
 
+    def reset(self) -> dict[str, int]:
+        """Wipe every data row (videos, jobs, watch activity) so the app starts
+        from a clean slate. The schema is preserved; only the contents go. Returns
+        the number of rows removed per table so callers can report what was cleared."""
+        counts: dict[str, int] = {}
+        with self.connect() as conn:
+            for table in ("jobs", "videos", "watch_activity"):
+                counts[table] = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                conn.execute(f"DELETE FROM {table}")
+        return counts
+
     def latest_active_job_for_video(self, video_id: str) -> sqlite3.Row | None:
         placeholders = ",".join("?" for _ in ACTIVE_STATUSES)
         with self.connect() as conn:

@@ -193,6 +193,13 @@ final class LibraryViewModel: ObservableObject {
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 
+    /// Open the latest job's log folder in Finder, so the user can inspect why a
+    /// summary failed (job.log + provider stdout/stderr live there).
+    func revealLogs(_ video: LibraryVideo) {
+        guard let url = video.jobLogURL else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+
     func saveMarkdownCopy(_ video: LibraryVideo) {
         guard let sourceURL = video.markdownURL else { return }
         let panel = NSSavePanel()

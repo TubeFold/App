@@ -53,6 +53,10 @@ struct ProviderSetupService {
         )
     }
 
+    func resetData() async throws -> ResetDataResult {
+        try await request(path: "/api/v1/reset", method: "POST", body: Optional<StringRequest>.none)
+    }
+
     private func request<Response: Decodable, Body: Encodable>(
         path: String,
         method: String,

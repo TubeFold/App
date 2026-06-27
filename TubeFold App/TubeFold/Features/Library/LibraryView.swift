@@ -294,6 +294,14 @@ struct LibraryVideoRow: View {
                         } label: {
                             Label("Retry", systemImage: "arrow.clockwise")
                         }
+
+                        if video.hasJobLogs {
+                            Button {
+                                viewModel.revealLogs(video)
+                            } label: {
+                                Label("Show Logs", systemImage: "doc.text.magnifyingglass")
+                            }
+                        }
                     }
 
                     Button {
@@ -329,6 +337,14 @@ struct LibraryVideoRow: View {
                             Label("Save Markdown", systemImage: "square.and.arrow.down")
                         }
                         .disabled(!video.hasMarkdown)
+
+                        if video.hasJobLogs {
+                            Button {
+                                viewModel.revealLogs(video)
+                            } label: {
+                                Label("Show Logs", systemImage: "doc.text.magnifyingglass")
+                            }
+                        }
 
                         Divider()
 

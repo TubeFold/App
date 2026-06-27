@@ -124,6 +124,22 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(library["videos"][0]["status"], "queued")
         self.assertEqual(library["videos"][0]["latestJobID"], first["jobId"])
 
+    def test_job_log_path_set_only_when_log_dir_exists(self) -> None:
+        from tubefold.models import SummaryRequest
+
+        request = SummaryRequest.from_json({}, "dQw4w9WgXcQ", "https://youtu.be/dQw4w9WgXcQ")
+        _, _, job_id = self.repository.create_or_reuse(request)
+
+        # No on-disk job dir yet -> the payload omits the path.
+        video = self.get_json("/api/v1/videos")["videos"][0]
+        self.assertIsNone(video["jobLogPath"])
+
+        # Once the worker has created the job's log dir, the path points at it.
+        job_dir = self.server.config.jobs_dir / job_id
+        job_dir.mkdir(parents=True, exist_ok=True)
+        video = self.get_json("/api/v1/videos")["videos"][0]
+        self.assertEqual(video["jobLogPath"], str(job_dir))
+
     def test_reclaim_orphaned_jobs_fails_interrupted_jobs(self) -> None:
         from tubefold.models import ProcessingStatus, SummaryRequest
 

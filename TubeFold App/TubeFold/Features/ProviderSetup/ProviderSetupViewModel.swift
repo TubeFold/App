@@ -242,6 +242,13 @@ final class ProviderSetupViewModel: ObservableObject {
         usage = summary
     }
 
+    func resetData() async {
+        await runBusy("Clearing all data") {
+            _ = try await service.resetData()
+            usage = try? await service.loadUsage()
+        }
+    }
+
     func selectProvider(_ provider: String) async {
         guard provider != selectedProviderID else { return }
         await runBusy("Switching provider") {

@@ -95,6 +95,7 @@ struct LibraryVideo: Decodable, Identifiable, Equatable {
     let latestJobFinishedAt: String?
     let telegraphURL: String?
     let readingTimeMinutes: Int?
+    let jobLogPath: String?
 
     var displayTitle: String {
         title?.isEmpty == false ? title! : youtubeVideoID
@@ -129,6 +130,16 @@ struct LibraryVideo: Decodable, Identifiable, Equatable {
     var markdownURL: URL? {
         guard let summaryPath, !summaryPath.isEmpty else { return nil }
         return URL(fileURLWithPath: summaryPath)
+    }
+
+    /// Folder with the latest job's logs (job.log + provider stdout/stderr), for "Show Logs".
+    var jobLogURL: URL? {
+        guard let jobLogPath, !jobLogPath.isEmpty else { return nil }
+        return URL(fileURLWithPath: jobLogPath, isDirectory: true)
+    }
+
+    var hasJobLogs: Bool {
+        jobLogURL != nil
     }
 
     var isPublishedToTelegraph: Bool {

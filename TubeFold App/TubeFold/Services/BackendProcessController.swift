@@ -62,6 +62,7 @@ final class BackendProcessController {
                 && features?.usageStats == true
                 && features?.watchActivity == true
                 && features?.libraryDelete == true
+                && features?.resetData == true
         } catch {
             return false
         }
@@ -229,4 +230,5 @@ private struct BackendFeatures: Decodable {
     let usageStats: Bool
     let watchActivity: Bool
     let libraryDelete: Bool
+    let resetData: Bool
 }

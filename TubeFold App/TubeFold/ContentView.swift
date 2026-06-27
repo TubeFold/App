@@ -118,7 +118,11 @@ struct MainStatusView: View {
 
             OutputLanguageSettingsView(viewModel: viewModel)
 
+            AppBehaviorSettingsView()
+
             UsageStatsView(viewModel: viewModel)
+
+            ResetDataSettingsView(viewModel: viewModel)
 
             if let errorMessage = viewModel.errorMessage {
                 Label(errorMessage, systemImage: "exclamationmark.triangle")
@@ -268,6 +272,44 @@ struct OutputLanguageSettingsView: View {
     }
 }
 
+struct AppBehaviorSettingsView: View {
+    @ObservedObject private var settings = AppSettings.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("App behavior")
+                    .font(.headline)
+                Text("Control how TubeFold reacts when a summary finishes.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Toggle(isOn: $settings.autoOpenTelegraph) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Open Telegraph automatically")
+                    Text("When a summary is ready, publish it to Telegraph and open the page in your browser.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Toggle(isOn: $settings.hideMenuBarIcon) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Hide menu bar icon")
+                    Text("Remove the TubeFold icon from the macOS menu bar. The main window stays available.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .settingsCard()
+    }
+}
+
 struct UsageStatsView: View {
     @ObservedObject var viewModel: ProviderSetupViewModel
 
@@ -395,6 +437,49 @@ struct UsageStatsView: View {
         }
         let minutes = (Int(remaining) % 3_600) / 60
         return hours > 0 ? "Resets in \(hours)h \(minutes)m" : "Resets in \(minutes)m"
+    }
+}
+
+struct ResetDataSettingsView: View {
+    @ObservedObject var viewModel: ProviderSetupViewModel
+    @State private var showingConfirmation = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Reset")
+                    .font(.headline)
+                Text("Erase the whole library, processing history, and usage stats so the app starts from scratch. Your provider sign-in and settings are kept. This can't be undone.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack {
+                Button(role: .destructive) {
+                    showingConfirmation = true
+                } label: {
+                    Label("Clear all data", systemImage: "trash")
+                }
+                .controlSize(.large)
+                .disabled(viewModel.isBusy)
+
+                Spacer(minLength: 0)
+            }
+        }
+        .settingsCard()
+        .confirmationDialog(
+            "Clear all data?",
+            isPresented: $showingConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Clear all data", role: .destructive) {
+                Task { await viewModel.resetData() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Every saved summary, queued job, and usage record will be permanently removed. Your provider sign-in and settings stay intact.")
+        }
     }
 }
 

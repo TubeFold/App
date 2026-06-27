@@ -186,6 +186,11 @@ struct SaveModelSettingsResult: Decodable {
     let reasoningEffortOptions: [CodexModelOption]
 }
 
+struct ResetDataResult: Decodable {
+    let status: String
+    let removed: [String: Int]
+}
+
 enum JSONValue: Decodable {
     case string(String)
     case number(Double)

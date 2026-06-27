@@ -27,10 +27,17 @@ final class MenuBarController: NSObject {
 
     func start() {
         statusItem.button?.wantsLayer = true
+        applyMenuBarVisibility()
         setIconMode(.idle, tooltip: "TubeFold")
         rebuildMenu(statusTitle: "TubeFold is ready", activeCount: 0)
         refresh()
         timer = Timer.scheduledTimer(timeInterval: 6, target: self, selector: #selector(pollFromTimer), userInfo: nil, repeats: true)
+    }
+
+    /// Show or hide the status item per the user's preference. Polling keeps
+    /// running while hidden so the app still auto-opens Telegraph if enabled.
+    func applyMenuBarVisibility() {
+        statusItem.isVisible = !AppSettings.shared.hideMenuBarIcon
     }
 
     func stop() {
@@ -82,8 +89,10 @@ final class MenuBarController: NSObject {
         }
 
         // On completion, open the Telegraph page directly — no notification.
-        for completed in newlyReady {
-            openTelegraph(for: completed)
+        if AppSettings.shared.autoOpenTelegraph {
+            for completed in newlyReady {
+                openTelegraph(for: completed)
+            }
         }
     }
 

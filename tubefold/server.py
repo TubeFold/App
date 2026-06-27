@@ -7,6 +7,7 @@ import re
 import shutil
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from socketserver import ThreadingMixIn
 from typing import Any
 
@@ -69,6 +70,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                         "usageStats": True,
                         "watchActivity": True,
                         "libraryDelete": True,
+                        "resetData": True,
                     },
                 }
             )
@@ -91,7 +93,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         if self.path == "/api/v1/videos":
             if not self._authorized():
                 return
-            videos = [self._video_payload(video) for video in self.server.repository.list_videos()]
+            jobs_dir = self.server.config.jobs_dir
+            videos = [self._video_payload(video, jobs_dir) for video in self.server.repository.list_videos()]
             self._send_json({"videos": videos})
             return
 
@@ -222,6 +225,21 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.server.repository.dismiss_watch_activity(youtube_id)
             logger.info("Watch activity dismissed youtube_id=%s", youtube_id)
             self._send_json({"status": "dismissed"})
+            return
+
+        if self.path == "/api/v1/reset":
+            removed = self.server.repository.reset()
+            # Best-effort cleanup of on-disk artifacts so nothing lingers after the
+            # database is wiped. The dirs are recreated lazily on the next job.
+            for directory in (
+                self.server.config.videos_dir,
+                self.server.config.jobs_dir,
+                self.server.config.logs_dir,
+            ):
+                shutil.rmtree(directory, ignore_errors=True)
+                directory.mkdir(parents=True, exist_ok=True)
+            logger.info("Reset all data removed=%s", removed)
+            self._send_json({"status": "reset", "removed": removed})
             return
 
         if self.path == "/api/v1/provider-setup/select":
@@ -434,13 +452,21 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(body)
 
     @staticmethod
-    def _video_payload(video: Any) -> dict[str, Any]:
+    def _video_payload(video: Any, jobs_dir: Path | None = None) -> dict[str, Any]:
         summary_markdown = video["summary_markdown"]
         reading_time_minutes = (
             reading_minutes_for_markdown(summary_markdown)
             if summary_markdown and str(summary_markdown).strip()
             else None
         )
+        # Path to the latest job's per-stage logs (job.log + provider stdout/stderr),
+        # so the app can offer "Show Logs" on failure. Only set when the dir exists.
+        job_log_path = None
+        latest_job_id = video["latest_job_id"]
+        if jobs_dir is not None and latest_job_id:
+            candidate = jobs_dir / str(latest_job_id)
+            if candidate.is_dir():
+                job_log_path = str(candidate)
         return {
             "id": video["id"],
             "youtubeVideoID": video["youtube_video_id"],
@@ -463,6 +489,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             "latestJobFinishedAt": video["latest_job_finished_at"],
             "telegraphURL": video["telegraph_url"],
             "readingTimeMinutes": reading_time_minutes,
+            "jobLogPath": job_log_path,
         }
 
     @staticmethod
