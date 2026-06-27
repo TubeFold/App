@@ -1,422 +1,245 @@
-# tubefold
+<div align="center">
 
-macOS CLI-инструмент для создания Markdown-саммари YouTube-видео через пользовательскую подписку и CLI модели. HTTP API модели не используется: provider запускает CLI локально и забирает только финальное сообщение модели. Поддерживаются два провайдера на выбор: `codex` (`codex exec`, по умолчанию) и `claude` (Claude Code CLI, `claude --print`) — оба работают по подписке пользователя, без API-ключа.
+# ▶︎ TubeFold
 
-## Архитектура
+**Любое YouTube-видео → чистый Markdown-конспект.**
+Работает через подписку на твой `codex` или `claude` CLI — **без API-ключей и оплаты по токенам.**
 
-Pipeline:
+[![Release](https://img.shields.io/github/v/release/TubeFold/App?color=ff3b30&label=release&style=flat-square)](https://github.com/TubeFold/App/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/TubeFold/App/total?color=ff3b30&style=flat-square)](https://github.com/TubeFold/App/releases)
+![macOS](https://img.shields.io/badge/macOS-26%2B-000?logo=apple&logoColor=white&style=flat-square)
+![Swift](https://img.shields.io/badge/SwiftUI-f05138?logo=swift&logoColor=white&style=flat-square)
+![Python](https://img.shields.io/badge/Python-3776ab?logo=python&logoColor=white&style=flat-square)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
+
+```sh
+brew install --cask tubefold/tap/tubefold
+```
+
+или [скачать TubeFold.zip](https://github.com/TubeFold/App/releases/latest/download/TubeFold.zip) напрямую · macOS, нотаризовано, с авто-апдейтом
+
+</div>
+
+---
+
+## 💡 В чём идея
+
+Ты уже платишь за **ChatGPT/Codex** или **Claude**. TubeFold не дёргает никакой облачный API и не просит ключ — он запускает твой **локальный CLI** (`codex` / `claude`) под капотом и забирает только финальный ответ модели. Никаких новых счетов, никакого вендор-лока.
+
+Кидаешь ссылку на видео → получаешь структурированный Markdown, готовый лечь в заметки, Obsidian или базу знаний.
+
+## ✨ Фишки
+
+| | |
+|---|---|
+| 🔑 **Твоя подписка, а не API** | Под капотом локальный `codex` или `claude`. Модель не видит API-ключа — всё на тарифе, за который ты уже платишь. |
+| 🖥 **Нативное macOS-приложение** | Нотаризованная Developer ID-сборка со встроенным Python-бэкендом. Ставится и работает из коробки. |
+| 📝 **Чистый Markdown на выходе** | Транскрипт на вход → структурированный конспект с YAML front matter на выход. |
+| 🔄 **Обновляется само** | Sparkle-автоапдейт держит тебя на свежей версии. Поставил и забыл. |
+| 🧩 **Chrome-расширение** | Кнопка прямо на странице YouTube + подсказки «суммировать это» по истории просмотров. |
+| 🌍 **Язык конспекта — любой** | Язык вывода не зависит от языка субтитров (`--language Russian`, `日本語`, что угодно). |
+| 📤 **Публикация в Telegraph** | Один клик — и конспект живёт публичной статьёй со ссылкой. |
+| 📊 **Учёт токенов** | Карточка Usage: токены по провайдерам, недельная квота Codex, стоимость Claude. |
+
+## 🚀 Установка
+
+**Рекомендуемый способ — Homebrew:**
+
+```sh
+brew install --cask tubefold/tap/tubefold
+```
+
+Дальше открой **TubeFold.app**, выбери провайдера (Codex или Claude Code) в мастере — и готово. Обновления прилетают сами через Sparkle; `brew upgrade` для них не нужен.
+
+> **Требуется:** macOS 26+ и установленный хотя бы один CLI — [Codex](https://github.com/openai/codex) (`codex`) **или** [Claude Code](https://docs.anthropic.com/claude-code) (`claude`), залогиненный под твою подписку. Сам CLI — внешняя зависимость; в `.app` упакован только Python-бэкенд.
+
+<details>
+<summary>Альтернатива — прямое скачивание</summary>
+
+Скачай [TubeFold.zip](https://github.com/TubeFold/App/releases/latest/download/TubeFold.zip), распакуй и перетащи `TubeFold.app` в `Applications`. Сборка подписана и нотаризована, Gatekeeper пропустит без плясок с `xattr`.
+
+</details>
+
+## ⚡️ Как это работает
 
 ```text
 YouTube URL
--> parse video ID
--> optional yt-dlp metadata
--> youtube-transcript-api transcript
--> plain transcript text
--> prompt template
--> provider <prompt_file> <output_file>
--> Markdown with front matter
+  → video ID
+  → метаданные (yt-dlp, опционально)
+  → транскрипт (youtube-transcript-api)
+  → prompt-шаблон
+  → провайдер (локальный codex/claude CLI)
+  → Markdown + YAML front matter
 ```
 
-Главные части:
+1. **Кидаешь ссылку** на видео.
+2. TubeFold **тянет транскрипт** и оборачивает его в summary-промпт.
+3. **Твоя модель крутится локально** — берётся только финальное сообщение.
+4. **Получаешь Markdown-конспект** — сохраняй или делись.
 
-- `bin/tubefold` - CLI orchestrator.
-- `providers/codex.sh` - Codex CLI provider.
-- `providers/claude.sh` - Claude Code CLI provider (`claude --print`).
-- `providers/fake.sh` - test/development provider without a real CLI.
-- `prompts/detailed-summary.md` - prompt template.
-- `scripts/fetch-transcript.py` - transcript fetching through `youtube-transcript-api`.
-- `hammerspoon/tubefold.lua` - optional hotkey integration.
+> **Инвариант:** YAML front matter всегда генерирует pipeline, а не модель. Модель отвечает только за тело конспекта.
 
-Provider contract:
+## 🎬 Использование (CLI)
 
-```bash
+Кроме приложения есть и чистый CLI:
+
+```sh
+# базовый прогон
+tubefold "https://youtu.be/dQw4w9WgXcQ" --verbose
+
+# другой провайдер и модель
+tubefold "https://youtu.be/…" --provider claude --claude-model opus --claude-effort high
+
+# язык конспекта (не зависит от языка субтитров)
+tubefold "https://youtu.be/…" --language Russian
+
+# прогнать pipeline без реальной модели (для отладки)
+PROVIDER=fake tubefold "https://youtu.be/…" --verbose
+```
+
+CLI печатает абсолютный путь к созданному `.md` в stdout, диагностику — в stderr.
+
+---
+
+<details>
+<summary><b>🛠 Для разработчиков</b> — архитектура, провайдеры, локальный API, сборка, тесты</summary>
+
+### Архитектура
+
+Два фронтенда над одним pipeline:
+
+- **`bin/tubefold`** — синхронный one-shot CLI-оркестратор.
+- **`bin/tubefold-server` + пакет `tubefold/`** — persistent localhost HTTP API c SQLite и фоновой очередью задач; питает Chrome-расширение и macOS-приложение.
+
+Оба переиспользуют хелперы из `scripts/tubefold_lib.py` (парсинг URL, извлечение метаданных, front matter, безопасные имена файлов).
+
+### Провайдеры
+
+Провайдер — исполняемый файл `providers/<name>.sh`, вызывается как:
+
+```sh
 provider <prompt_file> <output_file>
 ```
 
-Provider должен записать в `output_file` только финальный Markdown-ответ модели и вернуть `0` при успехе.
+Он должен записать в `<output_file>` **только** финальный Markdown и вернуть `0`.
 
-## Требования
+- `providers/codex.sh` — `codex exec` из изолированного temp-каталога (`--sandbox read-only --ephemeral`), промпт через stdin, ответ через `--output-last-message`.
+- `providers/claude.sh` — `claude --print --output-format json`, промпт через stdin; подписка пользователя (OAuth/keychain), не API-ключ.
+- `providers/fake.sh` — канонические заглушки для тестов.
 
-- macOS.
-- `python3`.
-- `youtube-transcript-api`.
-- Codex CLI (`codex`) для provider `codex` **или** Claude Code CLI (`claude`) для provider `claude` (нужен хотя бы один).
-- `yt-dlp` опционально для метаданных.
-- Hammerspoon только для горячей клавиши.
-- `ffmpeg` может понадобиться `yt-dlp` в некоторых окружениях, но видео в MVP не скачивается.
+Оба first-class провайдера best-effort пишут token usage в сайдкар `<output_file>.usage.json`.
 
-Проверка:
+### Установка из исходников
 
-```bash
-command -v python3
-command -v codex
-python3 -c 'import youtube_transcript_api'
-codex exec --help
-```
-
-Текущая реализация Codex provider использует:
-
-```bash
-codex exec \
-  --sandbox read-only \
-  --cd "$isolated_temp_dir" \
-  --skip-git-repo-check \
-  --ephemeral \
-  --ignore-rules \
-  --output-last-message "$output_file" \
-  -
-```
-
-Промпт передается через stdin. Codex запускается из отдельной временной директории.
-
-Provider `claude` запускает:
-
-```bash
-claude --print \
-  --model "$CLAUDE_MODEL" \
-  --effort "$CLAUDE_REASONING_EFFORT" \
-  --output-format json
-```
-
-Промпт передается через stdin, текст ответа парсится из JSON-объекта результата в stdout. `claude` запускается из отдельной временной директории (чтобы CLI не подхватил `CLAUDE.md` из репозитория) и использует подписку пользователя (OAuth/keychain), а не API-ключ.
-
-Оба first-class провайдера дополнительно пишут token usage в сайдкар `<output_file>.usage.json` (для Codex — ещё и снимок недельной квоты `rate_limits`). Это best-effort: отсутствие или повреждение сайдкара не ломает задачу, просто usage не записывается.
-
-## Установка
-
-Python-зависимость:
-
-```bash
+```sh
 python3 -m pip install -r requirements.txt
+./install.sh   # проверит deps, создаст ~/.config/tubefold/config.env, слинкует CLI в ~/.local/bin
 ```
 
-```bash
-./install.sh
-```
+### Конфигурация
 
-Скрипт:
+Приоритет: CLI-флаги → env vars → `~/.config/tubefold/config.env` → дефолты. Пример — в `config/config.example.env`.
 
-- проверит `python3`, `youtube-transcript-api` и наличие хотя бы одного CLI провайдера (`codex` или `claude`);
-- создаст `~/.config/tubefold/config.env`, если его еще нет;
-- сделает скрипты исполняемыми;
-- создаст symlinks `~/.local/bin/tubefold` и `~/.local/bin/tubefold-server`.
-
-Если `~/.local/bin` не в `PATH`, добавьте его в shell profile.
-
-## Конфигурация
-
-Пример находится в `config/config.example.env`.
-
-Пользовательский конфиг по умолчанию:
-
-```text
-~/.config/tubefold/config.env
-```
-
-Приоритет настроек:
-
-1. CLI-аргументы.
-2. Environment variables.
-3. Пользовательский config.
-4. Значения по умолчанию.
-
-Ключевые параметры:
-
-```bash
-PROVIDER="codex"            # или "claude"
+```sh
+PROVIDER="codex"                  # или "claude"
 OUTPUT_DIR="$HOME/Documents/YouTube Summaries"
 PROMPT_TEMPLATE="detailed-summary.md"
-OUTPUT_LANGUAGE="English"   # язык саммари; подставляется в шаблон как {{OUTPUT_LANGUAGE}}
+OUTPUT_LANGUAGE="English"         # подставляется в шаблон как {{OUTPUT_LANGUAGE}}
 PREFERRED_TRANSCRIPT_LANGS="pl,ru,en"
 ALLOW_ANY_TRANSCRIPT_LANGUAGE="true"
-OPEN_AFTER_SAVE="false"
-CODEX_TIMEOUT_SECONDS="900"
-CODEX_MODEL="gpt-5.4-mini"
-CODEX_REASONING_EFFORT="medium"
-CLAUDE_TIMEOUT_SECONDS="900"
-CLAUDE_MODEL="sonnet"       # alias (sonnet, opus, haiku) или полный id
-CLAUDE_REASONING_EFFORT="medium"  # low, medium, high, xhigh, max
+CODEX_MODEL="gpt-5.4-mini"        # CODEX_REASONING_EFFORT, CODEX_TIMEOUT_SECONDS
+CLAUDE_MODEL="sonnet"             # alias или полный id; CLAUDE_REASONING_EFFORT: low…max
 LOG_LEVEL="info"
 ```
 
-Запуск через Claude Code CLI:
+### Output Markdown
 
-```bash
-tubefold "https://youtu.be/dQw4w9WgXcQ" --provider claude --claude-model opus --claude-effort high
+Итоговый файл получает YAML front matter (`type`, `source`, `video_id`, `url`, `title`, `channel`, `duration_seconds`, `published_at`, `processed_at`, `transcript_language*`, `provider`, `prompt_template`). Имена файлов строятся из названия видео, чистятся для macOS и не перезаписывают существующие (` (2)`, ` (3)`…).
+
+### Локальный API
+
+```sh
+tubefold-server --provider codex      # или --provider fake для отладки без модели
 ```
 
-Язык саммари задаётся `OUTPUT_LANGUAGE` или флагом `--language` (по умолчанию `English`), он не зависит от языка субтитров:
-
-```bash
-tubefold "https://youtu.be/dQw4w9WgXcQ" --language Russian
-```
-
-Легаси-ключи `SUBTITLE_LANGS` / `ALLOW_ANY_SUBTITLE_LANGUAGE` мапятся на `*_TRANSCRIPT_*`, а `SUMMARY_LANGUAGE` — на `OUTPUT_LANGUAGE`.
-
-## Ручной запуск
-
-```bash
-tubefold "https://youtu.be/dQw4w9WgXcQ" --verbose
-```
-
-Для проверки pipeline без Codex:
-
-```bash
-PROVIDER=fake tubefold "https://youtu.be/dQw4w9WgXcQ" --verbose
-```
-
-CLI печатает абсолютный путь к созданному `.md` в stdout. Диагностика идет в stderr.
-
-Полезные параметры:
-
-```bash
-tubefold --help
-tubefold "https://www.youtube.com/watch?v=dQw4w9WgXcQ" --output-dir "$HOME/Desktop/Summaries"
-tubefold "https://youtu.be/dQw4w9WgXcQ" --keep-temp --verbose
-tubefold "https://youtu.be/dQw4w9WgXcQ" --provider fake
-```
-
-## Output Markdown
-
-Итоговый файл получает YAML front matter, который создает pipeline, а не модель:
-
-```yaml
----
-type: "tubefold"
-source: "youtube"
-video_id: "..."
-url: "https://www.youtube.com/watch?v=..."
-title: "..."
-channel: "..."
-duration_seconds: 1234
-published_at: "2026-06-20"
-processed_at: "2026-06-25T12:30:00+02:00"
-subtitle_language: "en"
-transcript_language: "English"
-transcript_language_code: "en"
-transcript_is_generated: true
-provider: "codex"
-prompt_template: "detailed-summary"
----
-```
-
-Имена файлов строятся из названия видео, очищаются для macOS и не перезаписывают существующие файлы. При конфликте добавляется суффикс `(2)`, `(3)` и так далее.
-
-## Hammerspoon
-
-Подключите скрипт из `~/.hammerspoon/init.lua`:
-
-```lua
-dofile("/Users/bogdan/GIT/tubefold/hammerspoon/tubefold.lua")
-```
-
-По умолчанию hotkey:
+Слушает только `127.0.0.1:43821`. Опциональная bearer-авторизация через `TUBEFOLD_API_TOKEN`. Основные эндпоинты:
 
 ```text
-Option + Command + Y
+GET    /health
+POST   /api/v1/summaries
+GET    /api/v1/jobs/{jobId}
+GET    /api/v1/videos                          # библиотека (+ readingTimeMinutes)
+DELETE /api/v1/videos/{videoId}
+POST   /api/v1/videos/{videoId}/regenerate
+POST   /api/v1/videos/{videoId}/publish-telegraph
+GET    /api/v1/usage                           # агрегированная статистика токенов
+POST   /api/v1/provider-setup/select           # {"provider":"codex"|"claude"}
+POST   /api/v1/provider-setup/{codex|claude}/{detect,test,model}
+POST   /api/v1/provider-setup/{complete,output-language}
+POST   /api/v1/watch-activity[/dismiss]
 ```
 
-Поддерживаемые браузеры:
+### macOS-приложение
 
-- Safari;
-- Google Chrome;
-- Arc;
-- Brave Browser;
-- Microsoft Edge.
+Xcode-проект — `TubeFold App/TubeFold.xcodeproj`. Build phase `Embed Python Backend` упаковывает в `.app` весь бэкенд + Python-framework + зависимости, ad-hoc подписывает и валидирует импорты на этапе сборки. В рантайме `BackendProcessController` сам поднимает и супервизит embedded `tubefold-server`; `/health` работает как gate совместимости клиента и бэкенда.
 
-Скрипт получает URL активной вкладки через AppleScript и запускает CLI через `hs.task`, не открывая Terminal. Повторный запуск блокируется, пока текущая задача не завершится.
-
-Если Hammerspoon не видит `tubefold`, задайте абсолютный путь:
-
-```lua
-package.loaded["tubefold"] = nil
-local ys = dofile("/Users/bogdan/GIT/tubefold/hammerspoon/tubefold.lua")
-ys.cliPath = "/Users/bogdan/.local/bin/tubefold"
+```sh
+xcodebuild -project "TubeFold App/TubeFold.xcodeproj" \
+  -scheme TubeFold -configuration Debug -destination "platform=macOS" build
 ```
 
-macOS может запросить Automation/Accessibility permissions для Hammerspoon, Safari или Chrome.
+### Авто-апдейт (Sparkle)
 
-## TubeFold Local API
+Приложение ships [Sparkle 2](https://sparkle-project.org). `SUFeedURL` → `releases/latest/download/appcast.xml`, апдейты подписаны EdDSA. Релиз автоматизирован — см. ниже.
 
-Дополнительно к CLI в проекте есть development-прототип TubeFold: localhost API + Chrome Extension. macOS-приложение включает копию backend-а внутри `.app` и поднимает этот helper само; ручной запуск нужен только для отладки API или extension. Helper переиспользует тот же transcript/Codex pipeline, но сохраняет данные в:
+### Релиз (CI)
 
-```text
-~/Library/Application Support/TubeFold/
+Пуш тега `v<MARKETING_VERSION>` запускает `.github/workflows/release.yml`: build → sign → notarize → staple → zip → EdDSA-appcast → GitHub Release → bump каски в `TubeFold/homebrew-tap`. Локально весь цикл воспроизводится через `scripts/release-macos.sh` + `scripts/generate-appcast.sh`.
+
+```sh
+git tag v0.3 && git push origin v0.3   # должно равняться MARKETING_VERSION
 ```
 
-Ручной запуск сервера для development-отладки:
+### Тесты
 
-```bash
-tubefold-server --provider codex
-```
-
-Для проверки без Codex:
-
-```bash
-tubefold-server --provider fake
-```
-
-Endpoints:
-
-```text
-GET    http://127.0.0.1:43821/health
-GET    http://127.0.0.1:43821/api/v1/provider-setup
-POST   http://127.0.0.1:43821/api/v1/provider-setup/select            # {"provider":"codex"|"claude"}
-POST   http://127.0.0.1:43821/api/v1/provider-setup/{codex|claude}/detect
-POST   http://127.0.0.1:43821/api/v1/provider-setup/{codex|claude}/test
-POST   http://127.0.0.1:43821/api/v1/provider-setup/{codex|claude}/model
-POST   http://127.0.0.1:43821/api/v1/provider-setup/complete
-POST   http://127.0.0.1:43821/api/v1/provider-setup/output-language   # {"outputLanguage":"English"}
-POST   http://127.0.0.1:43821/api/v1/summaries
-GET    http://127.0.0.1:43821/api/v1/jobs/{jobId}
-GET    http://127.0.0.1:43821/api/v1/videos
-GET    http://127.0.0.1:43821/api/v1/videos/by-youtube-id/{youtubeVideoId}
-POST   http://127.0.0.1:43821/api/v1/videos/{videoId}/regenerate
-POST   http://127.0.0.1:43821/api/v1/videos/{videoId}/publish-telegraph
-DELETE http://127.0.0.1:43821/api/v1/videos/{videoId}
-GET    http://127.0.0.1:43821/api/v1/usage
-POST   http://127.0.0.1:43821/api/v1/watch-activity
-POST   http://127.0.0.1:43821/api/v1/watch-activity/dismiss
-```
-
-`GET /api/v1/videos` отдаёт библиотеку (включая `readingTimeMinutes` для готовых видео). `publish-telegraph` публикует/обновляет анонимную статью в Telegraph (одна статья на видео). `usage` возвращает агрегированную статистику token usage по собственным запускам TubeFold. `watch-activity` принимает от extension сведения о просмотренных на YouTube видео и используется для подсказок «суммировать это видео».
-
-Provider setup endpoints implement the backend for the onboarding wizard (`{provider}` is `codex` or `claude`):
-
-```bash
-curl -sS -X POST -H 'Content-Type: application/json' -d '{"provider":"claude"}' \
-  http://127.0.0.1:43821/api/v1/provider-setup/select
-curl -sS -X POST http://127.0.0.1:43821/api/v1/provider-setup/claude/detect
-curl -sS -X POST http://127.0.0.1:43821/api/v1/provider-setup/claude/test
-curl -sS -X POST http://127.0.0.1:43821/api/v1/provider-setup/complete
-```
-
-Detection checks the saved path, login-shell `command -v <binary>`, and the usual Homebrew/`~/.local/bin` locations for the chosen provider (`codex` or `claude`). The connection test runs the provider from an isolated temp directory with a marker prompt and stores only setup state, not credentials or the full test output. The embedded server boots with `--provider codex`, but the active provider is whichever the user selected in-app (`selectedProviderID` in `provider-setup.json`) — no relaunch needed to switch.
-
-## TubeFold macOS App
-
-Xcode-проект находится в:
-
-```text
-TubeFold App/TubeFold.xcodeproj
-```
-
-Текущий SwiftUI app реализует onboarding для выбранного провайдера (Codex или Claude Code, переключатель в мастере и в настройках):
-
-- стартовый экран состояния приложения без ручных backend-команд;
-- wizard `Before you begin -> Check installation -> Test connection -> Complete`;
-- автоматический запуск и остановку local helper;
-- embedded backend в `Contents/Resources/TubeFoldBackend`;
-- выбор провайдера (Codex / Claude Code) на первом шаге wizard и в настройках;
-- автоматический поиск бинарника выбранного провайдера (`codex` или `claude`);
-- ручной выбор executable;
-- connection test через `POST /api/v1/provider-setup/{codex|claude}/test`;
-- сохранение завершённого setup через `POST /api/v1/provider-setup/complete`.
-- главный экран статуса провайдера: `Installed`, `Signed in`, `Ready`;
-- repair flow: если сохранённый путь провайдера сломан или connection test больше не проходит, setup помечается incomplete и app открывает нужный шаг wizard;
-- библиотека обработанных видео с регенерацией, удалением и публикацией в Telegraph, плюс оценкой времени чтения;
-- настройка языка саммари (`Output language`) и карточка Usage со статистикой токенов (для Codex — недельная квота, для Claude — токены и стоимость);
-- подсказки на основе watch-активности: extension сообщает о просмотренных видео, app предлагает их суммировать.
-
-Перед запуском app вручную поднимать `tubefold-server` не нужно. Xcode build phase `Embed Python Backend` копирует в app bundle `bin/`, `tubefold/`, `scripts/`, `providers/`, `prompts/`, `config/`, `requirements.txt`, Python framework, interpreter и Python dependencies. Для текущей direct-distribution сборки App Sandbox выключен, потому что приложение запускает локальный helper-процесс и может использовать выбранный пользователем Codex executable после перезапуска.
-
-Build phase проверяет embedded backend прямо во время сборки:
-
-```text
-TubeFold.app/Contents/Resources/TubeFoldBackend/
-  Runtime/Python.framework/
-  Runtime/bin/python3
-  Runtime/lib/python*/site-packages/
-  tubefold-server
-```
-
-Для сборки из терминала:
-
-```bash
-xcodebuild -project "TubeFold App/TubeFold.xcodeproj" -scheme "TubeFold" -configuration Debug -destination "platform=macOS" build
-```
-
-Сервер слушает только `127.0.0.1`. Для development API token по умолчанию отключён. Чтобы включить локальную авторизацию:
-
-```bash
-export TUBEFOLD_API_TOKEN="dev-local-token"
-```
-
-Логи:
-
-```text
-~/Library/Application Support/TubeFold/logs/app.log
-~/Library/Application Support/TubeFold/jobs/<job-id>/job.log
-~/Library/Application Support/TubeFold/jobs/<job-id>/metadata.stdout.log
-~/Library/Application Support/TubeFold/jobs/<job-id>/metadata.stderr.log
-~/Library/Application Support/TubeFold/jobs/<job-id>/transcript.stdout.log
-~/Library/Application Support/TubeFold/jobs/<job-id>/transcript.stderr.log
-~/Library/Application Support/TubeFold/jobs/<job-id>/provider-codex.stdout.log
-~/Library/Application Support/TubeFold/jobs/<job-id>/provider-codex.stderr.log
-```
-
-`app.log` содержит HTTP-запросы, dedupe-решения, переходы статусов, запуск процессов, exit codes, длительность и размеры. `job.log` содержит компактный timeline конкретной задачи. Полный transcript и summary в эти логи не пишутся.
-
-Chrome Extension находится в `chrome-extension/`. Установка development build:
-
-1. Откройте `chrome://extensions`.
-2. Включите Developer Mode.
-3. Нажмите Load unpacked.
-4. Выберите `/Users/bogdan/GIT/tubefold/chrome-extension`.
-5. Откройте macOS-приложение TubeFold или вручную запустите `tubefold-server` для чистой API-отладки.
-6. Откройте YouTube-видео и нажмите иконку TubeFold.
-
-Это ещё не финальная notarized упаковка. Сейчас macOS app уже прячет ручной запуск backend-а, управляет helper-ом и включает backend-код с Python runtime в `.app`; установленный Codex CLI пока остаётся внешней зависимостью пользователя.
-
-## Тесты
-
-```bash
+```sh
 python3 -m unittest discover -s tests
 ```
 
-Тесты покрывают разбор YouTube URL, выбор transcript language, объединение `snippet.text`, безопасные имена файлов, рендер языка вывода, Telegraph/reading-time, usage-сайдкары и end-to-end pipeline с fake provider. Настоящий Codex/Claude в автоматических тестах не вызывается.
+~90 тестов: парсинг URL, выбор языка транскрипта, безопасные имена, Telegraph/reading-time, usage-сайдкары и end-to-end pipeline с fake-провайдером. Реальные Codex/Claude в автотестах не вызываются.
 
-Manual smoke test с Codex:
+### Hammerspoon (опционально)
 
-```bash
-tubefold "https://youtu.be/dQw4w9WgXcQ" --verbose
-```
+Хоткей `Option+Cmd+Y` суммирует видео из активной вкладки браузера (Safari/Chrome/Arc/Brave/Edge) без открытия терминала — см. `hammerspoon/tubefold.lua`.
 
-Критерии:
+</details>
 
-- exit code `0`;
-- stdout содержит путь к Markdown;
-- front matter заполнен;
-- output не содержит служебный вывод Codex;
-- временные файлы удалены, если не указан `--keep-temp`.
+<details>
+<summary><b>🧯 Частые ошибки</b></summary>
 
-## Частые ошибки
+| Сообщение | Решение |
+|---|---|
+| `Missing dependency: youtube-transcript-api` | `python3 -m pip install youtube-transcript-api` |
+| `Missing dependency: codex` | Поставь Codex CLI, проверь `codex --help` |
+| `authorization/login problem` | `codex login` (или `claude` login) и повтори |
+| `No transcript found` | Нет субтитров для настроенных языков → включи `ALLOW_ANY_TRANSCRIPT_LANGUAGE=true` |
 
-`Missing dependency: youtube-transcript-api`
-: Установите Python-библиотеку: `python3 -m pip install youtube-transcript-api`.
+</details>
 
-`Missing dependency: codex`
-: Установите Codex CLI и проверьте `codex --help`.
+## 🗺 Roadmap
 
-`authorization/login problem`
-: Выполните `codex login` и повторите запуск.
+- [x] Нотаризованная упаковка + Homebrew + авто-апдейт
+- [ ] Chunked summarization для длинных видео
+- [ ] Whisper fallback при отсутствии субтитров
+- [ ] Несколько prompt-шаблонов
+- [ ] Obsidian URI / vault integration
 
-`No transcript found`
-: У видео нет доступного transcript для настроенных языков. Можно включить `ALLOW_ANY_TRANSCRIPT_LANGUAGE=true`.
+> **MVP-ограничения:** нет плейлистов, нет Whisper, длинные транскрипты пока отправляются целиком.
 
+## 📄 Лицензия
 
-## Ограничения MVP
+[MIT](LICENSE) © 2026 Bogdan Bystritskiy
 
-- Не обрабатываются плейлисты.
-- Нет Whisper fallback.
-- Нет HTTP API провайдера модели (только локальные CLI по подписке).
-- Chunked summarization пока не реализован — длинные транскрипты отправляются целиком.
-
-## Будущее развитие
-
-- ChatGPT Desktop provider через UI automation.
-- Chunked summarization для длинных видео.
-- Whisper fallback при отсутствии субтитров.
-- Несколько prompt templates.
-- Obsidian URI/vault integration.
-- Notarized упаковка macOS-приложения.
+<div align="center">
+<sub><a href="https://github.com/TubeFold">github.com/TubeFold</a> · собрано вне Mac App Store, подписано и нотаризовано Developer ID</sub>
+</div>
