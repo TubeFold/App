@@ -208,10 +208,6 @@ python3 -m unittest discover -s tests
 
 ~90 тестов: парсинг URL, выбор языка транскрипта, безопасные имена, Telegraph/reading-time, usage-сайдкары и end-to-end pipeline с fake-провайдером. Реальные Codex/Claude в автотестах не вызываются.
 
-### Hammerspoon (опционально)
-
-Хоткей `Option+Cmd+Y` суммирует видео из активной вкладки браузера (Safari/Chrome/Arc/Brave/Edge) без открытия терминала — см. `hammerspoon/tubefold.lua`.
-
 </details>
 
 <details>

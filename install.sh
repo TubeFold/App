@@ -104,10 +104,6 @@ Next steps:
   3. Run:
      tubefold "https://youtu.be/dQw4w9WgXcQ" --verbose
 
-Hammerspoon:
-  Add this to ~/.hammerspoon/init.lua:
-     dofile("$project_root/hammerspoon/tubefold.lua")
-
 Chrome Extension:
   1. Start the local API:
      tubefold-server --provider codex
