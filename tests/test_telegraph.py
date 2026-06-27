@@ -136,7 +136,7 @@ class MarkdownConversionTests(unittest.TestCase):
         self.assertEqual(em["tag"], "em")
         link = em["children"][1]
         self.assertEqual(link["tag"], "a")
-        self.assertEqual(link["attrs"]["href"], "https://tubefold.com")
+        self.assertEqual(link["attrs"]["href"], "https://tubefold.github.io/Site/")
         self.assertEqual(link["children"], ["TubeFold"])
         note = em["children"][2]
         self.assertIn("11 min watching", note)
