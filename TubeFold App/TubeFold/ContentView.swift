@@ -12,6 +12,8 @@ struct ContentView: View {
                     .tag(AppSection.library)
                 Label("Settings", systemImage: "gearshape")
                     .tag(AppSection.settings)
+                Label("About", systemImage: "info.circle")
+                    .tag(AppSection.about)
             }
             .navigationSplitViewColumnWidth(min: 150, ideal: 170)
         } detail: {
@@ -20,6 +22,8 @@ struct ContentView: View {
                 LibraryView()
             case .settings:
                 MainStatusView(viewModel: viewModel, showingSetup: $showingSetup)
+            case .about:
+                AboutView()
             }
         }
         .task {
@@ -42,6 +46,7 @@ struct ContentView: View {
 enum AppSection: Hashable {
     case library
     case settings
+    case about
 }
 
 struct MainStatusView: View {

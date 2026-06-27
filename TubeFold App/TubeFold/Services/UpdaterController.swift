@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import Sparkle
 
@@ -7,26 +8,41 @@ import Sparkle
 /// process lifetime; it wires up Sparkle's standard UI (the "update available"
 /// window, progress, install-and-relaunch). We start it eagerly from
 /// `AppDelegate` so the automatic background check (gated by
-/// `SUEnableAutomaticChecks` in Info.plist) runs, and expose a manual check for
-/// the menu-bar "Check for Updates…" item.
+/// `SUEnableAutomaticChecks` in Info.plist) runs, and drive the About screen's
+/// "Check for Updates…" button and auto-update toggle from here.
 @MainActor
-final class UpdaterController {
+final class UpdaterController: ObservableObject {
     static let shared = UpdaterController()
 
+    /// Mirrors `SPUUpdater.canCheckForUpdates` (false while a check is in
+    /// flight), published so the menu item / button can disable themselves.
+    @Published private(set) var canCheckForUpdates = false
+
+    /// Two-way bound to the "Check for updates automatically" toggle.
+    @Published var automaticallyChecksForUpdates: Bool {
+        didSet {
+            controller.updater.automaticallyChecksForUpdates = automaticallyChecksForUpdates
+        }
+    }
+
     private let controller: SPUStandardUpdaterController
+    private var cancellable: AnyCancellable?
 
     private init() {
-        controller = SPUStandardUpdaterController(
+        let controller = SPUStandardUpdaterController(
             startingUpdater: true,
             updaterDelegate: nil,
             userDriverDelegate: nil
         )
-    }
+        self.controller = controller
+        self.canCheckForUpdates = controller.updater.canCheckForUpdates
+        self.automaticallyChecksForUpdates = controller.updater.automaticallyChecksForUpdates
+        self.cancellable = nil
 
-    /// False while an update check is already in flight, so the menu item can
-    /// disable itself instead of stacking concurrent checks.
-    var canCheckForUpdates: Bool {
-        controller.updater.canCheckForUpdates
+        // Keep `canCheckForUpdates` in sync with Sparkle's state.
+        cancellable = controller.updater.publisher(for: \.canCheckForUpdates)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] value in self?.canCheckForUpdates = value }
     }
 
     func checkForUpdates() {
