@@ -1,10 +1,12 @@
-<div align="center">
-
 # ▶︎ TubeFold
 
-**YouTube-видео → чистое Markdown-саммари.**
+**Turn long YouTube videos into clean, structured Markdown notes.**
 
-Работает через подписку `codex` или `claude` **без API-ключей и оплаты по токенам.**
+Paste a YouTube link and get the key ideas, arguments, and takeaways—ready for Obsidian, your notes, or a personal knowledge base.
+
+**No TubeFold account. No API keys. No separate API billing.**
+
+TubeFold uses the Codex CLI or Claude Code subscription already authenticated on your Mac.
 
 [![Release](https://img.shields.io/github/v/release/TubeFold/App?color=ff3b30&label=release&style=flat-square)](https://github.com/TubeFold/App/releases/latest)
 ![macOS](https://img.shields.io/badge/macOS-26%2B-000?logo=apple&logoColor=white&style=flat-square)
@@ -12,53 +14,55 @@
 ![Python](https://img.shields.io/badge/Python-3776ab?logo=python&logoColor=white&style=flat-square)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-</div>
-
 ---
 
-## 💡 В чём идея
+## Why another YouTube summarizer?
 
-Ты уже платишь за **ChatGPT/Codex** или **Claude**. TubeFold не дёргает никакой облачный API и не просит ключ — он запускает твой **локальный CLI** (`codex` / `claude`) под капотом и забирает только финальный ответ модели. Никаких новых счетов, никакого вендор-лока.
+Most YouTube summarizers are built around the same model: send a transcript to an AI API, then charge users another monthly subscription on top of the AI services they may already pay for.
 
-Кидаешь ссылку на видео → получаешь структурированный Markdown, готовый лечь в заметки, Obsidian или базу знаний.
+TubeFold takes a different approach.
 
-## ✨ Фишки
+It uses the Codex CLI or Claude Code subscription already authenticated on your Mac. There is no TubeFold account, no separate API key, no hosted TubeFold backend, and no additional AI subscription to maintain.
+
+Your library, transcripts, and Markdown files stay on your Mac. TubeFold is open source, so you can inspect exactly how it works, change the prompts, or extend it for your own workflow.
+
+## Features
 
 | | |
-|---|---|
-| 🔑 **Твоя подписка, а не API** | Под капотом локальный `codex` или `claude`, за который ты уже платишь. |
-| 🖥 **Нативное macOS-приложение** | Нотаризованная сборка со встроенным Python-бэкендом. Ставится и работает из коробки. |
-| 📝 **Чистый Markdown на выходе** | Транскрипт на вход → структурированный конспект на выход. |
-| 🧩 **Chrome-расширение** | Кнопка прямо на странице YouTube. |
-| 📤 **Публикация в Telegraph** | Один клик — и конспект живёт публичной статьёй со ссылкой. |
+| --- | --- |
+| **Bring your own AI subscription** | Use your authenticated `codex` or `claude` CLI without configuring separate API keys. |
+| **Native macOS app** | A notarized SwiftUI app with a bundled local backend. |
+| **Structured Markdown notes** | Extract key ideas, arguments, and takeaways from YouTube transcripts. |
+| **Chrome extension** | Send the current YouTube video to TubeFold directly from its page. |
+| **Telegraph publishing** | Publish a summary as a public article with one click. |
+| **Privacy-first** | No analytics, telemetry, tracking, or TubeFold account. Your library stays on your Mac. |
 
-## 🚀 Установка
+## Installation
+
+Install with Homebrew:
 
 ```sh
 brew install --cask tubefold/tap/tubefold
 ```
 
-или [скачать TubeFold.zip](https://github.com/TubeFold/App/releases/latest/download/TubeFold.zip) напрямую
+Or [download TubeFold.zip](https://github.com/TubeFold/App/releases/latest/download/TubeFold.zip).
 
-
-## ⚡️ Как это работает
+## How it works
 
 ```text
 YouTube URL
-  → video ID
-  → метаданные (yt-dlp)
-  → транскрипт (youtube-transcript-api)
-  → prompt-шаблон
-  → провайдер (локальный codex/claude)
-  → готовое Markdown саммари
+  → video metadata
+  → transcript
+  → prompt template
+  → Codex CLI or Claude Code
+  → Markdown summary
 ```
 
-## 🗺 Roadmap
+## Roadmap
 
-- [x] Нотаризованная упаковка + Homebrew + авто-апдейт
-- [ ] Несколько prompt-шаблонов (например отдельный шаблон для Anki)
+- [ ] Multiple prompt templates, including a dedicated Anki template
 - [ ] Obsidian integration
 
-## 📄 Лицензия
+## License
 
 [MIT](LICENSE)
