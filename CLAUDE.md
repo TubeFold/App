@@ -107,6 +107,8 @@ The app ships [Sparkle 2](https://sparkle-project.org) (SPM dependency, pinned `
 
 **Releasing an update:** bump `MARKETING_VERSION` + `CURRENT_PROJECT_VERSION`, run `scripts/release-macos.sh` (notarized zip), then `scripts/generate-appcast.sh` (EdDSA-signs the zip → `build/release/appcast.xml`). Upload **both** `TubeFold.zip` and `appcast.xml` to the GitHub release tagged `v<version>`. The **EdDSA private key** lives in the login keychain (created once via Sparkle's `generate_keys`) — back it up; losing it means no client can verify future updates. For CI, pass it as the `SPARKLE_ED_PRIVATE_KEY` secret (consumed by `generate-appcast.sh`).
 
+**CI:** `.github/workflows/release.yml` automates all of the above on a `v*` tag push — imports the Developer ID cert into a temp keychain, runs `release-macos.sh` (notary auth via the App Store Connect API-key trio) + `generate-appcast.sh`, publishes the GitHub Release, then bumps `TubeFold/homebrew-tap` via `scripts/update-cask.sh`. It fails fast unless the tag equals `v<MARKETING_VERSION>`. Required secrets are listed at the top of the workflow (cert .p12, notary .p8 trio, Sparkle key, and `HOMEBREW_TAP_TOKEN` — a PAT with write access to the tap, since the default `GITHUB_TOKEN` is repo-scoped).
+
 ### Chrome extension (`chrome-extension/`)
 
 MV3 extension that POSTs the active YouTube tab to `http://127.0.0.1:43821` (see `src/shared/constants.js`). Load unpacked from `chrome://extensions` for development.

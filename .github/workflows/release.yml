@@ -1,0 +1,135 @@
+name: Release
+
+# Tag-driven release: build → sign → notarize → staple → zip → EdDSA appcast →
+# GitHub Release (TubeFold.zip + appcast.xml) → bump the Homebrew cask.
+#
+# Push a tag matching the app's MARKETING_VERSION to fire it:
+#   git tag v0.3 && git push origin v0.3
+# The job fails fast if the tag doesn't equal v<MARKETING_VERSION> so the
+# appcast enclosure URL, the release tag, and the bundle version can't drift.
+#
+# ── Required repository secrets ───────────────────────────────────────────────
+#   DEVELOPER_ID_CERT_P12        base64 of the "Developer ID Application" .p12
+#                                  (export from Keychain Access, then
+#                                   `base64 -i cert.p12 | pbcopy`)
+#   DEVELOPER_ID_CERT_PASSWORD   password set when exporting that .p12
+#   NOTARY_KEY_P8                base64 of the App Store Connect API key (.p8)
+#   NOTARY_KEY_ID                the key's Key ID
+#   NOTARY_ISSUER                the API key's Issuer UUID
+#   SPARKLE_ED_PRIVATE_KEY       the Sparkle EdDSA private key string
+#                                  (export once: `generate_keys -x key.txt`)
+#   HOMEBREW_TAP_TOKEN           PAT (or fine-grained token) with contents:write
+#                                  on TubeFold/homebrew-tap — the default
+#                                  GITHUB_TOKEN can't push to another repo
+#
+# ── Runner ────────────────────────────────────────────────────────────────────
+# Needs a macOS runner whose Xcode can build this project (macOS 26 SDK / Xcode
+# 26+). If GitHub-hosted `macos-26` isn't available to you yet, point `runs-on`
+# at a self-hosted runner on a Mac with the matching Xcode.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write # create the Release and upload assets in THIS repo
+
+env:
+  TUBEFOLD_TEAM_ID: F7AZ625QQ5
+
+jobs:
+  release:
+    runs-on: macos-26
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify tag matches MARKETING_VERSION
+        run: |
+          set -euo pipefail
+          marketing="$(xcodebuild -project 'TubeFold App/TubeFold.xcodeproj' \
+            -scheme TubeFold -showBuildSettings 2>/dev/null \
+            | awk -F'= ' '/ MARKETING_VERSION =/{print $2; exit}')"
+          tag="${GITHUB_REF_NAME#v}"
+          echo "Tag=$tag  MARKETING_VERSION=$marketing"
+          [[ "$tag" == "$marketing" ]] \
+            || { echo "::error::Tag v$tag != MARKETING_VERSION $marketing. Bump MARKETING_VERSION/CURRENT_PROJECT_VERSION or retag."; exit 1; }
+
+      - name: Import Developer ID signing certificate
+        env:
+          CERT_P12: ${{ secrets.DEVELOPER_ID_CERT_P12 }}
+          CERT_PASSWORD: ${{ secrets.DEVELOPER_ID_CERT_PASSWORD }}
+        run: |
+          set -euo pipefail
+          keychain="$RUNNER_TEMP/app-signing.keychain-db"
+          keychain_pwd="$(uuidgen)"
+          cert="$RUNNER_TEMP/developer-id.p12"
+          echo "$CERT_P12" | base64 --decode > "$cert"
+
+          security create-keychain -p "$keychain_pwd" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_pwd" "$keychain"
+          security import "$cert" -P "$CERT_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$keychain" -T /usr/bin/codesign
+          # Put our keychain first in the search list so find-identity sees it.
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | sed s/\"//g)
+          # Allow codesign to use the key without an interactive prompt.
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_pwd" "$keychain"
+          rm -f "$cert"
+          security find-identity -v -p codesigning "$keychain" | grep "Developer ID Application"
+
+      - name: Build, sign, notarize, staple
+        env:
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+          TUBEFOLD_NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          TUBEFOLD_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+        run: |
+          set -euo pipefail
+          key_path="$RUNNER_TEMP/notary.p8"
+          echo "$NOTARY_KEY_P8" | base64 --decode > "$key_path"
+          export TUBEFOLD_NOTARY_KEY="$key_path"
+          ./scripts/release-macos.sh
+          rm -f "$key_path"
+
+      - name: Generate signed appcast
+        env:
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+          TUBEFOLD_DOWNLOAD_URL_PREFIX: https://github.com/TubeFold/App/releases/download/${{ github.ref_name }}/
+        run: ./scripts/generate-appcast.sh
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          assets=(build/release/TubeFold.zip build/release/appcast.xml)
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${assets[@]}" --clobber
+          else
+            gh release create "$TAG" "${assets[@]}" --title "$TAG" --generate-notes
+          fi
+
+      - name: Bump Homebrew cask
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          sha="$(shasum -a 256 build/release/TubeFold.zip | awk '{print $1}')"
+
+          tap="$RUNNER_TEMP/homebrew-tap"
+          git clone --depth 1 "https://x-access-token:${TAP_TOKEN}@github.com/TubeFold/homebrew-tap.git" "$tap"
+          ./scripts/update-cask.sh "$tap/Casks/tubefold.rb" "$version" "$sha"
+
+          cd "$tap"
+          if git diff --quiet; then
+            echo "Cask already at $version/$sha — nothing to push."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "tubefold ${version}"
+          git push origin HEAD:main
