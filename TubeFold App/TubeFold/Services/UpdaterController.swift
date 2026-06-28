@@ -48,4 +48,14 @@ final class UpdaterController: ObservableObject {
     func checkForUpdates() {
         controller.checkForUpdates(nil)
     }
+
+    /// Silent background check, fired once at launch. Unlike Sparkle's scheduled
+    /// check (gated by `SUScheduledCheckInterval`, default 24h) this runs every
+    /// time the app starts, but only surfaces UI when an update is actually
+    /// available — so it never nags when the user is up to date. No-op when the
+    /// auto-update toggle is off.
+    func checkForUpdatesInBackground() {
+        guard automaticallyChecksForUpdates else { return }
+        controller.updater.checkForUpdatesInBackground()
+    }
 }

@@ -1,7 +1,7 @@
 [project]
 name = "tubefold"
 version = "0.1.0"
-description = "Create Markdown summaries for YouTube videos through Codex CLI."
+description = "Create Markdown summaries of YouTube videos with the Codex or Claude CLI."
 requires-python = ">=3.11"
 dependencies = [
   "youtube-transcript-api>=1.0.0",

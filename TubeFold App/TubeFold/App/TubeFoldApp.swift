@@ -30,7 +30,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if activateRunningInstanceIfPresent() { return }
         // Start Sparkle: kicks off the automatic background update check and keeps
         // the updater alive for the manual "Check for Updates…" menu item.
-        _ = UpdaterController.shared
+        let updater = UpdaterController.shared
+        // Sparkle's scheduled check only runs once per `SUScheduledCheckInterval`
+        // (default 24h), so a fresh launch often won't check. Fire an explicit
+        // silent check every launch — it only shows UI if an update exists.
+        updater.checkForUpdatesInBackground()
         MenuBarController.shared.start()
     }
 

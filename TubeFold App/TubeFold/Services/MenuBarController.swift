@@ -20,8 +20,13 @@ final class MenuBarController: NSObject {
     private var knownReadyIDs = Set<String>()
     private var lastReadyVideo: LibraryVideo?
     private var latestVideo: LibraryVideo?
-    private var iconMode: IconMode = .idle
+    private var iconMode: IconMode?
     private var currentSymbol: String?
+
+    /// How long the "summary ready" checkmark lingers after a completion before the
+    /// icon settles back to the calm app-icon default.
+    private let readyDisplayDuration: TimeInterval = 8
+    private var readyResetTimer: Timer?
 
     private override init() {}
 
@@ -43,6 +48,7 @@ final class MenuBarController: NSObject {
     func stop() {
         timer?.invalidate()
         timer = nil
+        cancelReadyReset()
         NSStatusBar.system.removeStatusItem(statusItem)
     }
 
@@ -78,12 +84,17 @@ final class MenuBarController: NSObject {
         lastReadyVideo = readyVideos.first
 
         if !activeVideos.isEmpty {
+            cancelReadyReset()
             setIconMode(.processing, tooltip: "\(activeVideos.count) video processing")
             rebuildMenu(statusTitle: hasNewVideo ? "New video received" : "Processing \(activeVideos.count) video", activeCount: activeVideos.count)
-        } else if let ready = lastReadyVideo {
+        } else if let ready = lastReadyVideo, !newlyReady.isEmpty {
+            // A summary just finished: pop the checkmark, then auto-settle back to the app icon.
             setIconMode(.ready, tooltip: "Summary ready: \(ready.displayTitle)")
             rebuildMenu(statusTitle: "Summary ready", activeCount: 0)
-        } else {
+            scheduleReadyReset()
+        } else if readyResetTimer == nil {
+            // Calm default: the app icon. While the post-completion checkmark window is
+            // still counting down, leave it alone and let the timer revert us.
             setIconMode(.idle, tooltip: videos.isEmpty ? "Waiting for videos" : "Library is up to date")
             rebuildMenu(statusTitle: videos.isEmpty ? "Waiting for videos" : "Library is up to date", activeCount: 0)
         }
@@ -121,14 +132,67 @@ final class MenuBarController: NSObject {
             } else {
                 stopSpinning()
                 setButtonImage("checkmark.circle.fill", tooltip: tooltip)
+                popIn()
             }
         case .error:
             stopSpinning()
             setButtonImage("exclamationmark.triangle", tooltip: tooltip)
         case .idle:
             stopSpinning()
-            setButtonImage("play.rectangle", tooltip: tooltip)
+            setAppIconImage(tooltip: tooltip)
         }
+    }
+
+    /// Cached menu-bar brand glyph, built on first successful load.
+    private var cachedAppIcon: NSImage?
+
+    /// The TubeFold mark for the menu bar — the play-triangle-with-folded-corner from the
+    /// app icon, on a transparent background (`MenuBarMark` bundled asset). We ship a
+    /// dedicated transparent picture rather than the full AppIcon because the AppIcon
+    /// carries its own dark rounded-square background, which renders as an unreadable dark
+    /// blob in the bar. Kept as a colored (non-template) image so the red fold survives.
+    private func appIconImage() -> NSImage? {
+        if let cachedAppIcon { return cachedAppIcon }
+        guard let icon = NSImage(named: "MenuBarMark") else { return nil }
+        icon.isTemplate = false
+        cachedAppIcon = icon
+        return icon
+    }
+
+    private func setAppIconImage(tooltip: String) {
+        guard let button = statusItem.button else { return }
+        guard let image = appIconImage() else {
+            setButtonImage("play.rectangle", tooltip: tooltip)
+            return
+        }
+        let key = "TubeFold.icon"
+        if let current = currentSymbol, current != key {
+            crossfadeImage()
+        }
+        currentSymbol = key
+        button.image = image
+        button.imagePosition = .imageOnly
+    }
+
+    // MARK: - Ready-state auto-reset
+
+    /// Hold the checkmark for `readyDisplayDuration`, then fall back to the app icon.
+    private func scheduleReadyReset() {
+        readyResetTimer?.invalidate()
+        readyResetTimer = Timer.scheduledTimer(timeInterval: readyDisplayDuration, target: self, selector: #selector(readyResetFired), userInfo: nil, repeats: false)
+    }
+
+    private func cancelReadyReset() {
+        readyResetTimer?.invalidate()
+        readyResetTimer = nil
+    }
+
+    @objc private func readyResetFired() {
+        readyResetTimer = nil
+        guard iconMode == .ready else { return }
+        let title = knownVideoIDs.isEmpty ? "Waiting for videos" : "Library is up to date"
+        setIconMode(.idle, tooltip: title)
+        rebuildMenu(statusTitle: title, activeCount: 0)
     }
 
     private func setButtonImage(_ systemName: String, tooltip: String) {
@@ -281,6 +345,9 @@ final class MenuBarController: NSObject {
         checkForUpdates.isEnabled = UpdaterController.shared.canCheckForUpdates
         menu.addItem(checkForUpdates)
 
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Quit TubeFold", action: #selector(quitApp), keyEquivalent: "q"))
+
         menu.items.forEach { $0.target = self }
         statusItem.menu = menu
     }
@@ -306,6 +373,10 @@ final class MenuBarController: NSObject {
 
     @objc private func checkForUpdatesFromMenu() {
         UpdaterController.shared.checkForUpdates()
+    }
+
+    @objc private func quitApp() {
+        NSApp.terminate(nil)
     }
 
     @objc private func pollFromTimer() {

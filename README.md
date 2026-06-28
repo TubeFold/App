@@ -2,9 +2,9 @@
 
 **Turn long YouTube videos into clean, structured Markdown notes.**
 
-Paste a YouTube link and get the key ideas, arguments, and takeaways—ready for Obsidian, your notes, or a personal knowledge base.
+**Local-first. Open source. Your own AI subscription — no API keys.**
 
-**No TubeFold account. No API keys. No separate API billing.**
+Paste a YouTube link and get the key ideas, arguments, and takeaways—ready for Obsidian, your notes, or a personal knowledge base.
 
 TubeFold uses the Codex CLI or Claude Code subscription already authenticated on your Mac.
 
