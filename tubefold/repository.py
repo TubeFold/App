@@ -284,16 +284,16 @@ class Repository:
             )
 
     def latest_watch_suggestion(self) -> sqlite3.Row | None:
-        """Newest non-dismissed watched video, joined to the library so the caller knows
-        whether it has already been added (and the local video id / status if so).
+        """Newest non-dismissed watched video that is **not already in the library**.
 
-        A video that is currently being summarized (any active status) is skipped — once
-        the user has kicked off a job there is nothing to suggest, so we fall through to the
-        next watched video instead."""
-        placeholders = ",".join("?" for _ in ACTIVE_STATUSES)
+        Any video that already has a library row — queued, processing, ready, or failed —
+        is skipped: there is nothing to suggest about a video the user has already added, and
+        it would only duplicate the row shown in the list below. We fall through to the next
+        watched video instead. The library columns are kept in the projection so the caller
+        still gets a stable shape (they are always NULL here)."""
         with self.connect() as conn:
             return conn.execute(
-                f"""
+                """
                 SELECT
                     watch_activity.*,
                     videos.id AS library_video_id,
@@ -301,11 +301,10 @@ class Repository:
                 FROM watch_activity
                 LEFT JOIN videos ON videos.youtube_video_id = watch_activity.youtube_video_id
                 WHERE watch_activity.dismissed_at IS NULL
-                  AND (videos.status IS NULL OR videos.status NOT IN ({placeholders}))
+                  AND videos.id IS NULL
                 ORDER BY watch_activity.watched_at DESC
                 LIMIT 1
                 """,
-                tuple(ACTIVE_STATUSES),
             ).fetchone()
 
     def dismiss_watch_activity(self, youtube_video_id: str) -> None:

@@ -272,18 +272,17 @@ class ServerTests(unittest.TestCase):
         self.assertFalse(suggestion["inLibrary"])
         self.assertIsNone(suggestion["libraryVideoID"])
 
-    def test_watch_activity_reflects_library_membership(self) -> None:
+    def test_watch_activity_skips_video_already_in_library(self) -> None:
+        # Once a watched video has been added to the library — even a finished, ready one —
+        # there is nothing left to suggest: it already sits in the list below, so the banner
+        # would only duplicate it. It drops out instead of offering a redundant "Open".
         from tubefold.models import ProcessingStatus
 
         self.post_json("/api/v1/watch-activity", {"url": "https://youtu.be/dQw4w9WgXcQ"})
         created = self.post_json("/api/v1/summaries", {"url": "https://youtu.be/dQw4w9WgXcQ"})
-        # A ready video still surfaces (so the banner can offer "Open").
         self.repository.mark_status(created["videoId"], created["jobId"], ProcessingStatus.READY)
 
-        suggestion = self.get_json("/api/v1/watch-activity")["suggestion"]
-        self.assertTrue(suggestion["inLibrary"])
-        self.assertEqual(suggestion["libraryVideoID"], created["videoId"])
-        self.assertEqual(suggestion["libraryStatus"], "ready")
+        self.assertIsNone(self.get_json("/api/v1/watch-activity")["suggestion"])
 
     def test_watch_activity_skips_video_being_processed(self) -> None:
         # Once a watched video is queued/processing there is nothing left to suggest,
@@ -291,6 +290,22 @@ class ServerTests(unittest.TestCase):
         self.post_json("/api/v1/watch-activity", {"url": "https://youtu.be/dQw4w9WgXcQ"})
         self.post_json("/api/v1/summaries", {"url": "https://youtu.be/dQw4w9WgXcQ"})
         self.assertIsNone(self.get_json("/api/v1/watch-activity")["suggestion"])
+
+    def test_watch_activity_falls_through_to_not_in_library_video(self) -> None:
+        # The newest watched video is already in the library, so it's skipped — but an
+        # older watched video that hasn't been added yet should still surface instead of
+        # leaving the banner empty.
+        from tubefold.models import ProcessingStatus
+
+        self.post_json("/api/v1/watch-activity", {"url": "https://youtu.be/dQw4w9WgXcQ"})
+        self.post_json("/api/v1/watch-activity", {"url": "https://youtu.be/9bZkp7q19f0"})
+        created = self.post_json("/api/v1/summaries", {"url": "https://youtu.be/9bZkp7q19f0"})
+        self.repository.mark_status(created["videoId"], created["jobId"], ProcessingStatus.READY)
+
+        suggestion = self.get_json("/api/v1/watch-activity")["suggestion"]
+        self.assertIsNotNone(suggestion)
+        self.assertEqual(suggestion["youtubeVideoID"], "dQw4w9WgXcQ")
+        self.assertFalse(suggestion["inLibrary"])
 
     def test_watch_activity_dismiss_is_permanent(self) -> None:
         self.post_json("/api/v1/watch-activity", {"url": "https://youtu.be/dQw4w9WgXcQ"})

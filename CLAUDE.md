@@ -110,9 +110,9 @@ The app ships [Sparkle 2](https://sparkle-project.org) (SPM dependency, pinned `
 
 **CI:** `.github/workflows/release.yml` automates all of the above on a `v*` tag push — imports the Developer ID cert into a temp keychain, runs `release-macos.sh` (notary auth via an Apple ID + app-specific password) + `generate-appcast.sh`, publishes the GitHub Release, then bumps `TubeFold/homebrew-tap` via `scripts/update-cask.sh`. It fails fast unless the tag equals `v<MARKETING_VERSION>`. Required secrets are listed at the top of the workflow (cert .p12 + password, `NOTARY_APPLE_ID` + `NOTARY_APP_PASSWORD`, Sparkle key, and `HOMEBREW_TAP_TOKEN` — a PAT with write access to the tap, since the default `GITHUB_TOKEN` is repo-scoped). `release-macos.sh` still also accepts a keychain profile or the App Store Connect API-key trio for local runs.
 
-### Chrome extension (`chrome-extension/`)
+### Chrome extension
 
-MV3 extension that POSTs the active YouTube tab to `http://127.0.0.1:43821` (see `src/shared/constants.js`). Load unpacked from `chrome://extensions` for development.
+MV3 extension that POSTs the active YouTube tab to `http://127.0.0.1:43821`. It lives in its **own repo**, [TubeFold/extension](https://github.com/TubeFold/extension), with its own Chrome Web Store CI — it is no longer part of this monorepo. The only contract between them is the localhost API port and the `chrome-extension://*` CORS origin (`config.py`/`server.py`); there is no build-time coupling. If you change a server endpoint the extension calls, update it in the other repo too.
 
 ## Notable constraints
 

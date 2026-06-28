@@ -107,6 +107,7 @@ Next steps:
 Chrome Extension:
   1. Start the local API:
      tubefold-server --provider codex
-  2. Open chrome://extensions, enable Developer Mode, and Load unpacked:
-     $project_root/chrome-extension
+  2. Get the extension from https://github.com/TubeFold/extension
+     (or the Chrome Web Store), then in chrome://extensions enable
+     Developer Mode and Load unpacked from its folder.
 EOF

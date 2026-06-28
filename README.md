@@ -1,4 +1,4 @@
-# ▶︎ TubeFold
+# <img src=".github/assets/logo.png" height="28" align="top" alt=""> TubeFold
 
 **Turn long YouTube videos into clean, structured Markdown notes.**
 
