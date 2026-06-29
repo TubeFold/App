@@ -4,8 +4,9 @@ All notable user-facing changes to TubeFold are recorded here. When a version is
 released, the section matching that version is shown to users in the **Sparkle
 update dialog** and used verbatim as the **GitHub Release notes** — see
 [`scripts/changelog.py`](scripts/changelog.py) and
-[`scripts/generate-appcast.sh`](scripts/generate-appcast.sh). Sparkle 2.9+
-renders this Markdown directly, so no HTML conversion is needed.
+[`scripts/generate-appcast.sh`](scripts/generate-appcast.sh). The appcast marks
+the inline `<description>` as `sparkle:format="markdown"` so Sparkle 2.9+ renders
+the Markdown directly; no HTML conversion is needed.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 

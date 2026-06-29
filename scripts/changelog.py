@@ -6,9 +6,10 @@ Single source of truth for release notes: each released version has a
 ways at release time:
 
   * `section`  prints the Markdown body (for `gh release create --notes-file`).
-  * `inject`   inserts it as a `<description>` into the generated appcast item,
-               so Sparkle shows it in the update dialog. Sparkle 2.9+ renders
-               Markdown in <description> directly, so we embed Markdown as-is.
+  * `inject`   inserts it as a Markdown `<description>` into the generated
+               appcast item, so Sparkle shows it in the update dialog.
+               Sparkle 2.9+ renders Markdown when the description carries
+               `sparkle:format="markdown"`.
 
 Both subcommands accept a bare or `v`-prefixed version. `section` and `inject`
 exit 1 (not a hard error) when no section matches the version, so callers can
@@ -88,7 +89,7 @@ def _inject_description(appcast_xml: str, version: str, body: str) -> tuple[str,
         # Indent to match the <title> line, then insert right after it.
         title = re.search(r"^([ \t]*)<title>.*?</title>[ \t]*\n", item, flags=re.MULTILINE)
         indent = title.group(1) if title else "            "
-        desc = f"{indent}<description><![CDATA[\n{safe}\n]]></description>\n"
+        desc = f'{indent}<description sparkle:format="markdown"><![CDATA[\n{safe}\n]]></description>\n'
         if title:
             item = item[: title.end()] + desc + item[title.end():]
         else:  # no <title>: drop it right after <item>

@@ -90,7 +90,8 @@ log "Wrote $build_dir/appcast.xml"
 
 # --- Embed release notes from CHANGELOG.md (best-effort) -------------------
 # Sparkle shows the appcast item's <description> in the update dialog; we fill
-# it with this version's CHANGELOG section (Markdown — Sparkle 2.9+ renders it).
+# it with this version's CHANGELOG section and mark it as Markdown for Sparkle
+# 2.9+ (`sparkle:format="markdown"`).
 # A missing section is non-fatal here: it's enforced as a hard gate in CI
 # (see .github/workflows/release.yml) so local builds can still iterate.
 changelog="$repo_root/CHANGELOG.md"
