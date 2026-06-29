@@ -33,7 +33,7 @@ Your library, transcripts, and Markdown files stay on your Mac. TubeFold is open
 | **Bring your own AI subscription** | Use your authenticated `codex` or `claude` CLI without configuring separate API keys. |
 | **Native macOS app** | A notarized SwiftUI app with a bundled local backend. |
 | **Structured Markdown notes** | Extract key ideas, arguments, and takeaways from YouTube transcripts. |
-| **Chrome extension** | Send the current YouTube video to TubeFold directly from its page. |
+| **Chrome extension** | Send the current YouTube video to TubeFold directly from its page. [Get it on the Chrome Web Store](https://chromewebstore.google.com/detail/tubefold-mac-app-companio/hjfcdpioihmgoccmfkcicofjgbkjidbh). |
 | **Telegraph publishing** | Publish a summary as a public article with one click. |
 | **Privacy-first** | No analytics, telemetry, tracking, or TubeFold account. Your library stays on your Mac. |
 
