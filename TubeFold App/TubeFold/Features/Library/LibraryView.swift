@@ -304,17 +304,13 @@ struct LibraryVideoRow: View {
 
                 HStack(spacing: 8) {
                     if video.status == "failed" {
-                        Button {
+                        RowMiniButton("Retry", systemImage: "arrow.clockwise") {
                             viewModel.regenerate(video)
-                        } label: {
-                            Label("Retry", systemImage: "arrow.clockwise")
                         }
 
                         if video.hasJobLogs {
-                            Button {
+                            RowMiniButton("Show Logs", systemImage: "doc.text.magnifyingglass") {
                                 viewModel.revealLogs(video)
-                            } label: {
-                                Label("Show Logs", systemImage: "doc.text.magnifyingglass")
                             }
                         }
                     }
@@ -323,7 +319,7 @@ struct LibraryVideoRow: View {
                     // still running there's nothing to publish, so the button stays hidden
                     // and fades in when the summary lands instead of sitting there disabled.
                     if video.hasMarkdown {
-                        Button {
+                        RowMiniButton {
                             viewModel.publishToTelegraph(video)
                         } label: {
                             if viewModel.isPublishing(video) {
@@ -337,7 +333,7 @@ struct LibraryVideoRow: View {
                         .disabled(viewModel.isPublishing(video))
                         .transition(.opacity.combined(with: .move(edge: .leading)))
 
-                        Button {
+                        RowMiniButton {
                             viewModel.openPDF(video)
                         } label: {
                             if viewModel.isRenderingPDF(video) {
@@ -350,10 +346,8 @@ struct LibraryVideoRow: View {
                         .transition(.opacity.combined(with: .move(edge: .leading)))
                     }
 
-                    Button {
+                    RowMiniButton("YouTube", systemImage: "play.rectangle") {
                         viewModel.openYouTube(video)
-                    } label: {
-                        Label("YouTube", systemImage: "play.rectangle")
                     }
 
                     Menu {
@@ -398,9 +392,9 @@ struct LibraryVideoRow: View {
                     }
                     .menuIndicator(.hidden)
                     .fixedSize()
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
                 .animation(.easeInOut(duration: 0.25), value: video.hasMarkdown)
             }
         }

@@ -24,6 +24,12 @@ struct TubeFoldApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // SwiftUI Previews boot the full app executable to host the Canvas, which
+        // runs this delegate. Skip all production startup — the single-instance
+        // exit(0) guard below, Sparkle, the menu bar and the backend each take down
+        // the preview agent ("…app may have crashed") and break every #Preview.
+        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" { return }
+
         // If another copy of TubeFold is already running (e.g. an installed build
         // while LaunchServices opened a tubefold:// link against a different bundle
         // path), focus that one and bail instead of standing up a second instance.
