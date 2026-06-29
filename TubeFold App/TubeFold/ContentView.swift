@@ -125,7 +125,7 @@ struct MainStatusView: View {
                     StatusTile(
                         title: "Extension",
                         value: "Connected",
-                        systemImage: "puzzlepiece.extension.fill",
+                        systemImage: "puzzlepiece.extension",
                         tint: .pink
                     )
                 }

@@ -10,6 +10,7 @@ final class LibraryViewModel: ObservableObject {
     @Published private(set) var errorMessage: String?
     @Published private(set) var lastLoadedAt: Date?
     @Published private(set) var publishingVideoIDs: Set<String> = []
+    @Published private(set) var pdfRenderingVideoIDs: Set<String> = []
     @Published var urlInput = ""
     @Published private(set) var isSubmitting = false
     @Published private(set) var noticeMessage: String?
@@ -246,18 +247,77 @@ final class LibraryViewModel: ObservableObject {
         }
     }
 
-    /// Default Save-panel filename: "[TubeFold Summary] <video title>.md", sanitized
+    func isRenderingPDF(_ video: LibraryVideo) -> Bool {
+        pdfRenderingVideoIDs.contains(video.id)
+    }
+
+    /// Render the summary to PDF and open it in the default viewer (Preview),
+    /// mirroring how "Open Telegraph" opens the article in the browser. The PDF is
+    /// written to a temp dir; the user can then save it from Preview, or use
+    /// "Save PDF…" to pick a location directly.
+    func openPDF(_ video: LibraryVideo) {
+        guard !pdfRenderingVideoIDs.contains(video.id),
+              let sourceURL = video.markdownURL,
+              let markdown = try? String(contentsOf: sourceURL, encoding: .utf8) else { return }
+        pdfRenderingVideoIDs.insert(video.id)
+        Task {
+            defer { pdfRenderingVideoIDs.remove(video.id) }
+            do {
+                let data = try await SummaryPDFRenderer().makePDFData(markdown: markdown, title: video.displayTitle)
+                let dir = FileManager.default.temporaryDirectory.appendingPathComponent("TubeFold", isDirectory: true)
+                try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+                let fileURL = dir.appendingPathComponent(Self.suggestedFilename(for: video, fallback: sourceURL, fileExtension: "pdf"))
+                try data.write(to: fileURL)
+                NSWorkspace.shared.open(fileURL)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    func savePDFCopy(_ video: LibraryVideo) {
+        guard !pdfRenderingVideoIDs.contains(video.id),
+              let sourceURL = video.markdownURL,
+              let markdown = try? String(contentsOf: sourceURL, encoding: .utf8) else { return }
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.pdf]
+        panel.nameFieldStringValue = Self.suggestedFilename(for: video, fallback: sourceURL, fileExtension: "pdf")
+        panel.canCreateDirectories = true
+
+        guard panel.runModal() == .OK, let destinationURL = panel.url else { return }
+        pdfRenderingVideoIDs.insert(video.id)
+        Task {
+            defer { pdfRenderingVideoIDs.remove(video.id) }
+            do {
+                let data = try await SummaryPDFRenderer().makePDFData(markdown: markdown, title: video.displayTitle)
+                try data.write(to: destinationURL)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    /// Default Save-panel filename: "[TubeFold] <video title>.md", sanitized
     /// for the filesystem. Falls back to the source file's name if there's no title.
     static func suggestedMarkdownFilename(for video: LibraryVideo, fallback: URL) -> String {
+        suggestedFilename(for: video, fallback: fallback, fileExtension: "md")
+    }
+
+    /// Save-panel filename "[TubeFold] <video title>.<ext>", sanitized for
+    /// the filesystem. Falls back to the source file's name (with the requested
+    /// extension swapped in) when there's no title.
+    static func suggestedFilename(for video: LibraryVideo, fallback: URL, fileExtension: String) -> String {
         let title = video.displayTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !title.isEmpty else { return fallback.lastPathComponent }
+        guard !title.isEmpty else {
+            return fallback.deletingPathExtension().lastPathComponent + ".\(fileExtension)"
+        }
         let sanitized = title
             .replacingOccurrences(of: "/", with: "-")
             .replacingOccurrences(of: ":", with: "-")
             .replacingOccurrences(of: "\n", with: " ")
-        let base = "[TubeFold Summary] \(sanitized)"
-        // Keep well under the 255-byte filename limit, leaving room for ".md".
-        return "\(String(base.prefix(200))).md"
+        let base = "[TubeFold] \(sanitized)"
+        // Keep well under the 255-byte filename limit, leaving room for the extension.
+        return "\(String(base.prefix(200))).\(fileExtension)"
     }
 
     func isPublishing(_ video: LibraryVideo) -> Bool {

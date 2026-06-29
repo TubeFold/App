@@ -293,9 +293,6 @@ struct LibraryVideoRow: View {
                         MetadataLabel(systemImage: "book", text: readingTimeText)
                     }
                     MetadataLabel(systemImage: "calendar", text: formatDate(video.updatedAt))
-                    if let latestJobID = video.latestJobID {
-                        MetadataLabel(systemImage: "number", text: String(latestJobID.prefix(8)))
-                    }
                 }
 
                 if video.status == "failed" {
@@ -339,6 +336,18 @@ struct LibraryVideoRow: View {
                         }
                         .disabled(viewModel.isPublishing(video))
                         .transition(.opacity.combined(with: .move(edge: .leading)))
+
+                        Button {
+                            viewModel.openPDF(video)
+                        } label: {
+                            if viewModel.isRenderingPDF(video) {
+                                Label("Opening…", systemImage: "doc.richtext")
+                            } else {
+                                Label("Open PDF", systemImage: "doc.richtext")
+                            }
+                        }
+                        .disabled(viewModel.isRenderingPDF(video))
+                        .transition(.opacity.combined(with: .move(edge: .leading)))
                     }
 
                     Button {
@@ -359,6 +368,13 @@ struct LibraryVideoRow: View {
                             viewModel.saveMarkdownCopy(video)
                         } label: {
                             Label("Save Markdown", systemImage: "square.and.arrow.down")
+                        }
+                        .disabled(!video.hasMarkdown)
+
+                        Button {
+                            viewModel.savePDFCopy(video)
+                        } label: {
+                            Label("Save PDF", systemImage: "doc.richtext")
                         }
                         .disabled(!video.hasMarkdown)
 
