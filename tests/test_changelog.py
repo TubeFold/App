@@ -52,6 +52,19 @@ class ChangelogTests(unittest.TestCase):
         self.assertIn('<description sparkle:format="markdown"><![CDATA[', xml)
         self.assertIn("### Added\n- Export any summary to PDF.", xml)
 
+        rc = changelog.main([
+            "inject",
+            "--version",
+            "v0.6",
+            "--changelog",
+            str(ROOT / "CHANGELOG.md"),
+            str(appcast),
+        ])
+
+        self.assertEqual(rc, 0)
+        xml = appcast.read_text(encoding="utf-8")
+        self.assertEqual(xml.count("<description"), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -85,7 +85,12 @@ def _inject_description(appcast_xml: str, version: str, body: str) -> tuple[str,
         if not sv or _normalize(sv.group(1).strip()) != want:
             return item
         # Remove any prior <description> so the operation is idempotent.
-        item = re.sub(r"\s*<description>.*?</description>", "", item, flags=re.DOTALL)
+        item = re.sub(
+            r"\s*<description(?:\s+[^>]*)?>.*?</description>",
+            "",
+            item,
+            flags=re.DOTALL,
+        )
         # Indent to match the <title> line, then insert right after it.
         title = re.search(r"^([ \t]*)<title>.*?</title>[ \t]*\n", item, flags=re.MULTILINE)
         indent = title.group(1) if title else "            "
