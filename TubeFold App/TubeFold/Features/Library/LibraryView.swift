@@ -350,25 +350,11 @@ struct LibraryVideoRow: View {
                         viewModel.openYouTube(video)
                     }
 
-                    Menu {
+                    RowMiniMenu("More", systemImage: "ellipsis") {
                         Button {
                             viewModel.revealMarkdown(video)
                         } label: {
-                            Label("Show File", systemImage: "folder")
-                        }
-                        .disabled(!video.hasMarkdown)
-
-                        Button {
-                            viewModel.saveMarkdownCopy(video)
-                        } label: {
-                            Label("Save Markdown", systemImage: "square.and.arrow.down")
-                        }
-                        .disabled(!video.hasMarkdown)
-
-                        Button {
-                            viewModel.savePDFCopy(video)
-                        } label: {
-                            Label("Save PDF", systemImage: "doc.richtext")
+                            Label("Show Files", systemImage: "folder")
                         }
                         .disabled(!video.hasMarkdown)
 
@@ -387,13 +373,7 @@ struct LibraryVideoRow: View {
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
-                    } label: {
-                        Label("More", systemImage: "ellipsis")
                     }
-                    .menuIndicator(.hidden)
-                    .fixedSize()
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
                 }
                 .animation(.easeInOut(duration: 0.25), value: video.hasMarkdown)
             }

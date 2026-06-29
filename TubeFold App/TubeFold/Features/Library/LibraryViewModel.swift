@@ -1,7 +1,6 @@
 import AppKit
 import Combine
 import Foundation
-import UniformTypeIdentifiers
 
 @MainActor
 final class LibraryViewModel: ObservableObject {
@@ -220,31 +219,11 @@ final class LibraryViewModel: ObservableObject {
     }
 
     /// Open the latest job's log folder in Finder, so the user can inspect why a
-    /// summary failed (job.log + provider stdout/stderr live there).
+    /// summary failed (job.log + provider stdout/stderr live there). `open` drops
+    /// the user *inside* the folder rather than selecting it in its parent.
     func revealLogs(_ video: LibraryVideo) {
         guard let url = video.jobLogURL else { return }
-        NSWorkspace.shared.activateFileViewerSelecting([url])
-    }
-
-    func saveMarkdownCopy(_ video: LibraryVideo) {
-        guard let sourceURL = video.markdownURL else { return }
-        let panel = NSSavePanel()
-        // `UTType.markdown` is macOS 27+; build the standard Markdown UTI by hand
-        // so the deployment target can stay at macOS 26.
-        panel.allowedContentTypes = [UTType(filenameExtension: "md") ?? .plainText]
-        panel.nameFieldStringValue = Self.suggestedMarkdownFilename(for: video, fallback: sourceURL)
-        panel.canCreateDirectories = true
-
-        if panel.runModal() == .OK, let destinationURL = panel.url {
-            do {
-                if FileManager.default.fileExists(atPath: destinationURL.path) {
-                    try FileManager.default.removeItem(at: destinationURL)
-                }
-                try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
-            } catch {
-                errorMessage = error.localizedDescription
-            }
-        }
+        NSWorkspace.shared.open(url)
     }
 
     func isRenderingPDF(_ video: LibraryVideo) -> Bool {
@@ -275,37 +254,9 @@ final class LibraryViewModel: ObservableObject {
         }
     }
 
-    func savePDFCopy(_ video: LibraryVideo) {
-        guard !pdfRenderingVideoIDs.contains(video.id),
-              let sourceURL = video.markdownURL,
-              let markdown = try? String(contentsOf: sourceURL, encoding: .utf8) else { return }
-        let panel = NSSavePanel()
-        panel.allowedContentTypes = [.pdf]
-        panel.nameFieldStringValue = Self.suggestedFilename(for: video, fallback: sourceURL, fileExtension: "pdf")
-        panel.canCreateDirectories = true
-
-        guard panel.runModal() == .OK, let destinationURL = panel.url else { return }
-        pdfRenderingVideoIDs.insert(video.id)
-        Task {
-            defer { pdfRenderingVideoIDs.remove(video.id) }
-            do {
-                let data = try await SummaryPDFRenderer().makePDFData(markdown: markdown, title: video.displayTitle)
-                try data.write(to: destinationURL)
-            } catch {
-                errorMessage = error.localizedDescription
-            }
-        }
-    }
-
-    /// Default Save-panel filename: "[TubeFold] <video title>.md", sanitized
-    /// for the filesystem. Falls back to the source file's name if there's no title.
-    static func suggestedMarkdownFilename(for video: LibraryVideo, fallback: URL) -> String {
-        suggestedFilename(for: video, fallback: fallback, fileExtension: "md")
-    }
-
-    /// Save-panel filename "[TubeFold] <video title>.<ext>", sanitized for
-    /// the filesystem. Falls back to the source file's name (with the requested
-    /// extension swapped in) when there's no title.
+    /// Filename for a rendered artifact: "[TubeFold] <video title>.<ext>",
+    /// sanitized for the filesystem. Falls back to the source file's name (with
+    /// the requested extension swapped in) when there's no title.
     static func suggestedFilename(for video: LibraryVideo, fallback: URL, fileExtension: String) -> String {
         let title = video.displayTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty else {
