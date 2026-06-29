@@ -3,7 +3,9 @@ import SwiftUI
 struct UsageStatsView: View {
     @ObservedObject var viewModel: ProviderSetupViewModel
 
-    private var usage: UsageSummary { viewModel.usage ?? .empty }
+    private var usage: UsageSummary {
+        viewModel.usage ?? .empty
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -48,7 +50,6 @@ struct UsageStatsView: View {
         .settingsCard()
     }
 
-    @ViewBuilder
     private func providerRow(name: String, usage: UsageSummary.ProviderUsage) -> some View {
         HStack(alignment: .firstTextBaseline) {
             Text(UsageStatsView.providerDisplayName(name))
@@ -65,9 +66,9 @@ struct UsageStatsView: View {
 
     static func providerDisplayName(_ id: String) -> String {
         switch id {
-        case "codex": return "Codex CLI"
-        case "claude": return "Claude Code CLI"
-        default: return id.capitalized
+        case "codex": "Codex CLI"
+        case "claude": "Claude Code CLI"
+        default: id.capitalized
         }
     }
 
@@ -76,8 +77,8 @@ struct UsageStatsView: View {
         if value >= 1_000_000 {
             return String(format: "%.1fM", value / 1_000_000)
         }
-        if value >= 1_000 {
-            return String(format: "%.1fK", value / 1_000)
+        if value >= 1000 {
+            return String(format: "%.1fK", value / 1000)
         }
         return String(tokens)
     }

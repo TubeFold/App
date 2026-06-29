@@ -21,7 +21,7 @@ struct LibraryView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            if viewModel.isLoading && viewModel.videos.isEmpty {
+            if viewModel.isLoading, viewModel.videos.isEmpty {
                 Spacer()
                 ProgressView("Loading Library")
                     .frame(maxWidth: .infinity)
@@ -52,17 +52,19 @@ struct LibraryView: View {
             "Delete this video?",
             isPresented: Binding(
                 get: { videoPendingDeletion != nil },
-                set: { if !$0 { videoPendingDeletion = nil } }
+                set: { if !$0 { videoPendingDeletion = nil } },
             ),
             titleVisibility: .visible,
-            presenting: videoPendingDeletion
+            presenting: videoPendingDeletion,
         ) { video in
             Button("Delete", role: .destructive) {
                 viewModel.deleteVideo(video)
             }
             Button("Cancel", role: .cancel) {}
         } message: { video in
-            Text("“\(video.displayTitle)” and its generated summary will be removed from your Library. This can't be undone.")
+            Text(
+                "“\(video.displayTitle)” and its generated summary will be removed from your Library. This can't be undone.",
+            )
         }
         .task {
             viewModel.startAutoRefresh()

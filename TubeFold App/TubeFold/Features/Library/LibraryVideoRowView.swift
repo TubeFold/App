@@ -133,7 +133,7 @@ struct LibraryVideoRowView: View {
         if let url = video.thumbnailImageURL {
             AsyncImage(url: url) { phase in
                 switch phase {
-                case .success(let image):
+                case let .success(image):
                     image
                         .resizable()
                         .scaledToFill()
@@ -182,32 +182,32 @@ private func formatDate(_ value: String) -> String {
 }
 
 #if DEBUG
-extension LibraryVideo {
-    static let preview = LibraryVideo(
-        id: "video-1",
-        youtubeVideoID: "dQw4w9WgXcQ",
-        canonicalURL: "https://youtu.be/dQw4w9WgXcQ",
-        title: "How transformers actually work",
-        channelName: "Deep Dive",
-        thumbnailURL: nil,
-        durationSeconds: 942,
-        currentTimeAtRequest: nil,
-        createdAt: "2026-06-29T10:00:00Z",
-        updatedAt: "2026-06-29T10:05:00Z",
-        status: "ready",
-        transcriptPath: "/tmp/transcript.txt",
-        summaryPath: "/tmp/summary.md",
-        errorCode: nil,
-        errorMessage: nil,
-        latestJobID: "job-1",
-        latestJobStatus: "ready",
-        latestJobCreatedAt: "2026-06-29T10:00:00Z",
-        latestJobFinishedAt: "2026-06-29T10:05:00Z",
-        telegraphURL: nil,
-        readingTimeMinutes: 4,
-        jobLogPath: nil
-    )
-}
+    extension LibraryVideo {
+        static let preview = LibraryVideo(
+            id: "video-1",
+            youtubeVideoID: "dQw4w9WgXcQ",
+            canonicalURL: "https://youtu.be/dQw4w9WgXcQ",
+            title: "How transformers actually work",
+            channelName: "Deep Dive",
+            thumbnailURL: nil,
+            durationSeconds: 942,
+            currentTimeAtRequest: nil,
+            createdAt: "2026-06-29T10:00:00Z",
+            updatedAt: "2026-06-29T10:05:00Z",
+            status: "ready",
+            transcriptPath: "/tmp/transcript.txt",
+            summaryPath: "/tmp/summary.md",
+            errorCode: nil,
+            errorMessage: nil,
+            latestJobID: "job-1",
+            latestJobStatus: "ready",
+            latestJobCreatedAt: "2026-06-29T10:00:00Z",
+            latestJobFinishedAt: "2026-06-29T10:05:00Z",
+            telegraphURL: nil,
+            readingTimeMinutes: 4,
+            jobLogPath: nil,
+        )
+    }
 #endif
 
 #Preview {

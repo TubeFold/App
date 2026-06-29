@@ -9,10 +9,12 @@ struct ResetDataSettingsView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Reset")
                     .font(.headline)
-                Text("Erase the whole library, processing history, and usage stats so the app starts from scratch. Your provider sign-in and settings are kept. This can't be undone.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                Text(
+                    "Erase the whole library, processing history, and usage stats so the app starts from scratch. Your provider sign-in and settings are kept. This can't be undone.",
+                )
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             }
 
             HStack {
@@ -31,14 +33,16 @@ struct ResetDataSettingsView: View {
         .confirmationDialog(
             "Clear all data?",
             isPresented: $showingConfirmation,
-            titleVisibility: .visible
+            titleVisibility: .visible,
         ) {
             Button("Clear all data", role: .destructive) {
                 Task { await viewModel.resetData() }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Every saved summary, queued job, and usage record will be permanently removed. Your provider sign-in and settings stay intact.")
+            Text(
+                "Every saved summary, queued job, and usage record will be permanently removed. Your provider sign-in and settings stay intact.",
+            )
         }
     }
 }

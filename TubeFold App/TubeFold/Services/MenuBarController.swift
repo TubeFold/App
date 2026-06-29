@@ -31,7 +31,7 @@ final class MenuBarController: NSObject {
     private let readyDisplayDuration: TimeInterval = 8
     private var readyResetTimer: Timer?
 
-    private override init() {}
+    override private init() {}
 
     func start() {
         statusItem.button?.wantsLayer = true
@@ -39,7 +39,13 @@ final class MenuBarController: NSObject {
         setIconMode(.idle, tooltip: "TubeFold")
         rebuildMenu(statusTitle: "TubeFold is ready")
         refresh()
-        timer = Timer.scheduledTimer(timeInterval: 6, target: self, selector: #selector(pollFromTimer), userInfo: nil, repeats: true)
+        timer = Timer.scheduledTimer(
+            timeInterval: 6,
+            target: self,
+            selector: #selector(pollFromTimer),
+            userInfo: nil,
+            repeats: true,
+        )
     }
 
     /// Show or hide the status item per the user's preference. Polling keeps
@@ -185,7 +191,13 @@ final class MenuBarController: NSObject {
     /// Hold the checkmark for `readyDisplayDuration`, then fall back to the app icon.
     private func scheduleReadyReset() {
         readyResetTimer?.invalidate()
-        readyResetTimer = Timer.scheduledTimer(timeInterval: readyDisplayDuration, target: self, selector: #selector(readyResetFired), userInfo: nil, repeats: false)
+        readyResetTimer = Timer.scheduledTimer(
+            timeInterval: readyDisplayDuration,
+            target: self,
+            selector: #selector(readyResetFired),
+            userInfo: nil,
+            repeats: false,
+        )
     }
 
     private func cancelReadyReset() {
@@ -226,8 +238,10 @@ final class MenuBarController: NSObject {
             .applying(layer.affineTransform())
         let old = CGPoint(x: bounds.width * layer.anchorPoint.x, y: bounds.height * layer.anchorPoint.y)
             .applying(layer.affineTransform())
-        layer.position = CGPoint(x: layer.position.x - old.x + new.x,
-                                 y: layer.position.y - old.y + new.y)
+        layer.position = CGPoint(
+            x: layer.position.x - old.x + new.x,
+            y: layer.position.y - old.y + new.y,
+        )
         layer.anchorPoint = center
     }
 
@@ -330,7 +344,11 @@ final class MenuBarController: NSObject {
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Open Library", action: #selector(openApp), keyEquivalent: ""))
 
-        let openSummary = NSMenuItem(title: "Open Latest Summary", action: #selector(openLatestSummary), keyEquivalent: "")
+        let openSummary = NSMenuItem(
+            title: "Open Latest Summary",
+            action: #selector(openLatestSummary),
+            keyEquivalent: "",
+        )
         openSummary.isEnabled = lastReadyVideo?.markdownURL != nil
         menu.addItem(openSummary)
 
@@ -341,14 +359,22 @@ final class MenuBarController: NSObject {
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Refresh", action: #selector(refreshFromMenu), keyEquivalent: ""))
 
-        let checkForUpdates = NSMenuItem(title: "Check for Updates…", action: #selector(checkForUpdatesFromMenu), keyEquivalent: "")
+        let checkForUpdates = NSMenuItem(
+            title: "Check for Updates…",
+            action: #selector(checkForUpdatesFromMenu),
+            keyEquivalent: "",
+        )
         checkForUpdates.isEnabled = UpdaterController.shared.canCheckForUpdates
         menu.addItem(checkForUpdates)
 
         // Only surface the install link to people who don't already have the extension.
         if !extensionConnected {
             menu.addItem(.separator())
-            menu.addItem(NSMenuItem(title: "Get the Chrome Extension…", action: #selector(openChromeStore), keyEquivalent: ""))
+            menu.addItem(NSMenuItem(
+                title: "Get the Chrome Extension…",
+                action: #selector(openChromeStore),
+                keyEquivalent: "",
+            ))
         }
 
         menu.addItem(.separator())

@@ -6,7 +6,7 @@ struct StatusTileView: View {
     let systemImage: String
     let tint: Color
     /// When set, the tile becomes clickable and runs this on tap.
-    var action: (() -> Void)? = nil
+    var action: (() -> Void)?
 
     @State private var isHovering = false
 
@@ -35,7 +35,7 @@ struct StatusTileView: View {
                 content
                     .overlay(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(tint.opacity(isHovering ? 0.6 : 0), lineWidth: 1)
+                            .strokeBorder(tint.opacity(isHovering ? 0.6 : 0), lineWidth: 1),
                     )
             }
             .buttonStyle(.plain)

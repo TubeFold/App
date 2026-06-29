@@ -24,14 +24,16 @@ final class BackendProcessController {
 
         try launch()
 
-        for _ in 0..<30 {
+        for _ in 0 ..< 30 {
             try await Task.sleep(nanoseconds: 200_000_000)
             if await isCompatibleBackendHealthy() {
                 return
             }
         }
 
-        throw ProviderSetupAPIError(message: "TubeFold could not start its local helper. Reopen the app or reinstall the command-line helper.")
+        throw ProviderSetupAPIError(
+            message: "TubeFold could not start its local helper. Reopen the app or reinstall the command-line helper.",
+        )
     }
 
     func stop() {
@@ -46,7 +48,7 @@ final class BackendProcessController {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else { return false }
-            guard (200..<300).contains(httpResponse.statusCode) else { return false }
+            guard (200 ..< 300).contains(httpResponse.statusCode) else { return false }
 
             let health = try JSONDecoder().decode(BackendHealthResponse.self, from: data)
             let features = health.backendFeatures
@@ -70,7 +72,9 @@ final class BackendProcessController {
 
     private func launch() throws {
         guard let executableURL = discoverServerExecutable() else {
-            throw ProviderSetupAPIError(message: "TubeFold helper is missing from the app bundle. Rebuild the app or install the command-line helper.")
+            throw ProviderSetupAPIError(
+                message: "TubeFold helper is missing from the app bundle. Rebuild the app or install the command-line helper.",
+            )
         }
 
         let launchedProcess = Process()
@@ -92,7 +96,7 @@ final class BackendProcessController {
     private func terminateStaleHelperOnPort() {
         guard let output = runProcessAndCapture(
             executable: "/usr/sbin/lsof",
-            arguments: ["-nP", "-tiTCP:\(port)", "-sTCP:LISTEN"]
+            arguments: ["-nP", "-tiTCP:\(port)", "-sTCP:LISTEN"],
         ) else {
             return
         }
@@ -143,7 +147,7 @@ final class BackendProcessController {
         let candidates = [
             "\(home)/.local/bin/tubefold-server",
             "/opt/homebrew/bin/tubefold-server",
-            "/usr/local/bin/tubefold-server"
+            "/usr/local/bin/tubefold-server",
         ]
 
         if let path = candidates.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) {
@@ -198,7 +202,7 @@ final class BackendProcessController {
             "/usr/bin",
             "/bin",
             "/usr/sbin",
-            "/sbin"
+            "/sbin",
         ].joined(separator: ":")
         environment["PATH"] = "\(extraPath):\(environment["PATH"] ?? "")"
         return environment

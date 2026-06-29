@@ -54,8 +54,8 @@ struct ContentView: View {
         // keep `.automatic` elsewhere so their on-scroll separator still appears.
         .background(
             TitlebarSeparatorStyleSetter(
-                style: selectedSection == .library ? .none : .automatic
-            )
+                style: selectedSection == .library ? .none : .automatic,
+            ),
         )
     }
 }
@@ -65,13 +65,13 @@ struct ContentView: View {
 private struct TitlebarSeparatorStyleSetter: NSViewRepresentable {
     let style: NSTitlebarSeparatorStyle
 
-    func makeNSView(context: Context) -> NSView {
+    func makeNSView(context _: Context) -> NSView {
         let view = NSView()
         apply(from: view)
         return view
     }
 
-    func updateNSView(_ nsView: NSView, context: Context) {
+    func updateNSView(_ nsView: NSView, context _: Context) {
         apply(from: nsView)
     }
 
@@ -90,7 +90,10 @@ enum AppSection: Hashable {
 
 /// Shared external links used across the app's surfaces.
 enum TubeFoldLinks {
-    static let chromeWebStore = URL(string: "https://chromewebstore.google.com/detail/tubefold-mac-app-companio/hjfcdpioihmgoccmfkcicofjgbkjidbh")!
+    static let chromeWebStore =
+        URL(
+            string: "https://chromewebstore.google.com/detail/tubefold-mac-app-companio/hjfcdpioihmgoccmfkcicofjgbkjidbh",
+        )!
 }
 
 /// Whether the Chrome extension has recently talked to the local backend.

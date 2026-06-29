@@ -26,10 +26,10 @@ final class SummaryPDFRenderer: NSObject, WKNavigationDelegate {
 
         var errorDescription: String? {
             switch self {
-            case .loadFailed(let error):
-                return "Couldn't lay out the summary for PDF: \(error.localizedDescription)"
-            case .pdfFailed(let error):
-                return "Couldn't render the PDF: \(error.localizedDescription)"
+            case let .loadFailed(error):
+                "Couldn't lay out the summary for PDF: \(error.localizedDescription)"
+            case let .pdfFailed(error):
+                "Couldn't render the PDF: \(error.localizedDescription)"
             }
         }
     }
@@ -56,7 +56,7 @@ final class SummaryPDFRenderer: NSObject, WKNavigationDelegate {
         }
     }
 
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+    func webView(_ webView: WKWebView, didFinish _: WKNavigation!) {
         // Grow the web view to the full content height so `createPDF` captures all
         // of it in one page (it captures the view's bounds), then snapshot.
         webView.evaluateJavaScript("document.body.scrollHeight") { [weak self] value, _ in
@@ -66,20 +66,20 @@ final class SummaryPDFRenderer: NSObject, WKNavigationDelegate {
             }
             webView.createPDF(configuration: WKPDFConfiguration()) { result in
                 switch result {
-                case .success(let data):
+                case let .success(data):
                     self.finish(.success(data))
-                case .failure(let error):
+                case let .failure(error):
                     self.finish(.failure(.pdfFailed(error)))
                 }
             }
         }
     }
 
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+    func webView(_: WKWebView, didFail _: WKNavigation!, withError error: Error) {
         finish(.failure(.loadFailed(error)))
     }
 
-    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+    func webView(_: WKWebView, didFailProvisionalNavigation _: WKNavigation!, withError error: Error) {
         finish(.failure(.loadFailed(error)))
     }
 
@@ -88,9 +88,9 @@ final class SummaryPDFRenderer: NSObject, WKNavigationDelegate {
         self.continuation = nil
         webView = nil
         switch result {
-        case .success(let data):
+        case let .success(data):
             continuation.resume(returning: data)
-        case .failure(let error):
+        case let .failure(error):
             continuation.resume(throwing: error)
         }
     }
@@ -144,11 +144,10 @@ enum SummaryMarkdown {
 
     /// Title (linked to the YouTube video when we have the URL) plus the channel name.
     private static func header(title: String, videoURL: String, channel: String) -> String {
-        let heading: String
-        if videoURL.isEmpty {
-            heading = "<h1>\(escape(title))</h1>"
+        let heading = if videoURL.isEmpty {
+            "<h1>\(escape(title))</h1>"
         } else {
-            heading = "<h1><a href=\"\(escapeAttribute(videoURL))\">\(escape(title))</a></h1>"
+            "<h1><a href=\"\(escapeAttribute(videoURL))\">\(escape(title))</a></h1>"
         }
         let byline = channel.isEmpty ? "" : "<p class=\"byline\">\(escape(channel))</p>"
         return "<header>\(heading)\(byline)</header>"
@@ -204,7 +203,8 @@ enum SummaryMarkdown {
                 index += 1
                 var code: [String] = []
                 while index < lines.count,
-                      !lines[index].trimmingCharacters(in: .whitespaces).hasPrefix(fence) {
+                      !lines[index].trimmingCharacters(in: .whitespaces).hasPrefix(fence)
+                {
                     code.append(lines[index])
                     index += 1
                 }
@@ -237,7 +237,10 @@ enum SummaryMarkdown {
                 flushParagraph()
                 var items: [String] = []
                 while index < lines.count, let m = match(ulRegex, lines[index]) {
-                    items.append("<li>\(inlineHTML(group(m, lines[index], 1).trimmingCharacters(in: .whitespaces)))</li>")
+                    items
+                        .append(
+                            "<li>\(inlineHTML(group(m, lines[index], 1).trimmingCharacters(in: .whitespaces)))</li>",
+                        )
                     index += 1
                 }
                 html.append("<ul>\(items.joined())</ul>")
@@ -249,7 +252,10 @@ enum SummaryMarkdown {
                 flushParagraph()
                 var items: [String] = []
                 while index < lines.count, let m = match(olRegex, lines[index]) {
-                    items.append("<li>\(inlineHTML(group(m, lines[index], 1).trimmingCharacters(in: .whitespaces)))</li>")
+                    items
+                        .append(
+                            "<li>\(inlineHTML(group(m, lines[index], 1).trimmingCharacters(in: .whitespaces)))</li>",
+                        )
                     index += 1
                 }
                 html.append("<ol>\(items.joined())</ol>")
@@ -284,7 +290,7 @@ enum SummaryMarkdown {
         guard text.hasPrefix("---\n") else { return text }
         // Find the closing delimiter line.
         let afterOpen = text.index(text.startIndex, offsetBy: 4)
-        guard let closeRange = text.range(of: "\n---\n", range: afterOpen..<text.endIndex) else {
+        guard let closeRange = text.range(of: "\n---\n", range: afterOpen ..< text.endIndex) else {
             return text
         }
         let remainder = text[closeRange.upperBound...]
@@ -292,14 +298,19 @@ enum SummaryMarkdown {
     }
 
     private static let leadingTitleRegex = regex("^#[ \\t]+\\S[^\\n]*\\n?")
-    private static let footerRegex = regex("\\n*-{3,}[ \\t]*\\n+_Generated with \\[[^\\]]+\\]\\([^)]+\\)_[ \\t]*\\n*\\z")
+    private static let footerRegex =
+        regex("\\n*-{3,}[ \\t]*\\n+_Generated with \\[[^\\]]+\\]\\([^)]+\\)_[ \\t]*\\n*\\z")
 
     /// Drop a leading top-level `# Title` heading (we render our own linked title).
     /// Mirrors `telegraph.strip_leading_title`.
     private static func stripLeadingTitle(_ markdown: String) -> String {
         let head = String(markdown.drop(while: { $0 == "\n" }))
         let ns = head as NSString
-        guard let m = leadingTitleRegex.firstMatch(in: head, options: [.anchored], range: NSRange(location: 0, length: ns.length)) else {
+        guard let m = leadingTitleRegex.firstMatch(
+            in: head,
+            options: [.anchored],
+            range: NSRange(location: 0, length: ns.length),
+        ) else {
             return markdown
         }
         let rest = ns.substring(from: m.range.length)
@@ -322,16 +333,17 @@ enum SummaryMarkdown {
         if text.hasPrefix("\u{FEFF}") { text.removeFirst() }
         guard text.hasPrefix("---\n") else { return "" }
         let afterOpen = text.index(text.startIndex, offsetBy: 4)
-        guard let closeRange = text.range(of: "\n---\n", range: afterOpen..<text.endIndex) else {
+        guard let closeRange = text.range(of: "\n---\n", range: afterOpen ..< text.endIndex) else {
             return ""
         }
-        let block = String(text[afterOpen..<closeRange.lowerBound])
+        let block = String(text[afterOpen ..< closeRange.lowerBound])
         for rawLine in block.components(separatedBy: "\n") {
             guard rawLine.hasPrefix("\(key):") else { continue }
             let raw = String(rawLine.dropFirst(key.count + 1)).trimmingCharacters(in: .whitespaces)
             if raw.hasPrefix("\"") {
                 if let data = raw.data(using: .utf8),
-                   let value = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) as? String {
+                   let value = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) as? String
+                {
                     return value
                 }
             }
@@ -405,7 +417,7 @@ enum SummaryMarkdown {
 
     private static func regex(_ pattern: String) -> NSRegularExpression {
         // Patterns are static and known-valid; a bad one is a programmer error.
-        return try! NSRegularExpression(pattern: pattern)
+        try! NSRegularExpression(pattern: pattern)
     }
 
     private static func match(_ regex: NSRegularExpression, _ line: String) -> NSTextCheckingResult? {
@@ -430,7 +442,7 @@ enum SummaryMarkdown {
     /// Mirrors Python's `next(g for g in match.groups() if g is not None)` — the
     /// first non-empty alternation group (bold/italic each have two).
     private static func firstNonEmptyGroup(_ match: NSTextCheckingResult, _ ns: NSString) -> String {
-        for i in 1..<match.numberOfRanges {
+        for i in 1 ..< match.numberOfRanges {
             let range = match.range(at: i)
             if range.location != NSNotFound {
                 return ns.substring(with: range)

@@ -19,8 +19,8 @@ struct ProviderModelSettingsView: View {
                     "Provider",
                     selection: Binding(
                         get: { viewModel.selectedProviderID },
-                        set: { newValue in Task { await viewModel.selectProvider(newValue) } }
-                    )
+                        set: { newValue in Task { await viewModel.selectProvider(newValue) } },
+                    ),
                 ) {
                     ForEach(viewModel.availableProviders) { provider in
                         Text(provider.displayName).tag(provider.id)
@@ -38,8 +38,8 @@ struct ProviderModelSettingsView: View {
                         "Model",
                         selection: Binding(
                             get: { viewModel.selectedModel },
-                            set: { viewModel.updateModel($0) }
-                        )
+                            set: { viewModel.updateModel($0) },
+                        ),
                     ) {
                         ForEach(viewModel.modelOptions) { option in
                             Text(option.label).tag(option.id)
@@ -56,8 +56,8 @@ struct ProviderModelSettingsView: View {
                         "Effort",
                         selection: Binding(
                             get: { viewModel.selectedReasoningEffort },
-                            set: { viewModel.updateReasoningEffort($0) }
-                        )
+                            set: { viewModel.updateReasoningEffort($0) },
+                        ),
                     ) {
                         ForEach(viewModel.reasoningEffortOptions) { option in
                             Text(option.label).tag(option.id)

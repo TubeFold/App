@@ -17,7 +17,9 @@ struct ProviderSetupState: Codable {
     let lastSuccessfulConnectionTest: String?
     let preferredOutputDirectory: String?
 
-    var provider: String { selectedProviderID ?? "codex" }
+    var provider: String {
+        selectedProviderID ?? "codex"
+    }
 
     func executablePath(for provider: String) -> String? {
         provider == "claude" ? claudeExecutablePath : codexExecutablePath
@@ -45,7 +47,7 @@ struct ProviderInfo: Decodable, Identifiable, Hashable {
 
     static let defaults: [ProviderInfo] = [
         ProviderInfo(id: "codex", displayName: "Codex CLI", configured: false, executablePath: nil, version: nil),
-        ProviderInfo(id: "claude", displayName: "Claude Code CLI", configured: false, executablePath: nil, version: nil)
+        ProviderInfo(id: "claude", displayName: "Claude Code CLI", configured: false, executablePath: nil, version: nil),
     ]
 }
 
@@ -116,23 +118,23 @@ struct CodexModelOption: Decodable, Identifiable, Hashable {
     static let defaultModelOptions: [CodexModelOption] = [
         CodexModelOption(id: "gpt-5.4-mini", label: "GPT-5.4 Mini", description: "Fast, efficient mini model."),
         CodexModelOption(id: "gpt-5.5", label: "GPT-5.5", description: "Recommended Codex model for complex work."),
-        CodexModelOption(id: "gpt-5.4", label: "GPT-5.4", description: "Flagship model for professional work.")
+        CodexModelOption(id: "gpt-5.4", label: "GPT-5.4", description: "Flagship model for professional work."),
     ]
 
-    // "minimal" is intentionally absent: the Codex CLI attaches web_search/image_gen
-    // server-side for these models, which the API rejects with reasoning.effort
-    // 'minimal' (HTTP 400). Keep this in sync with CODEX_REASONING_EFFORT_OPTIONS.
+    /// "minimal" is intentionally absent: the Codex CLI attaches web_search/image_gen
+    /// server-side for these models, which the API rejects with reasoning.effort
+    /// 'minimal' (HTTP 400). Keep this in sync with CODEX_REASONING_EFFORT_OPTIONS.
     static let defaultReasoningEffortOptions: [CodexModelOption] = [
         CodexModelOption(id: "low", label: "Low", description: "Fast summaries."),
         CodexModelOption(id: "medium", label: "Medium", description: "Recommended balance."),
         CodexModelOption(id: "high", label: "High", description: "More careful summaries."),
-        CodexModelOption(id: "xhigh", label: "Extra High", description: "Hardest jobs.")
+        CodexModelOption(id: "xhigh", label: "Extra High", description: "Hardest jobs."),
     ]
 
     static let defaultClaudeModelOptions: [CodexModelOption] = [
         CodexModelOption(id: "sonnet", label: "Sonnet 4.6", description: "Recommended balance of quality and speed."),
         CodexModelOption(id: "opus", label: "Opus 4.8", description: "Most capable model for the hardest transcripts."),
-        CodexModelOption(id: "haiku", label: "Haiku 4.5", description: "Fastest, most efficient model.")
+        CodexModelOption(id: "haiku", label: "Haiku 4.5", description: "Fastest, most efficient model."),
     ]
 
     static let defaultClaudeReasoningEffortOptions: [CodexModelOption] = [
@@ -140,7 +142,7 @@ struct CodexModelOption: Decodable, Identifiable, Hashable {
         CodexModelOption(id: "medium", label: "Medium", description: "Recommended balance."),
         CodexModelOption(id: "high", label: "High", description: "More careful summaries."),
         CodexModelOption(id: "xhigh", label: "Extra High", description: "Harder jobs."),
-        CodexModelOption(id: "max", label: "Maximum", description: "Deepest reasoning.")
+        CodexModelOption(id: "max", label: "Maximum", description: "Deepest reasoning."),
     ]
 
     static func defaultModelOptions(for provider: String) -> [CodexModelOption] {
@@ -214,32 +216,32 @@ enum JSONValue: Decodable {
         } else if let value = try? container.decode([JSONValue].self) {
             self = .array(value)
         } else {
-            self = .object(try container.decode([String: JSONValue].self))
+            self = try .object(container.decode([String: JSONValue].self))
         }
     }
 
     var displayValue: String {
         switch self {
-        case .string(let value):
-            return value
-        case .number(let value):
-            return value.rounded() == value ? String(Int(value)) : String(value)
-        case .bool(let value):
-            return value ? "true" : "false"
-        case .object(let value):
-            return value
+        case let .string(value):
+            value
+        case let .number(value):
+            value.rounded() == value ? String(Int(value)) : String(value)
+        case let .bool(value):
+            value ? "true" : "false"
+        case let .object(value):
+            value
                 .sorted { $0.key < $1.key }
                 .map { "\($0.key)=\($0.value.displayValue)" }
                 .joined(separator: ", ")
-        case .array(let value):
-            return value.map(\.displayValue).joined(separator: ", ")
+        case let .array(value):
+            value.map(\.displayValue).joined(separator: ", ")
         case .null:
-            return "null"
+            "null"
         }
     }
 }
 
-extension Dictionary where Key == String, Value == JSONValue {
+extension [String: JSONValue] {
     var formattedLines: [String] {
         sorted { $0.key < $1.key }
             .map { "\($0.key): \($0.value.displayValue)" }

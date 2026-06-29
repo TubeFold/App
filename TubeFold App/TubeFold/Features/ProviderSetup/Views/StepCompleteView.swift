@@ -14,7 +14,7 @@ struct StepCompleteView: View {
                 status: "Ready",
                 message: viewModel.providerSummary,
                 systemImage: "sparkles",
-                tint: .green
+                tint: .green,
             )
         }
         .frame(maxWidth: 600, alignment: .leading)

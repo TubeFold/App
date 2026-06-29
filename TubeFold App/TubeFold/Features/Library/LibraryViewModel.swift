@@ -28,20 +28,23 @@ final class LibraryViewModel: ObservableObject {
     }
 
     var activeCount: Int {
-        videos.filter { ["queued", "fetchingMetadata", "fetchingTranscript", "generatingSummary"].contains($0.status) }.count
+        videos
+            .count(where: {
+                ["queued", "fetchingMetadata", "fetchingTranscript", "generatingSummary"].contains($0.status)
+            })
     }
 
     func startAutoRefresh() {
         guard refreshTask == nil else { return }
         refreshTask = Task { [weak self] in
             guard let self else { return }
-            await self.load(showSpinner: self.videos.isEmpty)
+            await load(showSpinner: videos.isEmpty)
 
             while !Task.isCancelled {
-                let delaySeconds = self.activeCount > 0 ? 2.0 : 6.0
+                let delaySeconds = activeCount > 0 ? 2.0 : 6.0
                 try? await Task.sleep(nanoseconds: UInt64(delaySeconds * 1_000_000_000))
                 if Task.isCancelled { return }
-                await self.load(showSpinner: false)
+                await load(showSpinner: false)
             }
         }
     }
@@ -190,11 +193,11 @@ final class LibraryViewModel: ObservableObject {
     private static func noticeText(for status: String) -> String {
         switch status {
         case "already_exists":
-            return "This video is already in your Library."
+            "This video is already in your Library."
         case "already_processing":
-            return "This video is already being processed."
+            "This video is already being processed."
         default:
-            return "Added — processing started."
+            "Added — processing started."
         }
     }
 
@@ -245,7 +248,11 @@ final class LibraryViewModel: ObservableObject {
                 let data = try await SummaryPDFRenderer().makePDFData(markdown: markdown, title: video.displayTitle)
                 let dir = FileManager.default.temporaryDirectory.appendingPathComponent("TubeFold", isDirectory: true)
                 try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-                let fileURL = dir.appendingPathComponent(Self.suggestedFilename(for: video, fallback: sourceURL, fileExtension: "pdf"))
+                let fileURL = dir.appendingPathComponent(Self.suggestedFilename(
+                    for: video,
+                    fallback: sourceURL,
+                    fileExtension: "pdf",
+                ))
                 try data.write(to: fileURL)
                 NSWorkspace.shared.open(fileURL)
             } catch {

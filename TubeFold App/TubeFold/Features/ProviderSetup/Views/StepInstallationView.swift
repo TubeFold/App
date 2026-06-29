@@ -16,7 +16,7 @@ struct StepInstallationView: View {
                 status: viewModel.installationStatusTitle,
                 message: viewModel.installationMessage,
                 systemImage: viewModel.installationSucceeded ? "checkmark.circle.fill" : "terminal",
-                tint: viewModel.installationSucceeded ? .green : .orange
+                tint: viewModel.installationSucceeded ? .green : .orange,
             )
 
             HStack {
@@ -45,7 +45,7 @@ struct StepInstallationView: View {
 #Preview {
     StepInstallationView(
         viewModel: ProviderSetupViewModel(),
-        showingExecutablePicker: .constant(false)
+        showingExecutablePicker: .constant(false),
     )
     .padding(34)
     .frame(width: 660, height: 480)

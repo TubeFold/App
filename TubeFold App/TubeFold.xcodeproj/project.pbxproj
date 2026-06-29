@@ -71,6 +71,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 000000000000000110000000 /* Build configuration list for PBXNativeTarget "TubeFold" */;
 			buildPhases = (
+				000000000000000160000000 /* SwiftFormat */,
 				000000000000000120000000 /* Sources */,
 				000000000000000130000000 /* Frameworks */,
 				000000000000000140000000 /* Resources */,
@@ -136,6 +137,22 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		000000000000000160000000 /* SwiftFormat */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			name = SwiftFormat;
+			shellPath = /bin/bash;
+			shellScript = (
+				"# Formats Swift sources in place before they are compiled.\n",
+				"# Runs before the Sources phase, so the freshly formatted files\n",
+				"# are what gets built — no second build needed. Config: ../.swiftformat\n",
+				"if command -v swiftformat >/dev/null 2>&1; then\n",
+				"  \"$SRCROOT/../scripts/format-swift.sh\"\n",
+				"else\n",
+				"  echo \"warning: SwiftFormat not installed — run 'brew install swiftformat'\"\n",
+				"fi\n",
+			);
+		};
 		000000000000000150000000 /* Embed Python Backend */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;

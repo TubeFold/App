@@ -12,10 +12,12 @@ struct BrowserExtensionSettingsView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Browser extension")
                         .font(.headline)
-                    Text("Install the Chrome extension to send videos straight from a YouTube page — one click, no copy-paste.")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    Text(
+                        "Install the Chrome extension to send videos straight from a YouTube page — one click, no copy-paste.",
+                    )
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Link(destination: TubeFoldLinks.chromeWebStore) {

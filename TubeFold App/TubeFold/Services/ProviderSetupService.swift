@@ -5,7 +5,7 @@ struct ProviderSetupService {
     private let backend = BackendProcessController.shared
 
     func loadSetup() async throws -> ProviderSetupResponse {
-        try await request(path: "/api/v1/provider-setup", method: "GET", body: Optional<StringRequest>.none)
+        try await request(path: "/api/v1/provider-setup", method: "GET", body: StringRequest?.none)
     }
 
     func loadState() async throws -> ProviderSetupState {
@@ -17,54 +17,66 @@ struct ProviderSetupService {
         try await request(
             path: "/api/v1/provider-setup/select",
             method: "POST",
-            body: SelectProviderRequest(provider: provider)
+            body: SelectProviderRequest(provider: provider),
         )
     }
 
     func detect(provider: String, path: String?) async throws -> InstallationResult {
-        try await request(path: "/api/v1/provider-setup/\(provider)/detect", method: "POST", body: StringRequest(path: path))
+        try await request(
+            path: "/api/v1/provider-setup/\(provider)/detect",
+            method: "POST",
+            body: StringRequest(path: path),
+        )
     }
 
     func test(provider: String, path: String?) async throws -> ConnectionTestResult {
-        try await request(path: "/api/v1/provider-setup/\(provider)/test", method: "POST", body: StringRequest(path: path))
+        try await request(
+            path: "/api/v1/provider-setup/\(provider)/test",
+            method: "POST",
+            body: StringRequest(path: path),
+        )
     }
 
     func completeSetup() async throws -> CompleteSetupResult {
-        try await request(path: "/api/v1/provider-setup/complete", method: "POST", body: Optional<StringRequest>.none)
+        try await request(path: "/api/v1/provider-setup/complete", method: "POST", body: StringRequest?.none)
     }
 
-    func saveModelSettings(provider: String, model: String, reasoningEffort: String) async throws -> SaveModelSettingsResult {
+    func saveModelSettings(
+        provider: String,
+        model: String,
+        reasoningEffort: String,
+    ) async throws -> SaveModelSettingsResult {
         try await request(
             path: "/api/v1/provider-setup/\(provider)/model",
             method: "POST",
-            body: ModelSettingsRequest(model: model, reasoningEffort: reasoningEffort)
+            body: ModelSettingsRequest(model: model, reasoningEffort: reasoningEffort),
         )
     }
 
     func loadUsage() async throws -> UsageSummary {
-        try await request(path: "/api/v1/usage", method: "GET", body: Optional<StringRequest>.none)
+        try await request(path: "/api/v1/usage", method: "GET", body: StringRequest?.none)
     }
 
     func loadExtensionStatus() async throws -> ExtensionStatus {
-        try await request(path: "/api/v1/extension-status", method: "GET", body: Optional<StringRequest>.none)
+        try await request(path: "/api/v1/extension-status", method: "GET", body: StringRequest?.none)
     }
 
     func saveOutputLanguage(_ outputLanguage: String) async throws -> SaveModelSettingsResult {
         try await request(
             path: "/api/v1/provider-setup/output-language",
             method: "POST",
-            body: OutputLanguageRequest(outputLanguage: outputLanguage)
+            body: OutputLanguageRequest(outputLanguage: outputLanguage),
         )
     }
 
     func resetData() async throws -> ResetDataResult {
-        try await request(path: "/api/v1/reset", method: "POST", body: Optional<StringRequest>.none)
+        try await request(path: "/api/v1/reset", method: "POST", body: StringRequest?.none)
     }
 
-    private func request<Response: Decodable, Body: Encodable>(
+    private func request<Response: Decodable>(
         path: String,
         method: String,
-        body: Body?
+        body: (some Encodable)?,
     ) async throws -> Response {
         try await backend.ensureRunning()
 
@@ -87,7 +99,7 @@ struct ProviderSetupService {
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw ProviderSetupAPIError(message: "TubeFold returned an invalid response.")
             }
-            guard (200..<300).contains(httpResponse.statusCode) else {
+            guard (200 ..< 300).contains(httpResponse.statusCode) else {
                 let text = String(data: data, encoding: .utf8) ?? "HTTP \(httpResponse.statusCode)"
                 throw ProviderSetupAPIError(message: text)
             }
@@ -95,7 +107,9 @@ struct ProviderSetupService {
         } catch let error as ProviderSetupAPIError {
             throw error
         } catch {
-            throw ProviderSetupAPIError(message: "TubeFold could not talk to its local helper. Reopen the app and try again.")
+            throw ProviderSetupAPIError(
+                message: "TubeFold could not talk to its local helper. Reopen the app and try again.",
+            )
         }
     }
 }

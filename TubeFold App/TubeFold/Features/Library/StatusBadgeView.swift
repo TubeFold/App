@@ -37,47 +37,47 @@ struct StatusBadgeView: View {
     private var statusTitle: String {
         switch status {
         case "queued":
-            return "Queued"
+            "Queued"
         case "fetchingMetadata":
-            return "Metadata"
+            "Metadata"
         case "fetchingTranscript":
-            return "Transcript"
+            "Transcript"
         case "generatingSummary":
-            return "Summarizing"
+            "Summarizing"
         case "ready":
-            return "Ready"
+            "Ready"
         case "failed":
-            return "Failed"
+            "Failed"
         case "cancelled":
-            return "Cancelled"
+            "Cancelled"
         default:
-            return status
+            status
         }
     }
 
     private var statusIcon: String {
         switch status {
         case "ready":
-            return "checkmark.circle.fill"
+            "checkmark.circle.fill"
         case "failed", "cancelled":
-            return "exclamationmark.triangle.fill"
+            "exclamationmark.triangle.fill"
         case "queued":
-            return "clock.fill"
+            "clock.fill"
         default:
-            return "arrow.triangle.2.circlepath"
+            "arrow.triangle.2.circlepath"
         }
     }
 
     private var statusColor: Color {
         switch status {
         case "ready":
-            return .green
+            .green
         case "failed", "cancelled":
-            return .orange
+            .orange
         case "queued":
-            return .secondary
+            .secondary
         default:
-            return .blue
+            .blue
         }
     }
 }

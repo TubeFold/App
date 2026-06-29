@@ -6,18 +6,20 @@ enum SetupStep: Int, CaseIterable, Identifiable {
     case testConnection
     case complete
 
-    var id: Int { rawValue }
+    var id: Int {
+        rawValue
+    }
 
     var title: String {
         switch self {
         case .beforeBegin:
-            return "Before you begin"
+            "Before you begin"
         case .checkInstallation:
-            return "Check installation"
+            "Check installation"
         case .testConnection:
-            return "Test connection"
+            "Test connection"
         case .complete:
-            return "Complete"
+            "Complete"
         }
     }
 }

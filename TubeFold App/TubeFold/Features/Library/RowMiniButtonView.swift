@@ -19,7 +19,7 @@ extension RowMiniButtonView where Content == Label<Text, Image> {
     /// Convenience for the common static title + SF Symbol case.
     init(_ title: LocalizedStringKey, systemImage: String, action: @escaping () -> Void) {
         self.action = action
-        self.label = { Label(title, systemImage: systemImage) }
+        label = { Label(title, systemImage: systemImage) }
     }
 }
 

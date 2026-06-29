@@ -13,7 +13,7 @@ struct LibraryService {
         try await request(
             path: "/api/v1/summaries",
             method: "POST",
-            body: CreateSummaryRequest(url: url, source: "macos-app")
+            body: CreateSummaryRequest(url: url, source: "macos-app"),
         )
     }
 
@@ -30,7 +30,7 @@ struct LibraryService {
         let _: StatusResponse = try await request(
             path: "/api/v1/watch-activity/dismiss",
             method: "POST",
-            body: DismissWatchRequest(youtubeVideoID: youtubeID)
+            body: DismissWatchRequest(youtubeVideoID: youtubeID),
         )
     }
 
@@ -47,13 +47,13 @@ struct LibraryService {
     }
 
     private func request<Response: Decodable>(path: String, method: String = "GET") async throws -> Response {
-        try await request(path: path, method: method, body: Optional<CreateSummaryRequest>.none)
+        try await request(path: path, method: method, body: CreateSummaryRequest?.none)
     }
 
-    private func request<Response: Decodable, Body: Encodable>(
+    private func request<Response: Decodable>(
         path: String,
         method: String,
-        body: Body?
+        body: (some Encodable)?,
     ) async throws -> Response {
         try await backend.ensureRunning()
 
@@ -76,7 +76,7 @@ struct LibraryService {
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw ProviderSetupAPIError(message: "TubeFold returned an invalid response.")
             }
-            guard (200..<300).contains(httpResponse.statusCode) else {
+            guard (200 ..< 300).contains(httpResponse.statusCode) else {
                 throw ProviderSetupAPIError(message: Self.errorMessage(from: data, status: httpResponse.statusCode))
             }
             return try JSONDecoder().decode(Response.self, from: data)
@@ -100,5 +100,6 @@ private struct APIErrorEnvelope: Decodable {
         let code: String
         let message: String
     }
+
     let error: Body
 }

@@ -21,7 +21,7 @@ struct StepRowView: View {
         .background(isCurrent ? Color.orange.opacity(0.12) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(isCurrent ? Color.orange.opacity(0.65) : Color.clear, lineWidth: 1)
+                .stroke(isCurrent ? Color.orange.opacity(0.65) : Color.clear, lineWidth: 1),
         )
     }
 }

@@ -8,10 +8,22 @@ struct AboutView: View {
     @ObservedObject private var updater = UpdaterController.shared
 
     private static let links: [AboutLink] = [
-        AboutLink(title: "GitHub", systemImage: "chevron.left.forwardslash.chevron.right", url: "https://github.com/TubeFold/App"),
+        AboutLink(
+            title: "GitHub",
+            systemImage: "chevron.left.forwardslash.chevron.right",
+            url: "https://github.com/TubeFold/App",
+        ),
         AboutLink(title: "Website", systemImage: "globe", url: "https://tubefold.github.io/"),
-        AboutLink(title: "Chrome extension", systemImage: "puzzlepiece.extension", url: "https://chromewebstore.google.com/detail/tubefold-mac-app-companio/hjfcdpioihmgoccmfkcicofjgbkjidbh"),
-        AboutLink(title: "Report an issue", systemImage: "exclamationmark.bubble", url: "https://github.com/TubeFold/App/issues"),
+        AboutLink(
+            title: "Chrome extension",
+            systemImage: "puzzlepiece.extension",
+            url: "https://chromewebstore.google.com/detail/tubefold-mac-app-companio/hjfcdpioihmgoccmfkcicofjgbkjidbh",
+        ),
+        AboutLink(
+            title: "Report an issue",
+            systemImage: "exclamationmark.bubble",
+            url: "https://github.com/TubeFold/App/issues",
+        ),
         AboutLink(title: "Feedback", systemImage: "envelope", url: "mailto:tubefold@proton.me"),
     ]
 
@@ -71,7 +83,9 @@ private struct AboutLink: Identifiable {
     let title: String
     let systemImage: String
     let url: String
-    var id: String { title }
+    var id: String {
+        title
+    }
 }
 
 /// Static facts pulled from the bundle so the screen never drifts from the build.

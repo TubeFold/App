@@ -84,8 +84,12 @@ struct ProviderSetupWizardView: View {
         .task(id: viewModel.currentStep) {
             await viewModel.prepareCurrentStepIfNeeded()
         }
-        .fileImporter(isPresented: $showingExecutablePicker, allowedContentTypes: [.item], allowsMultipleSelection: false) { result in
-            guard case .success(let urls) = result, let url = urls.first else { return }
+        .fileImporter(
+            isPresented: $showingExecutablePicker,
+            allowedContentTypes: [.item],
+            allowsMultipleSelection: false,
+        ) { result in
+            guard case let .success(urls) = result, let url = urls.first else { return }
             Task { await viewModel.detectInstallation(path: url.path) }
         }
     }
@@ -96,7 +100,7 @@ struct ProviderSetupWizardView: View {
                 StepRowView(
                     step: step,
                     isCurrent: viewModel.currentStep == step,
-                    isComplete: viewModel.isStepComplete(step)
+                    isComplete: viewModel.isStepComplete(step),
                 )
             }
             Spacer()
@@ -112,7 +116,7 @@ struct ProviderSetupWizardView: View {
         case .checkInstallation:
             StepInstallationView(
                 viewModel: viewModel,
-                showingExecutablePicker: $showingExecutablePicker
+                showingExecutablePicker: $showingExecutablePicker,
             )
         case .testConnection:
             StepConnectionView(viewModel: viewModel)

@@ -32,12 +32,12 @@ final class UpdaterController: ObservableObject {
         let controller = SPUStandardUpdaterController(
             startingUpdater: true,
             updaterDelegate: nil,
-            userDriverDelegate: nil
+            userDriverDelegate: nil,
         )
         self.controller = controller
-        self.canCheckForUpdates = controller.updater.canCheckForUpdates
-        self.automaticallyChecksForUpdates = controller.updater.automaticallyChecksForUpdates
-        self.cancellable = nil
+        canCheckForUpdates = controller.updater.canCheckForUpdates
+        automaticallyChecksForUpdates = controller.updater.automaticallyChecksForUpdates
+        cancellable = nil
 
         // Keep `canCheckForUpdates` in sync with Sparkle's state.
         cancellable = controller.updater.publisher(for: \.canCheckForUpdates)

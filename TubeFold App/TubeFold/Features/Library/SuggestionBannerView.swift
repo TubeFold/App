@@ -59,7 +59,7 @@ struct SuggestionBannerView: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.accentColor.opacity(0.35), lineWidth: 1)
+                .strokeBorder(Color.accentColor.opacity(0.35), lineWidth: 1),
         )
     }
 
@@ -68,7 +68,7 @@ struct SuggestionBannerView: View {
         if let url = suggestion.thumbnailImageURL {
             AsyncImage(url: url) { phase in
                 switch phase {
-                case .success(let image):
+                case let .success(image):
                     image.resizable().scaledToFill()
                 default:
                     Color.secondary.opacity(0.12)
@@ -85,20 +85,20 @@ struct SuggestionBannerView: View {
 }
 
 #if DEBUG
-extension WatchSuggestion {
-    static let preview = WatchSuggestion(
-        youtubeVideoID: "dQw4w9WgXcQ",
-        canonicalURL: "https://youtu.be/dQw4w9WgXcQ",
-        title: "How transformers actually work",
-        channelName: "Deep Dive",
-        thumbnailURL: nil,
-        durationSeconds: 942,
-        watchedAt: "2026-06-29T10:00:00Z",
-        inLibrary: false,
-        libraryVideoID: nil,
-        libraryStatus: nil
-    )
-}
+    extension WatchSuggestion {
+        static let preview = WatchSuggestion(
+            youtubeVideoID: "dQw4w9WgXcQ",
+            canonicalURL: "https://youtu.be/dQw4w9WgXcQ",
+            title: "How transformers actually work",
+            channelName: "Deep Dive",
+            thumbnailURL: nil,
+            durationSeconds: 942,
+            watchedAt: "2026-06-29T10:00:00Z",
+            inLibrary: false,
+            libraryVideoID: nil,
+            libraryStatus: nil,
+        )
+    }
 #endif
 
 #Preview {

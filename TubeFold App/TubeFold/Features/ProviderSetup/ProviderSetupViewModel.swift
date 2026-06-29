@@ -16,7 +16,8 @@ final class ProviderSetupViewModel: ObservableObject {
     @Published private(set) var selectedProviderID = "codex"
     @Published private(set) var availableProviders: [ProviderInfo] = ProviderInfo.defaults
     @Published private(set) var modelOptions: [CodexModelOption] = CodexModelOption.defaultModelOptions
-    @Published private(set) var reasoningEffortOptions: [CodexModelOption] = CodexModelOption.defaultReasoningEffortOptions
+    @Published private(set) var reasoningEffortOptions: [CodexModelOption] = CodexModelOption
+        .defaultReasoningEffortOptions
     @Published private(set) var selectedModel = "gpt-5.4-mini"
     @Published private(set) var selectedReasoningEffort = "medium"
     @Published private(set) var outputLanguage = ProviderSetupViewModel.defaultOutputLanguage
@@ -53,7 +54,8 @@ final class ProviderSetupViewModel: ObservableObject {
 
     var connectionSucceeded: Bool {
         guard !hasInstallationFailure, !hasConnectionFailure else { return false }
-        return connectionResult?.status == "success" || setupState?.lastSuccessfulConnectionTest != nil || isSetupComplete
+        return connectionResult?.status == "success" || setupState?
+            .lastSuccessfulConnectionTest != nil || isSetupComplete
     }
 
     var providerSummary: String {
@@ -125,7 +127,10 @@ final class ProviderSetupViewModel: ObservableObject {
             return URL(fileURLWithPath: (path as NSString).expandingTildeInPath, isDirectory: true)
         }
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support", isDirectory: true)
+            ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
+                "Library/Application Support",
+                isDirectory: true,
+            )
         return appSupport
             .appendingPathComponent("TubeFold", isDirectory: true)
             .appendingPathComponent("exports", isDirectory: true)
@@ -142,35 +147,35 @@ final class ProviderSetupViewModel: ObservableObject {
     var primaryButtonTitle: String {
         switch currentStep {
         case .beforeBegin:
-            return "Next"
+            "Next"
         case .checkInstallation:
-            return installationSucceeded ? "Next" : "Check Installation"
+            installationSucceeded ? "Next" : "Check Installation"
         case .testConnection:
-            return connectionSucceeded ? "Next" : "Test Connection"
+            connectionSucceeded ? "Next" : "Test Connection"
         case .complete:
-            return "Complete Setup"
+            "Complete Setup"
         }
     }
 
     var primaryButtonSystemImage: String {
         switch currentStep {
         case .beforeBegin:
-            return "chevron.right"
+            "chevron.right"
         case .checkInstallation:
-            return installationSucceeded ? "chevron.right" : "arrow.clockwise"
+            installationSucceeded ? "chevron.right" : "arrow.clockwise"
         case .testConnection:
-            return connectionSucceeded ? "chevron.right" : "bolt.fill"
+            connectionSucceeded ? "chevron.right" : "bolt.fill"
         case .complete:
-            return "checkmark.circle.fill"
+            "checkmark.circle.fill"
         }
     }
 
     var canAdvance: Bool {
         switch currentStep {
         case .beforeBegin, .checkInstallation, .complete:
-            return true
+            true
         case .testConnection:
-            return installationSucceeded || connectionSucceeded
+            installationSucceeded || connectionSucceeded
         }
     }
 
@@ -401,13 +406,13 @@ final class ProviderSetupViewModel: ObservableObject {
     func isStepComplete(_ step: SetupStep) -> Bool {
         switch step {
         case .beforeBegin:
-            return currentStep.rawValue > step.rawValue || hasLoadedState
+            currentStep.rawValue > step.rawValue || hasLoadedState
         case .checkInstallation:
-            return installationSucceeded && currentStep.rawValue > step.rawValue
+            installationSucceeded && currentStep.rawValue > step.rawValue
         case .testConnection:
-            return connectionSucceeded && currentStep.rawValue > step.rawValue
+            connectionSucceeded && currentStep.rawValue > step.rawValue
         case .complete:
-            return isSetupComplete
+            isSetupComplete
         }
     }
 
@@ -475,7 +480,7 @@ final class ProviderSetupViewModel: ObservableObject {
             let response = try await service.saveModelSettings(
                 provider: selectedProviderID,
                 model: selectedModel,
-                reasoningEffort: selectedReasoningEffort
+                reasoningEffort: selectedReasoningEffort,
             )
             setupState = response.state
             modelOptions = response.modelOptions

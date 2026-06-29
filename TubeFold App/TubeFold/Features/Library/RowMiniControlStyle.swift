@@ -24,8 +24,7 @@ struct RowMiniLabelStyle: LabelStyle {
 
 extension View {
     func rowMiniControlStyle() -> some View {
-        self
-            .labelStyle(RowMiniLabelStyle())
+        labelStyle(RowMiniLabelStyle())
             .buttonStyle(.bordered)
             .controlSize(.small)
     }

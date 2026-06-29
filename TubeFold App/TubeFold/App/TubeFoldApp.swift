@@ -23,7 +23,7 @@ struct TubeFoldApp: App {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    func applicationDidFinishLaunching(_ notification: Notification) {
+    func applicationDidFinishLaunching(_: Notification) {
         // SwiftUI Previews boot the full app executable to host the Canvas, which
         // runs this delegate. Skip all production startup — the single-instance
         // exit(0) guard below, Sparkle, the menu bar and the backend each take down
@@ -57,13 +57,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         exit(0)
     }
 
-    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+    func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
         MenuBarController.shared.stop()
         BackendProcessController.shared.stop()
         return .terminateNow
     }
 
-    func applicationWillTerminate(_ notification: Notification) {
+    func applicationWillTerminate(_: Notification) {
         MenuBarController.shared.stop()
         BackendProcessController.shared.stop()
     }

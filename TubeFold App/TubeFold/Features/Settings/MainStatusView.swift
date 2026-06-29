@@ -7,73 +7,88 @@ struct MainStatusView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-            HStack(spacing: 12) {
-                StatusTileView(
-                    title: "App",
-                    value: viewModel.apiReachable ? "Ready" : "Starting helper",
-                    systemImage: "macwindow",
-                    tint: viewModel.apiReachable ? .indigo : .orange
-                )
-                StatusTileView(
-                    title: viewModel.providerDisplayName,
-                    value: viewModel.providerSummary,
-                    systemImage: "terminal",
-                    tint: .blue
-                )
-                if viewModel.extensionConnected {
+                HStack(spacing: 12) {
                     StatusTileView(
-                        title: "Extension",
-                        value: "Connected",
-                        systemImage: "puzzlepiece.extension",
-                        tint: .pink
+                        title: "App",
+                        value: viewModel.apiReachable ? "Ready" : "Starting helper",
+                        systemImage: "macwindow",
+                        tint: viewModel.apiReachable ? .indigo : .orange,
                     )
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 16) {
-                Text("\(viewModel.providerDisplayName) Status")
-                    .font(.headline)
-                HStack(alignment: .top, spacing: 12) {
-                    StatusCheckItemView(title: "Installed", isReady: viewModel.providerInstalled, detail: viewModel.versionSummary)
-                    StatusCheckItemView(title: "Signed in", isReady: viewModel.providerSignedIn, detail: viewModel.providerSignedIn ? "Account verified" : "Test required")
-                    StatusCheckItemView(title: "Ready", isReady: viewModel.providerReady, detail: viewModel.providerReady ? "Summaries enabled" : "Setup incomplete")
-                }
-
-                HStack {
-                    Button {
-                        viewModel.startRepair()
-                        showingSetup = true
-                    } label: {
-                        Label(viewModel.setupButtonTitle, systemImage: viewModel.requiresRepair ? "wrench.and.screwdriver" : "sparkles")
+                    StatusTileView(
+                        title: viewModel.providerDisplayName,
+                        value: viewModel.providerSummary,
+                        systemImage: "terminal",
+                        tint: .blue,
+                    )
+                    if viewModel.extensionConnected {
+                        StatusTileView(
+                            title: "Extension",
+                            value: "Connected",
+                            systemImage: "puzzlepiece.extension",
+                            tint: .pink,
+                        )
                     }
-                    .controlSize(.large)
-
-                    Spacer(minLength: 0)
                 }
-            }
-            .settingsCard()
 
-            BrowserExtensionSettingsView(viewModel: viewModel)
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("\(viewModel.providerDisplayName) Status")
+                        .font(.headline)
+                    HStack(alignment: .top, spacing: 12) {
+                        StatusCheckItemView(
+                            title: "Installed",
+                            isReady: viewModel.providerInstalled,
+                            detail: viewModel.versionSummary,
+                        )
+                        StatusCheckItemView(
+                            title: "Signed in",
+                            isReady: viewModel.providerSignedIn,
+                            detail: viewModel.providerSignedIn ? "Account verified" : "Test required",
+                        )
+                        StatusCheckItemView(
+                            title: "Ready",
+                            isReady: viewModel.providerReady,
+                            detail: viewModel.providerReady ? "Summaries enabled" : "Setup incomplete",
+                        )
+                    }
 
-            ProviderModelSettingsView(viewModel: viewModel)
+                    HStack {
+                        Button {
+                            viewModel.startRepair()
+                            showingSetup = true
+                        } label: {
+                            Label(
+                                viewModel.setupButtonTitle,
+                                systemImage: viewModel.requiresRepair ? "wrench.and.screwdriver" : "sparkles",
+                            )
+                        }
+                        .controlSize(.large)
 
-            OutputLanguageSettingsView(viewModel: viewModel)
+                        Spacer(minLength: 0)
+                    }
+                }
+                .settingsCard()
 
-            AppBehaviorSettingsView()
+                BrowserExtensionSettingsView(viewModel: viewModel)
 
-            UsageStatsView(viewModel: viewModel)
+                ProviderModelSettingsView(viewModel: viewModel)
 
-            StorageSettingsView(viewModel: viewModel)
+                OutputLanguageSettingsView(viewModel: viewModel)
 
-            ResetDataSettingsView(viewModel: viewModel)
+                AppBehaviorSettingsView()
 
-            if let errorMessage = viewModel.errorMessage {
-                Label(errorMessage, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.orange)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+                UsageStatsView(viewModel: viewModel)
 
-            Spacer()
+                StorageSettingsView(viewModel: viewModel)
+
+                ResetDataSettingsView(viewModel: viewModel)
+
+                if let errorMessage = viewModel.errorMessage {
+                    Label(errorMessage, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
             }
             .padding(32)
         }
