@@ -44,13 +44,24 @@ fi
   || die "generate_appcast not found. Set SPARKLE_TOOLS_DIR, or run xcodebuild -resolvePackageDependencies."
 log "Sparkle tools: $tools_dir"
 
-# --- Resolve the download URL prefix --------------------------------------
+# --- Resolve the version + download URL prefix ----------------------------
+# Determine the version first (needed both for the URL and to pick the right
+# CHANGELOG section). When CI passes a prefix, parse v<version> out of it so we
+# don't have to shell out to xcodebuild; otherwise read MARKETING_VERSION.
+version="${TUBEFOLD_VERSION:-}"
+if [[ -z "$version" && -n "${TUBEFOLD_DOWNLOAD_URL_PREFIX:-}" ]]; then
+  version="$(printf '%s' "$TUBEFOLD_DOWNLOAD_URL_PREFIX" | sed -nE 's#.*/v([^/]+)/?$#\1#p')"
+fi
+if [[ -z "$version" ]]; then
+  version="$(xcodebuild -project "$project" -scheme TubeFold -showBuildSettings 2>/dev/null \
+    | awk -F'= ' '/ MARKETING_VERSION =/{print $2; exit}')"
+fi
+[[ -n "$version" ]] || die "Could not determine version; set TUBEFOLD_VERSION."
+
 if [[ -z "${TUBEFOLD_DOWNLOAD_URL_PREFIX:-}" ]]; then
-  version="${TUBEFOLD_VERSION:-$(xcodebuild -project "$project" -scheme TubeFold -showBuildSettings 2>/dev/null \
-    | awk -F'= ' '/ MARKETING_VERSION =/{print $2; exit}')}"
-  [[ -n "$version" ]] || die "Could not determine version; set TUBEFOLD_VERSION."
   TUBEFOLD_DOWNLOAD_URL_PREFIX="https://github.com/TubeFold/App/releases/download/v${version}/"
 fi
+log "Version: $version"
 log "Enclosure URL prefix: $TUBEFOLD_DOWNLOAD_URL_PREFIX"
 
 # --- Signing key argument --------------------------------------------------
@@ -76,4 +87,22 @@ fi
   "$build_dir"
 
 log "Wrote $build_dir/appcast.xml"
+
+# --- Embed release notes from CHANGELOG.md (best-effort) -------------------
+# Sparkle shows the appcast item's <description> in the update dialog; we fill
+# it with this version's CHANGELOG section (Markdown — Sparkle 2.9+ renders it).
+# A missing section is non-fatal here: it's enforced as a hard gate in CI
+# (see .github/workflows/release.yml) so local builds can still iterate.
+changelog="$repo_root/CHANGELOG.md"
+if [[ -f "$changelog" ]]; then
+  if python3 "$repo_root/scripts/changelog.py" inject \
+       --version "$version" --changelog "$changelog" "$build_dir/appcast.xml"; then
+    :
+  else
+    log "No CHANGELOG.md section for $version — appcast has no release notes."
+  fi
+else
+  log "No CHANGELOG.md — appcast has no release notes."
+fi
+
 printf '\n  Upload to the release:\n    %s\n    %s\n' "$build_dir/TubeFold.zip" "$build_dir/appcast.xml"

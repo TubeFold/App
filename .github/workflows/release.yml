@@ -59,6 +59,16 @@ jobs:
           [[ "$tag" == "$marketing" ]] \
             || { echo "::error::Tag v$tag != MARKETING_VERSION $marketing. Bump MARKETING_VERSION/CURRENT_PROJECT_VERSION or retag."; exit 1; }
 
+      - name: Verify CHANGELOG has a section for this version
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          notes="$RUNNER_TEMP/release-notes.md"
+          python3 scripts/changelog.py section --version "$version" > "$notes" \
+            || { echo "::error::No '## [$version]' section in CHANGELOG.md. Add it (move items out of [Unreleased]) before tagging."; exit 1; }
+          echo "RELEASE_NOTES=$notes" >> "$GITHUB_ENV"
+          echo "Release notes for $version:"; cat "$notes"
+
       - name: Import Developer ID signing certificate
         env:
           CERT_P12: ${{ secrets.DEVELOPER_ID_CERT_P12 }}
@@ -104,7 +114,9 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "${assets[@]}" --clobber
           else
-            gh release create "$TAG" "${assets[@]}" --title "$TAG" --generate-notes
+            # Body comes from the CHANGELOG section captured in the guard step,
+            # so the GitHub Release and the Sparkle dialog show identical notes.
+            gh release create "$TAG" "${assets[@]}" --title "$TAG" --notes-file "$RELEASE_NOTES"
           fi
 
       - name: Bump Homebrew cask
