@@ -9,10 +9,10 @@
     {
       "layers" : [
         {
-          "image-name" : "tubefold-logo-ref.png",
-          "name" : "tubefold-logo-ref",
+          "image-name" : "Logo.png",
+          "name" : "Logo",
           "position" : {
-            "scale" : 1.08,
+            "scale" : 1,
             "translation-in-points" : [
               0,
               0

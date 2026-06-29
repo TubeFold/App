@@ -25,37 +25,56 @@ class FakeSnippet:
 
 
 class TranscriptSourceTests(unittest.TestCase):
-    def test_manual_transcript_is_preferred_before_auto_tier(self) -> None:
+    def test_manual_original_preferred_over_auto(self) -> None:
+        # Original language = English (the ASR track); the manual English track wins.
         transcripts = [
-            FakeTranscript("Polish auto", "pl", True),
+            FakeTranscript("English auto", "en", True),
             FakeTranscript("English manual", "en", False),
         ]
-        selected = select_transcript(transcripts, ["pl", "ru", "en"], allow_any=True)
+        selected = select_transcript(transcripts)
         self.assertEqual(selected.language_code, "en")
         self.assertFalse(selected.is_generated)
 
-    def test_auto_generated_preferred_language(self) -> None:
+    def test_falls_back_to_auto_in_original_language(self) -> None:
+        # No manual track in the original (English) language, so the ASR one is used,
+        # never the German manual translation.
         transcripts = [
             FakeTranscript("German manual", "de", False),
             FakeTranscript("English auto", "en", True),
         ]
-        selected = select_transcript(transcripts, ["pl", "ru", "en"], allow_any=True)
+        selected = select_transcript(transcripts)
         self.assertEqual(selected.language_code, "en")
         self.assertTrue(selected.is_generated)
 
-    def test_regional_language_code_matches_preferred_prefix(self) -> None:
-        transcripts = [FakeTranscript("English US", "en-US", False)]
-        selected = select_transcript(transcripts, ["en"], allow_any=False)
-        self.assertEqual(selected.language_code, "en-US")
+    def test_original_language_beats_manual_translation(self) -> None:
+        # The video is Russian (ASR=ru); an English manual translation must NOT win.
+        transcripts = [
+            FakeTranscript("Russian auto", "ru", True),
+            FakeTranscript("English manual", "en", False),
+        ]
+        selected = select_transcript(transcripts)
+        self.assertEqual(selected.language_code, "ru")
+        self.assertTrue(selected.is_generated)
 
-    def test_fallback_first_available(self) -> None:
-        transcripts = [FakeTranscript("Portuguese", "pt-BR", True)]
-        selected = select_transcript(transcripts, ["pl"], allow_any=True)
+    def test_regional_manual_matches_original_base_language(self) -> None:
+        # ASR "en" + manual "en-US": base languages match, manual wins.
+        transcripts = [
+            FakeTranscript("English auto", "en", True),
+            FakeTranscript("English US", "en-US", False),
+        ]
+        selected = select_transcript(transcripts)
+        self.assertEqual(selected.language_code, "en-US")
+        self.assertFalse(selected.is_generated)
+
+    def test_no_asr_falls_back_to_first_manual(self) -> None:
+        # Original language unknown (no ASR track): take the manual track.
+        transcripts = [FakeTranscript("Portuguese", "pt-BR", False)]
+        selected = select_transcript(transcripts, allow_any=True)
         self.assertEqual(selected.language_code, "pt-BR")
 
-    def test_no_transcript_without_fallback(self) -> None:
+    def test_no_asr_without_fallback_raises(self) -> None:
         with self.assertRaises(TranscriptError):
-            select_transcript([FakeTranscript("Portuguese", "pt-BR", True)], ["pl"], allow_any=False)
+            select_transcript([FakeTranscript("Portuguese", "pt-BR", False)], allow_any=False)
 
     def test_snippets_to_text_normalizes_whitespace_and_keeps_unicode(self) -> None:
         text = snippets_to_text(

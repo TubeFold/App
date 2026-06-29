@@ -39,7 +39,6 @@ DEFAULT_CONFIG = {
     "OUTPUT_DIR": "$HOME/Documents/YouTube Summaries",
     "PROMPT_TEMPLATE": "detailed-summary.md",
     "OUTPUT_LANGUAGE": "English",
-    "PREFERRED_TRANSCRIPT_LANGS": "pl,ru,en",
     "ALLOW_ANY_TRANSCRIPT_LANGUAGE": "true",
     "OPEN_AFTER_SAVE": "false",
     "CODEX_TIMEOUT_SECONDS": "900",
@@ -132,8 +131,6 @@ def main() -> int:
                     video_id,
                     str(transcript_file),
                     str(transcript_info_json),
-                    "--preferred-langs",
-                    config["PREFERRED_TRANSCRIPT_LANGS"],
                     "--allow-any",
                     config["ALLOW_ANY_TRANSCRIPT_LANGUAGE"],
                 ]
@@ -273,7 +270,7 @@ def load_config(args: argparse.Namespace) -> dict[str, str]:
             config[key] = os.environ[key]
     env_legacy = {
         key: os.environ[key]
-        for key in ("SUBTITLE_LANGS", "ALLOW_ANY_SUBTITLE_LANGUAGE", "SUMMARY_LANGUAGE", "OUTPUT_LANGUAGE")
+        for key in ("ALLOW_ANY_SUBTITLE_LANGUAGE", "SUMMARY_LANGUAGE", "OUTPUT_LANGUAGE")
         if key in os.environ
     }
     apply_legacy_keys(config, env_legacy)
@@ -315,8 +312,6 @@ def validate_dependencies(config: dict[str, str], args: argparse.Namespace) -> N
 
 
 def apply_legacy_keys(config: dict[str, str], source: dict[str, str]) -> None:
-    if "SUBTITLE_LANGS" in source and "PREFERRED_TRANSCRIPT_LANGS" not in source:
-        config["PREFERRED_TRANSCRIPT_LANGS"] = source["SUBTITLE_LANGS"]
     if "ALLOW_ANY_SUBTITLE_LANGUAGE" in source and "ALLOW_ANY_TRANSCRIPT_LANGUAGE" not in source:
         config["ALLOW_ANY_TRANSCRIPT_LANGUAGE"] = source["ALLOW_ANY_SUBTITLE_LANGUAGE"]
     if "SUMMARY_LANGUAGE" in source and "OUTPUT_LANGUAGE" not in source:

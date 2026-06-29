@@ -265,8 +265,6 @@ class ProcessingQueue:
                 video_id,
                 str(transcript_file),
                 str(info_json),
-                "--preferred-langs",
-                os.environ.get("PREFERRED_TRANSCRIPT_LANGS", "pl,ru,en"),
                 "--allow-any",
                 os.environ.get("ALLOW_ANY_TRANSCRIPT_LANGUAGE", "true"),
             ],

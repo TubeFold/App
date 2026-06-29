@@ -37,7 +37,7 @@ final class MenuBarController: NSObject {
         statusItem.button?.wantsLayer = true
         applyMenuBarVisibility()
         setIconMode(.idle, tooltip: "TubeFold")
-        rebuildMenu(statusTitle: "TubeFold is ready", activeCount: 0)
+        rebuildMenu(statusTitle: "TubeFold is ready")
         refresh()
         timer = Timer.scheduledTimer(timeInterval: 6, target: self, selector: #selector(pollFromTimer), userInfo: nil, repeats: true)
     }
@@ -65,7 +65,7 @@ final class MenuBarController: NSObject {
                 apply(videos: videos)
             } catch {
                 setIconMode(.error, tooltip: "TubeFold needs attention")
-                rebuildMenu(statusTitle: "Could not load Library", activeCount: 0)
+                rebuildMenu(statusTitle: "Could not load Library")
             }
         }
     }
@@ -92,17 +92,17 @@ final class MenuBarController: NSObject {
         if !activeVideos.isEmpty {
             cancelReadyReset()
             setIconMode(.processing, tooltip: "\(activeVideos.count) video processing")
-            rebuildMenu(statusTitle: hasNewVideo ? "New video received" : "Processing \(activeVideos.count) video", activeCount: activeVideos.count)
+            rebuildMenu(statusTitle: hasNewVideo ? "New video received" : "Processing \(activeVideos.count) video")
         } else if let ready = lastReadyVideo, !newlyReady.isEmpty {
             // A summary just finished: pop the checkmark, then auto-settle back to the app icon.
             setIconMode(.ready, tooltip: "Summary ready: \(ready.displayTitle)")
-            rebuildMenu(statusTitle: "Summary ready", activeCount: 0)
+            rebuildMenu(statusTitle: "Summary ready")
             scheduleReadyReset()
         } else if readyResetTimer == nil {
             // Calm default: the app icon. While the post-completion checkmark window is
             // still counting down, leave it alone and let the timer revert us.
             setIconMode(.idle, tooltip: videos.isEmpty ? "Waiting for videos" : "Library is up to date")
-            rebuildMenu(statusTitle: videos.isEmpty ? "Waiting for videos" : "Library is up to date", activeCount: 0)
+            rebuildMenu(statusTitle: videos.isEmpty ? "Waiting for videos" : "Library is up to date")
         }
 
         // On completion, open the Telegraph page directly — no notification.
@@ -198,7 +198,7 @@ final class MenuBarController: NSObject {
         guard iconMode == .ready else { return }
         let title = knownVideoIDs.isEmpty ? "Waiting for videos" : "Library is up to date"
         setIconMode(.idle, tooltip: title)
-        rebuildMenu(statusTitle: title, activeCount: 0)
+        rebuildMenu(statusTitle: title)
     }
 
     private func setButtonImage(_ systemName: String, tooltip: String) {
@@ -320,18 +320,12 @@ final class MenuBarController: NSObject {
 
     // MARK: - Menu
 
-    private func rebuildMenu(statusTitle: String, activeCount: Int) {
+    private func rebuildMenu(statusTitle: String) {
         let menu = NSMenu()
 
         let status = NSMenuItem(title: statusTitle, action: nil, keyEquivalent: "")
         status.isEnabled = false
         menu.addItem(status)
-
-        if activeCount > 0 {
-            let processing = NSMenuItem(title: "\(activeCount) processing", action: nil, keyEquivalent: "")
-            processing.isEnabled = false
-            menu.addItem(processing)
-        }
 
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Open Library", action: #selector(openApp), keyEquivalent: ""))

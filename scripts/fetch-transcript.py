@@ -15,7 +15,6 @@ def main() -> int:
     parser.add_argument("output_text", type=Path)
     parser.add_argument("info_json", type=Path)
     parser.add_argument("--requested-language")
-    parser.add_argument("--preferred-langs", default="pl,ru,en")
     parser.add_argument("--allow-any", default="true")
     args = parser.parse_args()
 
@@ -23,7 +22,6 @@ def main() -> int:
         result = fetch_transcript(
             args.video_id,
             requested_language=args.requested_language,
-            preferred_langs=args.preferred_langs,
             allow_any=parse_bool(args.allow_any, default=True),
         )
         ensure_transcript_text(result)

@@ -71,13 +71,13 @@ To add a provider, drop an executable `providers/<name>.sh` honoring the contrac
 ### Pipeline scripts (`scripts/`)
 
 - `get-video-metadata.sh` — yt-dlp metadata; both orchestrators **fall back to a video-id-only stub** if yt-dlp is missing or fails (metadata is best-effort, never fatal).
-- `fetch-transcript.py` / `youtube_transcript_source.py` — transcript fetch + language selection (manual preferred over auto-generated; honors `PREFERRED_TRANSCRIPT_LANGS` / `ALLOW_ANY_TRANSCRIPT_LANGUAGE`). A failed transcript **is** fatal.
+- `fetch-transcript.py` / `youtube_transcript_source.py` — transcript fetch + language selection. Selection always targets the video's **original spoken language**, inferred from the auto-generated ("asr") track's language (`original_language_code`); within that language a manual transcript is preferred over the auto-generated one. There is **no** preferred-language list — the summary's `OUTPUT_LANGUAGE` is independent of the transcript language. `ALLOW_ANY_TRANSCRIPT_LANGUAGE` only governs the fallback when no ASR track exists (original can't be inferred): take the best available track vs. fail. A failed transcript **is** fatal.
 - `render-prompt.py` — fills `prompts/<template>.md` with metadata + transcript.
 - `embed-macos-backend.sh` — Xcode build-phase script; see below.
 
 ### CLI config layering (`bin/tubefold`)
 
-Precedence, lowest to highest: `DEFAULT_CONFIG` in the script → `~/.config/tubefold/config.env` (or `--config` / `$TUBEFOLD_CONFIG`) → environment variables → CLI flags. Legacy keys `SUBTITLE_LANGS` / `ALLOW_ANY_SUBTITLE_LANGUAGE` are mapped onto the `*_TRANSCRIPT_*` keys, and the legacy `SUMMARY_LANGUAGE` key maps onto `OUTPUT_LANGUAGE`. Output filenames are derived from the video title, sanitized for macOS, and never overwrite — collisions get a ` (2)`, ` (3)` suffix. The summary's output language is configurable (`OUTPUT_LANGUAGE` / `--language`, default `English`): it is substituted into the prompt template as `{{OUTPUT_LANGUAGE}}` by `render-prompt.py`, so the template no longer hard-codes a language.
+Precedence, lowest to highest: `DEFAULT_CONFIG` in the script → `~/.config/tubefold/config.env` (or `--config` / `$TUBEFOLD_CONFIG`) → environment variables → CLI flags. The legacy key `ALLOW_ANY_SUBTITLE_LANGUAGE` is mapped onto `ALLOW_ANY_TRANSCRIPT_LANGUAGE`, and the legacy `SUMMARY_LANGUAGE` key maps onto `OUTPUT_LANGUAGE`. Output filenames are derived from the video title, sanitized for macOS, and never overwrite — collisions get a ` (2)`, ` (3)` suffix. The summary's output language is configurable (`OUTPUT_LANGUAGE` / `--language`, default `English`): it is substituted into the prompt template as `{{OUTPUT_LANGUAGE}}` by `render-prompt.py`, so the template no longer hard-codes a language.
 
 ### `tubefold/` package (the local server)
 
