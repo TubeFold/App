@@ -6,8 +6,6 @@ struct LibraryView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            header
-
             addBar
 
             // A video that's already in the library sits in the list below, so suggesting it
@@ -71,26 +69,6 @@ struct LibraryView: View {
         }
         .onDisappear {
             viewModel.stopAutoRefresh()
-        }
-    }
-
-    private var header: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Library")
-                    .font(.largeTitle.weight(.semibold))
-                Text("\(viewModel.videos.count) videos • \(viewModel.readyCount) ready • \(viewModel.activeCount) processing")
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            Button {
-                Task { await viewModel.load(showSpinner: true) }
-            } label: {
-                Label(viewModel.isLoading ? "Refreshing" : "Refresh", systemImage: "arrow.clockwise")
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
-            .disabled(viewModel.isLoading)
         }
     }
 

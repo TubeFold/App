@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct ContentView: View {
@@ -46,6 +47,38 @@ struct ContentView: View {
             ProviderSetupWizard(viewModel: viewModel, isPresented: $showingSetup)
                 .frame(width: 820, height: 600)
         }
+        // Library's detail root is a plain VStack, so AppKit always draws the
+        // titlebar hairline under it. Settings/About use a ScrollView root, where
+        // the separator is tied to scroll position and hidden at the top. Force
+        // `.none` on Library for a clean top edge that matches the other sections;
+        // keep `.automatic` elsewhere so their on-scroll separator still appears.
+        .background(
+            TitlebarSeparatorStyleSetter(
+                style: selectedSection == .library ? .none : .automatic
+            )
+        )
+    }
+}
+
+/// Sets the host window's titlebar separator style. There's no SwiftUI modifier
+/// for this, so reach the `NSWindow` through a zero-size representable.
+private struct TitlebarSeparatorStyleSetter: NSViewRepresentable {
+    let style: NSTitlebarSeparatorStyle
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        apply(from: view)
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        apply(from: nsView)
+    }
+
+    private func apply(from view: NSView) {
+        let style = style
+        // The window isn't attached yet on the first pass; defer to the next runloop.
+        DispatchQueue.main.async { view.window?.titlebarSeparatorStyle = style }
     }
 }
 
@@ -75,31 +108,12 @@ struct MainStatusView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("TubeFold")
-                        .font(.largeTitle.weight(.semibold))
-                    Text("Save clean Markdown summaries from YouTube videos using your signed-in provider CLI.")
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Button {
-                    viewModel.startRepair()
-                    showingSetup = true
-                } label: {
-                    Label(viewModel.setupButtonTitle, systemImage: viewModel.requiresRepair ? "wrench.and.screwdriver" : "sparkles")
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-            }
-
             HStack(spacing: 12) {
                 StatusTile(
                     title: "App",
                     value: viewModel.apiReachable ? "Ready" : "Starting helper",
-                    systemImage: "checkmark.circle.fill",
-                    tint: viewModel.apiReachable ? .green : .orange,
-                    iconImage: NSApplication.shared.applicationIconImage
+                    systemImage: "macwindow",
+                    tint: viewModel.apiReachable ? .indigo : .orange
                 )
                 StatusTile(
                     title: viewModel.providerDisplayName,
@@ -124,6 +138,18 @@ struct MainStatusView: View {
                     StatusCheckItem(title: "Installed", isReady: viewModel.providerInstalled, detail: viewModel.versionSummary)
                     StatusCheckItem(title: "Signed in", isReady: viewModel.providerSignedIn, detail: viewModel.providerSignedIn ? "Account verified" : "Test required")
                     StatusCheckItem(title: "Ready", isReady: viewModel.providerReady, detail: viewModel.providerReady ? "Summaries enabled" : "Setup incomplete")
+                }
+
+                HStack {
+                    Button {
+                        viewModel.startRepair()
+                        showingSetup = true
+                    } label: {
+                        Label(viewModel.setupButtonTitle, systemImage: viewModel.requiresRepair ? "wrench.and.screwdriver" : "sparkles")
+                    }
+                    .controlSize(.large)
+
+                    Spacer(minLength: 0)
                 }
             }
             .settingsCard()
@@ -161,17 +187,11 @@ struct ProviderModelSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Provider & Model")
-                        .font(.headline)
-                    Text("Used for new summaries. Existing Markdown files stay unchanged.")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer(minLength: 16)
-                Text(viewModel.modelSummary)
-                    .font(.callout.weight(.semibold))
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Provider & Model")
+                    .font(.headline)
+                Text("Used for new summaries. Existing Markdown files stay unchanged.")
+                    .font(.callout)
                     .foregroundStyle(.secondary)
             }
 
@@ -209,10 +229,6 @@ struct ProviderModelSettingsView: View {
                     }
                     .labelsHidden()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    SettingsHint(
-                        title: viewModel.selectedModelOption?.label ?? viewModel.selectedModel,
-                        detail: viewModel.selectedModelOption?.description ?? "Selected model."
-                    )
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -231,10 +247,6 @@ struct ProviderModelSettingsView: View {
                     }
                     .labelsHidden()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    SettingsHint(
-                        title: viewModel.selectedReasoningEffortOption?.label ?? viewModel.selectedReasoningEffort,
-                        detail: viewModel.selectedReasoningEffortOption?.description ?? "Selected reasoning effort."
-                    )
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -534,23 +546,6 @@ struct SettingsFieldLabel: View {
     }
 }
 
-struct SettingsHint: View {
-    let title: String
-    let detail: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-            Text(detail)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
 struct StatusCheckItem: View {
     let title: String
     let isReady: Bool
@@ -580,9 +575,6 @@ struct StatusTile: View {
     let value: String
     let systemImage: String
     let tint: Color
-    /// When set, the tile shows the app's real icon instead of `systemImage` —
-    /// the glyph then represents the application itself, not its status.
-    var iconImage: NSImage? = nil
     /// When set, the tile becomes clickable and runs this on tap.
     var action: (() -> Void)? = nil
 
@@ -590,18 +582,9 @@ struct StatusTile: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Group {
-                if let iconImage {
-                    Image(nsImage: iconImage)
-                        .resizable()
-                        .interpolation(.high)
-                        .frame(width: 26, height: 26)
-                } else {
-                    Image(systemName: systemImage)
-                        .font(.title2)
-                        .foregroundStyle(tint)
-                }
-            }
+            Image(systemName: systemImage)
+                .font(.title2)
+                .foregroundStyle(.secondary)
             Text(title)
                 .font(.headline)
             Text(value)
