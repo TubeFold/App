@@ -84,22 +84,20 @@ struct SuggestionBannerView: View {
     }
 }
 
-#if DEBUG
-    extension WatchSuggestion {
-        static let preview = WatchSuggestion(
-            youtubeVideoID: "dQw4w9WgXcQ",
-            canonicalURL: "https://youtu.be/dQw4w9WgXcQ",
-            title: "How transformers actually work",
-            channelName: "Deep Dive",
-            thumbnailURL: nil,
-            durationSeconds: 942,
-            watchedAt: "2026-06-29T10:00:00Z",
-            inLibrary: false,
-            libraryVideoID: nil,
-            libraryStatus: nil,
-        )
-    }
-#endif
+extension WatchSuggestion {
+    static let preview = WatchSuggestion(
+        youtubeVideoID: "dQw4w9WgXcQ",
+        canonicalURL: "https://youtu.be/dQw4w9WgXcQ",
+        title: "How transformers actually work",
+        channelName: "Deep Dive",
+        thumbnailURL: nil,
+        durationSeconds: 942,
+        watchedAt: "2026-06-29T10:00:00Z",
+        inLibrary: false,
+        libraryVideoID: nil,
+        libraryStatus: nil,
+    )
+}
 
 #Preview {
     SuggestionBannerView(suggestion: .preview, viewModel: LibraryViewModel())
