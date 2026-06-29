@@ -12,6 +12,7 @@ final class AppSettings: ObservableObject {
     private enum Keys {
         static let autoOpenTelegraph = "autoOpenTelegraph"
         static let hideMenuBarIcon = "hideMenuBarIcon"
+        static let dismissedExtensionTip = "dismissedExtensionTip"
     }
 
     /// When a summary becomes ready, publish it to Telegraph and open the page
@@ -28,14 +29,22 @@ final class AppSettings: ObservableObject {
         }
     }
 
+    /// Set once the user dismisses the "get the browser extension" tip under the
+    /// Library add bar, so it never comes back. Default: off (tip can show).
+    @Published var dismissedExtensionTip: Bool {
+        didSet { UserDefaults.standard.set(dismissedExtensionTip, forKey: Keys.dismissedExtensionTip) }
+    }
+
     private init() {
         let defaults = UserDefaults.standard
         defaults.register(defaults: [
             Keys.autoOpenTelegraph: true,
             Keys.hideMenuBarIcon: false,
+            Keys.dismissedExtensionTip: false,
         ])
         // Property observers don't fire during init, so read the stored values directly.
         autoOpenTelegraph = defaults.bool(forKey: Keys.autoOpenTelegraph)
         hideMenuBarIcon = defaults.bool(forKey: Keys.hideMenuBarIcon)
+        dismissedExtensionTip = defaults.bool(forKey: Keys.dismissedExtensionTip)
     }
 }

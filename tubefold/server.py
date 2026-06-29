@@ -5,6 +5,8 @@ import json
 import logging
 import re
 import shutil
+import time
+from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -49,10 +51,12 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self) -> None:
         logger.info("OPTIONS path=%s origin=%s", self.path, self.headers.get("Origin"))
+        self._note_extension_origin()
         self._send_json({}, status=HTTPStatus.NO_CONTENT)
 
     def do_GET(self) -> None:
         logger.info("GET path=%s origin=%s", self.path, self.headers.get("Origin"))
+        self._note_extension_origin()
         if self.path == "/health":
             self._send_json(
                 {
@@ -104,6 +108,18 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._send_json(self.server.repository.usage_summary())
             return
 
+        if self.path == "/api/v1/extension-status":
+            if not self._authorized():
+                return
+            last_seen = self.server.repository.extension_last_seen()
+            self._send_json(
+                {
+                    "connected": _extension_connected(last_seen),
+                    "lastSeenAt": last_seen,
+                }
+            )
+            return
+
         if self.path == "/api/v1/watch-activity":
             if not self._authorized():
                 return
@@ -148,6 +164,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         logger.info("POST path=%s origin=%s content_length=%s", self.path, self.headers.get("Origin"), self.headers.get("Content-Length"))
+        self._note_extension_origin()
         if not self._authorized():
             return
 
@@ -380,6 +397,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_DELETE(self) -> None:
         logger.info("DELETE path=%s origin=%s", self.path, self.headers.get("Origin"))
+        self._note_extension_origin()
         if not self._authorized():
             return
 
@@ -435,6 +453,26 @@ class RequestHandler(BaseHTTPRequestHandler):
         logger.warning("Unauthorized request path=%s", self.path)
         self._send_error("unauthorized", "Invalid local API token.", HTTPStatus.UNAUTHORIZED)
         return False
+
+    def _note_extension_origin(self) -> None:
+        """Remember that the Chrome extension is talking to us whenever a request
+        carries a ``chrome-extension://`` origin (including the CORS preflight). This
+        is what lets the macOS app stop nudging users who already have the extension.
+
+        Throttled to one DB write every few minutes via an in-memory timestamp on the
+        server so a burst of requests doesn't hammer SQLite; best-effort, never fatal."""
+        origin = self.headers.get("Origin") or ""
+        if not origin.startswith("chrome-extension://"):
+            return
+        now = time.monotonic()
+        last = getattr(self.server, "_extension_seen_monotonic", None)
+        if last is not None and (now - last) < 300:
+            return
+        self.server._extension_seen_monotonic = now
+        try:
+            self.server.repository.mark_extension_seen()
+        except Exception:  # pragma: no cover - telemetry only, must never break a request
+            logger.debug("Could not record extension activity", exc_info=True)
 
     def _send_error(self, code: str, message: str, status: HTTPStatus) -> None:
         logger.info("Response error status=%s code=%s message=%s", status.value, code, message)
@@ -514,6 +552,23 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Authorization,Content-Type")
+
+
+def _extension_connected(last_seen: str | None, *, max_age_days: int = 30) -> bool:
+    """True if the Chrome extension has talked to the backend within ``max_age_days``.
+
+    A missing or stale timestamp reads as "not installed" so the app keeps gently
+    nudging — and resumes nudging if the extension goes quiet for a month (e.g. it
+    was removed)."""
+    if not last_seen:
+        return False
+    try:
+        seen = datetime.fromisoformat(last_seen)
+    except ValueError:
+        return False
+    if seen.tzinfo is None:
+        seen = seen.replace(tzinfo=timezone.utc)
+    return datetime.now(timezone.utc) - seen <= timedelta(days=max_age_days)
 
 
 def _optional_float(value: Any) -> float | None:

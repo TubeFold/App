@@ -45,6 +45,10 @@ struct ProviderSetupService {
         try await request(path: "/api/v1/usage", method: "GET", body: Optional<StringRequest>.none)
     }
 
+    func loadExtensionStatus() async throws -> ExtensionStatus {
+        try await request(path: "/api/v1/extension-status", method: "GET", body: Optional<StringRequest>.none)
+    }
+
     func saveOutputLanguage(_ outputLanguage: String) async throws -> SaveModelSettingsResult {
         try await request(
             path: "/api/v1/provider-setup/output-language",

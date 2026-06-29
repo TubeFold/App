@@ -49,6 +49,19 @@ enum AppSection: Hashable {
     case about
 }
 
+/// Shared external links used across the app's surfaces.
+enum TubeFoldLinks {
+    static let chromeWebStore = URL(string: "https://chromewebstore.google.com/detail/tubefold-mac-app-companio/hjfcdpioihmgoccmfkcicofjgbkjidbh")!
+}
+
+/// Whether the Chrome extension has recently talked to the local backend.
+/// Drives the gentle "install the extension" nudges — they only appear when it
+/// hasn't been seen, so people who already have it never get advertised to.
+struct ExtensionStatus: Decodable {
+    let connected: Bool
+    let lastSeenAt: String?
+}
+
 struct MainStatusView: View {
     @ObservedObject var viewModel: ProviderSetupViewModel
     @Binding var showingSetup: Bool
@@ -120,6 +133,8 @@ struct MainStatusView: View {
             OutputLanguageSettingsView(viewModel: viewModel)
 
             AppBehaviorSettingsView()
+
+            BrowserExtensionSettingsView(viewModel: viewModel)
 
             UsageStatsView(viewModel: viewModel)
 
@@ -305,6 +320,46 @@ struct AppBehaviorSettingsView: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+            }
+        }
+        .settingsCard()
+    }
+}
+
+/// Soft promo + status for the companion Chrome extension. Shows a calm
+/// "Connected" confirmation once the extension has been seen, and an unobtrusive
+/// install pitch otherwise — never a nag for people who already have it.
+struct BrowserExtensionSettingsView: View {
+    @ObservedObject var viewModel: ProviderSetupViewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Browser extension")
+                        .font(.headline)
+                    Text(viewModel.extensionConnected
+                         ? "The Chrome extension is connected. Send the video you're watching to TubeFold with one click."
+                         : "Install the Chrome extension to send videos straight from a YouTube page — one click, no copy-paste.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 16)
+                if viewModel.extensionConnected {
+                    Label("Connected", systemImage: "checkmark.circle.fill")
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(.green)
+                        .labelStyle(.titleAndIcon)
+                }
+            }
+
+            if !viewModel.extensionConnected {
+                Link(destination: TubeFoldLinks.chromeWebStore) {
+                    Label("Get the Chrome extension", systemImage: "puzzlepiece.extension")
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
             }
         }
         .settingsCard()

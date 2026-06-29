@@ -22,6 +22,9 @@ final class ProviderSetupViewModel: ObservableObject {
     @Published private(set) var outputLanguage = ProviderSetupViewModel.defaultOutputLanguage
     @Published var outputLanguageDraft = ProviderSetupViewModel.defaultOutputLanguage
     @Published private(set) var usage: UsageSummary?
+    /// Defaults to `true` so we never flash an install pitch before the first
+    /// status check resolves; flips to the real value once the backend answers.
+    @Published private(set) var extensionConnected = true
 
     static let defaultOutputLanguage = "English"
 
@@ -256,6 +259,7 @@ final class ProviderSetupViewModel: ObservableObject {
             hasLoadedState = true
         }
         await refreshUsage()
+        await refreshExtensionStatus()
     }
 
     /// Fetch the token-usage summary without blocking the UI with the busy spinner.
@@ -263,6 +267,14 @@ final class ProviderSetupViewModel: ObservableObject {
     func refreshUsage() async {
         guard let summary = try? await service.loadUsage() else { return }
         usage = summary
+    }
+
+    /// Best-effort check of whether the companion Chrome extension is installed.
+    /// A failure (e.g. older backend without the endpoint) leaves the prior value,
+    /// so we never spuriously start nagging.
+    func refreshExtensionStatus() async {
+        guard let status = try? await service.loadExtensionStatus() else { return }
+        extensionConnected = status.connected
     }
 
     func resetData() async {

@@ -14,6 +14,9 @@ final class LibraryViewModel: ObservableObject {
     @Published private(set) var isSubmitting = false
     @Published private(set) var noticeMessage: String?
     @Published private(set) var suggestion: WatchSuggestion?
+    /// Defaults to `true` so the empty-state / tip nudges stay hidden until the
+    /// first status check resolves (no flash for users who already have it).
+    @Published private(set) var extensionConnected = true
 
     private let service = LibraryService()
     private var refreshTask: Task<Void, Never>?
@@ -73,6 +76,28 @@ final class LibraryViewModel: ObservableObject {
         }
 
         await loadSuggestion()
+        await loadExtensionStatus()
+    }
+
+    /// Best-effort: an old/missing backend just leaves the prior value, so the
+    /// nudges never appear spuriously.
+    private func loadExtensionStatus() async {
+        guard let status = try? await service.extensionStatus() else { return }
+        if status.connected != extensionConnected {
+            extensionConnected = status.connected
+        }
+    }
+
+    /// The subtle "get the extension" line under the add bar. Shown only once the
+    /// library has content (the empty state carries its own bigger pitch), when the
+    /// extension isn't connected, and only until the user dismisses it for good.
+    var showExtensionTip: Bool {
+        !videos.isEmpty && !extensionConnected && !AppSettings.shared.dismissedExtensionTip
+    }
+
+    func dismissExtensionTip() {
+        AppSettings.shared.dismissedExtensionTip = true
+        objectWillChange.send()
     }
 
     private func loadSuggestion() async {

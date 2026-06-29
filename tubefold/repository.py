@@ -71,6 +71,11 @@ class Repository:
                     watched_at TEXT NOT NULL,
                     dismissed_at TEXT
                 );
+
+                CREATE TABLE IF NOT EXISTS app_meta (
+                    key TEXT PRIMARY KEY,
+                    value TEXT
+                );
                 """
             )
             self._migrate(conn)
@@ -313,6 +318,34 @@ class Repository:
                 "UPDATE watch_activity SET dismissed_at = ? WHERE youtube_video_id = ?",
                 (utc_now(), youtube_video_id),
             )
+
+    # ------------------------------------------------------------------
+    # App metadata (small key/value store)
+    # ------------------------------------------------------------------
+
+    def set_meta(self, key: str, value: str) -> None:
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO app_meta (key, value) VALUES (?, ?)
+                ON CONFLICT(key) DO UPDATE SET value = excluded.value
+                """,
+                (key, value),
+            )
+
+    def get_meta(self, key: str) -> str | None:
+        with self.connect() as conn:
+            row = conn.execute("SELECT value FROM app_meta WHERE key = ?", (key,)).fetchone()
+            return row["value"] if row else None
+
+    def mark_extension_seen(self) -> None:
+        """Remember that the Chrome extension just talked to us, so the app can stop
+        nudging users who already have it installed. Deliberately kept across a data
+        reset — it's about the extension being present, not library content."""
+        self.set_meta("extension_last_seen", utc_now())
+
+    def extension_last_seen(self) -> str | None:
+        return self.get_meta("extension_last_seen")
 
     def list_queued_jobs(self) -> list[sqlite3.Row]:
         with self.connect() as conn:

@@ -22,6 +22,10 @@ struct LibraryService {
         return response.suggestion
     }
 
+    func extensionStatus() async throws -> ExtensionStatus {
+        try await request(path: "/api/v1/extension-status")
+    }
+
     func dismissWatchSuggestion(youtubeID: String) async throws {
         let _: StatusResponse = try await request(
             path: "/api/v1/watch-activity/dismiss",

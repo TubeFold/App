@@ -146,7 +146,34 @@ struct LibraryView: View {
                     .font(.callout)
                     .foregroundStyle(.green)
             }
+
+            if viewModel.showExtensionTip {
+                extensionTip
+            }
         }
+    }
+
+    /// Subtle one-line nudge under the add bar (populated library only).
+    private var extensionTip: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "puzzlepiece.extension")
+                .foregroundStyle(.secondary)
+            Text("Tip: send videos straight from a YouTube page with the browser extension.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            Link("Get it", destination: TubeFoldLinks.chromeWebStore)
+                .font(.callout.weight(.semibold))
+            Spacer(minLength: 0)
+            Button {
+                viewModel.dismissExtensionTip()
+            } label: {
+                Image(systemName: "xmark")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Dismiss")
+        }
+        .transition(.opacity)
     }
 
     private var emptyState: some View {
@@ -158,6 +185,16 @@ struct LibraryView: View {
                 .font(.title2.weight(.semibold))
             Text("Paste a YouTube link above, or send one from the Chrome extension, and it will appear here.")
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            if !viewModel.extensionConnected {
+                Link(destination: TubeFoldLinks.chromeWebStore) {
+                    Label("Get the Chrome extension", systemImage: "puzzlepiece.extension")
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .padding(.top, 4)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

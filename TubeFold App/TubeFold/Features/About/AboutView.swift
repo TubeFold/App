@@ -10,6 +10,7 @@ struct AboutView: View {
     private static let links: [AboutLink] = [
         AboutLink(title: "GitHub", systemImage: "chevron.left.forwardslash.chevron.right", url: "https://github.com/TubeFold/App"),
         AboutLink(title: "Website", systemImage: "globe", url: "https://tubefold.github.io/"),
+        AboutLink(title: "Chrome extension", systemImage: "puzzlepiece.extension", url: "https://chromewebstore.google.com/detail/tubefold-mac-app-companio/hjfcdpioihmgoccmfkcicofjgbkjidbh"),
         AboutLink(title: "Report an issue", systemImage: "exclamationmark.bubble", url: "https://github.com/TubeFold/App/issues"),
         AboutLink(title: "Feedback", systemImage: "envelope", url: "mailto:tubefold@proton.me"),
     ]

@@ -22,6 +22,9 @@ final class MenuBarController: NSObject {
     private var latestVideo: LibraryVideo?
     private var iconMode: IconMode?
     private var currentSymbol: String?
+    /// Whether the Chrome extension is connected. Defaults to `true` so the
+    /// "Get the Chrome Extension…" item stays hidden until we know otherwise.
+    private var extensionConnected = true
 
     /// How long the "summary ready" checkmark lingers after a completion before the
     /// icon settles back to the calm app-icon default.
@@ -56,6 +59,9 @@ final class MenuBarController: NSObject {
         Task {
             do {
                 let videos = try await service.listVideos()
+                if let status = try? await service.extensionStatus() {
+                    extensionConnected = status.connected
+                }
                 apply(videos: videos)
             } catch {
                 setIconMode(.error, tooltip: "TubeFold needs attention")
@@ -345,6 +351,12 @@ final class MenuBarController: NSObject {
         checkForUpdates.isEnabled = UpdaterController.shared.canCheckForUpdates
         menu.addItem(checkForUpdates)
 
+        // Only surface the install link to people who don't already have the extension.
+        if !extensionConnected {
+            menu.addItem(.separator())
+            menu.addItem(NSMenuItem(title: "Get the Chrome Extension…", action: #selector(openChromeStore), keyEquivalent: ""))
+        }
+
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit TubeFold", action: #selector(quitApp), keyEquivalent: "q"))
 
@@ -373,6 +385,10 @@ final class MenuBarController: NSObject {
 
     @objc private func checkForUpdatesFromMenu() {
         UpdaterController.shared.checkForUpdates()
+    }
+
+    @objc private func openChromeStore() {
+        NSWorkspace.shared.open(TubeFoldLinks.chromeWebStore)
     }
 
     @objc private func quitApp() {
