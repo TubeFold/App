@@ -25,7 +25,9 @@ CODEX_MODEL_OPTIONS: list[dict[str, str]] = [
 ]
 
 CODEX_REASONING_EFFORT_OPTIONS: list[dict[str, str]] = [
-    {"id": "minimal", "label": "Minimal", "description": "Lowest latency where supported."},
+    # "minimal" is deliberately omitted: the Codex CLI injects the web_search and
+    # image_gen tools server-side for these models, and the API rejects that
+    # combination with reasoning.effort 'minimal' (HTTP 400), so every job fails.
     {"id": "low", "label": "Low", "description": "Fast summaries with light reasoning."},
     {"id": "medium", "label": "Medium", "description": "Recommended balance."},
     {"id": "high", "label": "High", "description": "More careful summaries, slower."},

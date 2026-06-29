@@ -77,18 +77,15 @@ class CodexWrapperTests(unittest.TestCase):
             "out = args[args.index('--output-last-message') + 1]\n"
             "sys.stdin.read()\n"
             "open(out, 'w').write('# Codex body\\n')\n"
-            "print(json.dumps({'type':'event_msg','payload':{'type':'token_count',"
-            "'info':{'total_token_usage':{'input_tokens':7,'output_tokens':3,"
-            "'reasoning_output_tokens':1,'total_tokens':11}},"
-            "'rate_limits':{'primary':{'used_percent':30.0},"
-            "'secondary':{'used_percent':55.0,'resets_at':123},'plan_type':'plus'}}}))\n",
+            "print(json.dumps({'type':'turn.completed','usage':{'input_tokens':7,"
+            "'output_tokens':3,'cached_input_tokens':2,'reasoning_output_tokens':1}}))\n",
         )
         self.assertEqual(rc, 0)
         self.assertEqual(output.read_text(encoding="utf-8"), "# Codex body\n")
         sidecar = json.loads(Path(str(output) + ".usage.json").read_text(encoding="utf-8"))
         self.assertEqual(sidecar["provider"], "codex")
-        self.assertEqual(sidecar["total_tokens"], 11)
-        self.assertEqual(sidecar["weekly_percent"], 55.0)
+        self.assertEqual(sidecar["total_tokens"], 10)
+        self.assertNotIn("weekly_percent", sidecar)
 
 
 if __name__ == "__main__":

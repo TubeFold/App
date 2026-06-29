@@ -405,11 +405,9 @@ class ProcessingQueue:
         except Exception:  # noqa: BLE001 - usage capture must not fail the job
             logger.warning("Failed to persist usage for job=%s", job_id, exc_info=True)
             return
-        weekly = usage.get("weekly_percent")
         append_job_log(
             job_dir,
-            f"usage recorded provider={usage.get('provider')} total_tokens={usage.get('total_tokens')} "
-            f"weekly_percent={weekly}",
+            f"usage recorded provider={usage.get('provider')} total_tokens={usage.get('total_tokens')}",
         )
 
     def _output_language(self) -> str:

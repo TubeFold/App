@@ -93,9 +93,6 @@ class Repository:
             ("output_tokens", "INTEGER"),
             ("total_tokens", "INTEGER"),
             ("cost_usd", "REAL"),
-            ("weekly_percent", "REAL"),
-            ("weekly_resets_at", "INTEGER"),
-            ("primary_percent", "REAL"),
         ):
             if column not in job_columns:
                 conn.execute(f"ALTER TABLE jobs ADD COLUMN {column} {sql_type}")
@@ -480,16 +477,16 @@ class Repository:
             )
 
     def set_job_usage(self, job_id: str, usage: dict[str, Any]) -> None:
-        """Persist the token usage + quota snapshot captured from a provider run.
+        """Persist the token usage captured from a provider run.
 
-        ``usage`` is the parsed sidecar dict; codex carries ``weekly_percent`` etc.,
-        claude carries ``cost_usd``. Missing keys simply store NULL."""
+        ``usage`` is the parsed sidecar dict; claude also carries ``cost_usd``.
+        Missing keys simply store NULL."""
         with self.connect() as conn:
             conn.execute(
                 """
                 UPDATE jobs
                 SET provider = ?, input_tokens = ?, output_tokens = ?, total_tokens = ?,
-                    cost_usd = ?, weekly_percent = ?, weekly_resets_at = ?, primary_percent = ?
+                    cost_usd = ?
                 WHERE id = ?
                 """,
                 (
@@ -498,9 +495,6 @@ class Repository:
                     usage.get("output_tokens"),
                     usage.get("total_tokens"),
                     usage.get("cost_usd"),
-                    usage.get("weekly_percent"),
-                    usage.get("weekly_resets_at"),
-                    usage.get("primary_percent"),
                     job_id,
                 ),
             )
@@ -508,8 +502,7 @@ class Repository:
     def usage_summary(self) -> dict[str, Any]:
         """Aggregate token usage across all jobs that recorded any.
 
-        Returns total tokens, a per-provider breakdown (tokens/cost/job count) and
-        the freshest codex weekly-quota snapshot (the latest job carrying one)."""
+        Returns total tokens and a per-provider breakdown (tokens/cost/job count)."""
         with self.connect() as conn:
             rows = conn.execute(
                 """
@@ -524,15 +517,6 @@ class Repository:
                 GROUP BY provider
                 """
             ).fetchall()
-            codex_weekly = conn.execute(
-                """
-                SELECT weekly_percent, weekly_resets_at, primary_percent, finished_at
-                FROM jobs
-                WHERE weekly_percent IS NOT NULL
-                ORDER BY COALESCE(finished_at, created_at) DESC
-                LIMIT 1
-                """
-            ).fetchone()
 
         by_provider: dict[str, Any] = {}
         total_tokens = 0
@@ -547,19 +531,9 @@ class Repository:
                 "costUsd": float(row["cost_usd"]) if row["cost_usd"] else None,
             }
 
-        weekly = None
-        if codex_weekly is not None:
-            weekly = {
-                "usedPercent": codex_weekly["weekly_percent"],
-                "resetsAt": codex_weekly["weekly_resets_at"],
-                "primaryPercent": codex_weekly["primary_percent"],
-                "capturedAt": codex_weekly["finished_at"],
-            }
-
         return {
             "totalTokens": total_tokens,
             "byProvider": by_provider,
-            "codexWeekly": weekly,
         }
 
     def mark_failed(self, video_id: str, job_id: str, code: str, message: str) -> None:

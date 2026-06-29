@@ -1,10 +1,10 @@
 """Shared helpers for emitting provider token-usage sidecar files.
 
 Providers write **only** the Markdown body to ``<output_file>`` (the pipeline
-contract). Token usage and live quota are written alongside it to
-``<output_file>.usage.json`` so ``processing.py`` can persist them without
-touching the summary. Parsing failures are best-effort and never fatal — a
-missing sidecar simply means "no usage recorded for this run".
+contract). Token usage is written alongside it to ``<output_file>.usage.json``
+so ``processing.py`` can persist it without touching the summary. Parsing
+failures are best-effort and never fatal — a missing sidecar simply means
+"no usage recorded for this run".
 """
 from __future__ import annotations
 
@@ -57,36 +57,58 @@ def claude_usage_from_result(result_obj: dict[str, Any]) -> dict[str, Any] | Non
 
 
 def codex_usage_from_jsonl(stdout: str) -> dict[str, Any] | None:
-    """Extract usage + weekly quota from ``codex exec --json`` JSONL output.
+    """Extract token usage from ``codex exec --json`` JSONL output.
 
-    Scans for the **last** ``token_count`` event (the cumulative totals for the
-    run) and reads its ``rate_limits`` snapshot (``secondary`` = the 7-day
-    window). Returns ``None`` when no token_count event is found.
+    Codex's JSONL schema changed across CLI versions, so we handle both:
+
+    * **Current** (codex-cli >= ~0.40): a flat ``turn.completed`` event carrying
+      ``usage`` (``input_tokens``/``cached_input_tokens``/``output_tokens``/
+      ``reasoning_output_tokens``).
+    * **Legacy**: an ``event_msg`` whose ``payload.type == "token_count"`` holds
+      ``info.total_token_usage``.
+
+    The **last** matching event of either kind wins (cumulative totals for the
+    run). The current format is preferred when both appear. Returns ``None``
+    when neither is found.
     """
-    last: dict[str, Any] | None = None
+    last_turn: dict[str, Any] | None = None
+    last_token_count: dict[str, Any] | None = None
     for line in stdout.splitlines():
         line = line.strip()
-        if not line or '"token_count"' not in line:
+        if not line:
             continue
         try:
             event = json.loads(line)
         except ValueError:
             continue
-        payload = event.get("payload") if isinstance(event, dict) else None
+        if not isinstance(event, dict):
+            continue
+        if event.get("type") == "turn.completed" and isinstance(event.get("usage"), dict):
+            last_turn = event["usage"]
+            continue
+        payload = event.get("payload")
         if isinstance(payload, dict) and payload.get("type") == "token_count":
-            last = payload
-    if last is None:
+            last_token_count = payload
+
+    if last_turn is not None:
+        input_tokens = _as_int(last_turn.get("input_tokens"))
+        output_tokens = _as_int(last_turn.get("output_tokens"))
+        # No total in the new schema, and cached input isn't billed as fresh
+        # usage — report total = input + output (matches the Claude wrapper).
+        return {
+            "provider": "codex",
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "reasoning_output_tokens": _as_int(last_turn.get("reasoning_output_tokens")),
+            "cached_input_tokens": _as_int(last_turn.get("cached_input_tokens")),
+            "total_tokens": input_tokens + output_tokens,
+        }
+
+    if last_token_count is None:
         return None
 
-    info = last.get("info") or {}
+    info = last_token_count.get("info") or {}
     total = info.get("total_token_usage") or {}
-    rate_limits = last.get("rate_limits") or {}
-    secondary = rate_limits.get("secondary") or {}
-    primary = rate_limits.get("primary") or {}
-
-    def _percent(window: dict[str, Any]) -> float | None:
-        value = window.get("used_percent")
-        return float(value) if isinstance(value, (int, float)) else None
 
     return {
         "provider": "codex",
@@ -94,8 +116,4 @@ def codex_usage_from_jsonl(stdout: str) -> dict[str, Any] | None:
         "output_tokens": _as_int(total.get("output_tokens")),
         "reasoning_output_tokens": _as_int(total.get("reasoning_output_tokens")),
         "total_tokens": _as_int(total.get("total_tokens")),
-        "weekly_percent": _percent(secondary),
-        "weekly_resets_at": secondary.get("resets_at"),
-        "primary_percent": _percent(primary),
-        "plan_type": rate_limits.get("plan_type"),
     }

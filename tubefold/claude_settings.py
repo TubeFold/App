@@ -8,14 +8,14 @@ DEFAULT_CLAUDE_REASONING_EFFORT = "medium"
 
 CLAUDE_MODEL_OPTIONS: list[dict[str, str]] = [
     {
-        "id": "sonnet",
-        "label": "Sonnet 4.6",
-        "description": "Recommended balance of quality and speed for everyday summaries.",
-    },
-    {
         "id": "opus",
         "label": "Opus 4.8",
         "description": "Most capable Claude model for the hardest, longest transcripts.",
+    },
+    {
+        "id": "sonnet",
+        "label": "Sonnet 4.6",
+        "description": "Recommended balance of quality and speed for everyday summaries.",
     },
     {
         "id": "haiku",

@@ -31,6 +31,29 @@ CLAUDE_RESULT = {
     },
 }
 
+# Current codex-cli (>= ~0.40) --json schema: a flat turn.completed usage block,
+# with no rate_limits snapshot anywhere in the stream.
+CODEX_JSONL_TURN_COMPLETED = "\n".join(
+    [
+        json.dumps({"type": "thread.started", "thread_id": "abc"}),
+        json.dumps({"type": "turn.started"}),
+        json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": "ok"}}),
+        json.dumps(
+            {
+                "type": "turn.completed",
+                "usage": {
+                    "input_tokens": 16286,
+                    "cached_input_tokens": 10624,
+                    "output_tokens": 5,
+                    "reasoning_output_tokens": 0,
+                },
+            }
+        ),
+    ]
+)
+
+# Legacy schema: event_msg/token_count payload. (Any rate_limits snapshot it may
+# carry is ignored — the app no longer surfaces quota.)
 CODEX_JSONL = "\n".join(
     [
         json.dumps({"type": "event_msg", "payload": {"type": "agent_message", "message": "hi"}}),
@@ -40,11 +63,6 @@ CODEX_JSONL = "\n".join(
                 "payload": {
                     "type": "token_count",
                     "info": {"total_token_usage": {"input_tokens": 100, "output_tokens": 20, "reasoning_output_tokens": 5, "total_tokens": 125}},
-                    "rate_limits": {
-                        "primary": {"used_percent": 30.0, "window_minutes": 300, "resets_at": 1782392127},
-                        "secondary": {"used_percent": 55.0, "window_minutes": 10080, "resets_at": 1782895766},
-                        "plan_type": "plus",
-                    },
                 },
             }
         ),
@@ -55,11 +73,6 @@ CODEX_JSONL = "\n".join(
                 "payload": {
                     "type": "token_count",
                     "info": {"total_token_usage": {"input_tokens": 300, "output_tokens": 80, "reasoning_output_tokens": 40, "total_tokens": 420}},
-                    "rate_limits": {
-                        "primary": {"used_percent": 31.0},
-                        "secondary": {"used_percent": 56.0, "resets_at": 1782895999},
-                        "plan_type": "plus",
-                    },
                 },
             }
         ),
@@ -83,17 +96,30 @@ class ClaudeUsageTests(unittest.TestCase):
 
 
 class CodexUsageTests(unittest.TestCase):
-    def test_uses_last_token_count_and_weekly_quota(self) -> None:
+    def test_turn_completed_usage(self) -> None:
+        usage = codex_usage_from_jsonl(CODEX_JSONL_TURN_COMPLETED)
+        assert usage is not None
+        self.assertEqual(usage["provider"], "codex")
+        self.assertEqual(usage["input_tokens"], 16286)
+        self.assertEqual(usage["output_tokens"], 5)
+        self.assertEqual(usage["reasoning_output_tokens"], 0)
+        self.assertEqual(usage["cached_input_tokens"], 10624)
+        self.assertEqual(usage["total_tokens"], 16291)  # input + output, cache excluded
+
+    def test_turn_completed_preferred_over_legacy_token_count(self) -> None:
+        combined = CODEX_JSONL + "\n" + CODEX_JSONL_TURN_COMPLETED
+        usage = codex_usage_from_jsonl(combined)
+        assert usage is not None
+        self.assertEqual(usage["input_tokens"], 16286)
+
+    def test_uses_last_legacy_token_count(self) -> None:
         usage = codex_usage_from_jsonl(CODEX_JSONL)
         assert usage is not None
         self.assertEqual(usage["provider"], "codex")
         self.assertEqual(usage["total_tokens"], 420)
         self.assertEqual(usage["input_tokens"], 300)
         self.assertEqual(usage["reasoning_output_tokens"], 40)
-        self.assertEqual(usage["weekly_percent"], 56.0)
-        self.assertEqual(usage["weekly_resets_at"], 1782895999)
-        self.assertEqual(usage["primary_percent"], 31.0)
-        self.assertEqual(usage["plan_type"], "plus")
+        self.assertNotIn("weekly_percent", usage)
 
     def test_no_token_count_returns_none(self) -> None:
         self.assertIsNone(codex_usage_from_jsonl('{"type":"event_msg","payload":{"type":"agent_message"}}'))

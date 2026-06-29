@@ -70,17 +70,16 @@ class ServerTests(unittest.TestCase):
         empty = self.get_json("/api/v1/usage")
         self.assertEqual(empty["totalTokens"], 0)
         self.assertEqual(empty["byProvider"], {})
-        self.assertIsNone(empty["codexWeekly"])
+        self.assertNotIn("codexWeekly", empty)
 
-        # Seed a video + two jobs with usage, one carrying a codex weekly snapshot.
+        # Seed a video + two jobs with usage.
         from tubefold.models import SummaryRequest
 
         request = SummaryRequest.from_json({}, "dQw4w9WgXcQ", "https://youtu.be/dQw4w9WgXcQ")
         _, _, job_a = self.repository.create_or_reuse(request)
         self.repository.set_job_usage(
             job_a,
-            {"provider": "codex", "input_tokens": 1000, "output_tokens": 200, "total_tokens": 1200,
-             "weekly_percent": 55.0, "weekly_resets_at": 1782895766, "primary_percent": 30.0},
+            {"provider": "codex", "input_tokens": 1000, "output_tokens": 200, "total_tokens": 1200},
         )
         _, _, job_b = self.repository.create_or_reuse(request, force_regenerate=True)
         self.repository.set_job_usage(
@@ -94,8 +93,6 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(usage["byProvider"]["codex"]["jobs"], 1)
         self.assertEqual(usage["byProvider"]["claude"]["totalTokens"], 400)
         self.assertAlmostEqual(usage["byProvider"]["claude"]["costUsd"], 0.05)
-        self.assertEqual(usage["codexWeekly"]["usedPercent"], 55.0)
-        self.assertEqual(usage["codexWeekly"]["resetsAt"], 1782895766)
 
     def test_summary_request_creates_job_and_dedupes_active_video(self) -> None:
         request = {

@@ -119,8 +119,10 @@ struct CodexModelOption: Decodable, Identifiable, Hashable {
         CodexModelOption(id: "gpt-5.4", label: "GPT-5.4", description: "Flagship model for professional work.")
     ]
 
+    // "minimal" is intentionally absent: the Codex CLI attaches web_search/image_gen
+    // server-side for these models, which the API rejects with reasoning.effort
+    // 'minimal' (HTTP 400). Keep this in sync with CODEX_REASONING_EFFORT_OPTIONS.
     static let defaultReasoningEffortOptions: [CodexModelOption] = [
-        CodexModelOption(id: "minimal", label: "Minimal", description: "Lowest latency where supported."),
         CodexModelOption(id: "low", label: "Low", description: "Fast summaries."),
         CodexModelOption(id: "medium", label: "Medium", description: "Recommended balance."),
         CodexModelOption(id: "high", label: "High", description: "More careful summaries."),
@@ -248,7 +250,6 @@ extension Dictionary where Key == String, Value == JSONValue {
 struct UsageSummary: Decodable {
     let totalTokens: Int
     let byProvider: [String: ProviderUsage]
-    let codexWeekly: CodexWeeklyUsage?
 
     struct ProviderUsage: Decodable {
         let jobs: Int
@@ -258,20 +259,13 @@ struct UsageSummary: Decodable {
         let costUsd: Double?
     }
 
-    struct CodexWeeklyUsage: Decodable {
-        let usedPercent: Double?
-        let resetsAt: Double?
-        let primaryPercent: Double?
-        let capturedAt: String?
-    }
-
     var sortedProviders: [(name: String, usage: ProviderUsage)] {
         byProvider
             .sorted { $0.value.totalTokens > $1.value.totalTokens }
             .map { (name: $0.key, usage: $0.value) }
     }
 
-    static let empty = UsageSummary(totalTokens: 0, byProvider: [:], codexWeekly: nil)
+    static let empty = UsageSummary(totalTokens: 0, byProvider: [:])
 }
 
 struct StringRequest: Encodable {

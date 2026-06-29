@@ -36,6 +36,12 @@ struct ContentView: View {
                 showingSetup = true
             }
         }
+        .onChange(of: selectedSection) { _, section in
+            // Refresh usage stats every time the user opens Settings.
+            if section == .settings {
+                Task { await viewModel.refreshUsage() }
+            }
+        }
         .sheet(isPresented: $showingSetup) {
             ProviderSetupWizard(viewModel: viewModel, isPresented: $showingSetup)
                 .frame(width: 820, height: 600)
@@ -91,21 +97,15 @@ struct MainStatusView: View {
                 StatusTile(
                     title: "App",
                     value: viewModel.apiReachable ? "Ready" : "Starting helper",
-                    systemImage: viewModel.apiReachable ? "checkmark.circle.fill" : "clock.arrow.circlepath",
-                    tint: viewModel.apiReachable ? .green : .orange
+                    systemImage: "checkmark.circle.fill",
+                    tint: viewModel.apiReachable ? .green : .orange,
+                    iconImage: NSApplication.shared.applicationIconImage
                 )
                 StatusTile(
                     title: viewModel.providerDisplayName,
                     value: viewModel.providerSummary,
                     systemImage: "terminal",
                     tint: .blue
-                )
-                StatusTile(
-                    title: "Storage",
-                    value: viewModel.outputDirectorySummary,
-                    systemImage: "folder",
-                    tint: .purple,
-                    action: { viewModel.revealOutputDirectory() }
                 )
                 if viewModel.extensionConnected {
                     StatusTile(
@@ -116,14 +116,6 @@ struct MainStatusView: View {
                     )
                 }
             }
-
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Capture videos from the browser, then let TubeFold fetch the transcript, ask your provider for a summary, and save the result as Markdown.")
-                    .font(.headline)
-                Text("The local helper is started by the app when needed and stopped when the app quits.")
-                    .foregroundStyle(.secondary)
-            }
-            .settingsCard()
 
             VStack(alignment: .leading, spacing: 16) {
                 Text("\(viewModel.providerDisplayName) Status")
@@ -145,6 +137,8 @@ struct MainStatusView: View {
             AppBehaviorSettingsView()
 
             UsageStatsView(viewModel: viewModel)
+
+            StorageSettingsView(viewModel: viewModel)
 
             ResetDataSettingsView(viewModel: viewModel)
 
@@ -407,17 +401,6 @@ struct UsageStatsView: View {
                     providerRow(name: entry.name, usage: entry.usage)
                 }
             }
-
-            if let weekly = usage.codexWeekly, let percent = weekly.usedPercent {
-                weeklyGauge(percent: percent, resetsAt: weekly.resetsAt)
-            }
-
-            if usage.byProvider["claude"] != nil {
-                SettingsHint(
-                    title: "Claude weekly limit",
-                    detail: "The Claude CLI doesn't report a weekly subscription percentage, so only spent tokens are shown."
-                )
-            }
         }
         .settingsCard()
     }
@@ -435,29 +418,6 @@ struct UsageStatsView: View {
                 .font(.callout)
                 .monospacedDigit()
         }
-    }
-
-    @ViewBuilder
-    private func weeklyGauge(percent: Double, resetsAt: Double?) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("Codex weekly limit")
-                    .font(.subheadline.weight(.semibold))
-                Spacer()
-                Text("\(Int(percent.rounded()))% used")
-                    .font(.callout.weight(.semibold))
-                    .foregroundStyle(percent >= 90 ? .red : .primary)
-                    .monospacedDigit()
-            }
-            ProgressView(value: min(max(percent / 100, 0), 1))
-                .tint(percent >= 90 ? .red : (percent >= 70 ? .orange : .blue))
-            if let resets = UsageStatsView.formatReset(resetsAt) {
-                Text(resets)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.top, 4)
     }
 
     static func providerDisplayName(_ id: String) -> String {
@@ -478,18 +438,40 @@ struct UsageStatsView: View {
         }
         return String(tokens)
     }
+}
 
-    static func formatReset(_ resetsAt: Double?) -> String? {
-        guard let resetsAt else { return nil }
-        let remaining = resetsAt - Date().timeIntervalSince1970
-        guard remaining > 0 else { return "Resets soon" }
-        let days = Int(remaining) / 86_400
-        let hours = (Int(remaining) % 86_400) / 3_600
-        if days > 0 {
-            return "Resets in \(days)d \(hours)h"
+struct StorageSettingsView: View {
+    @ObservedObject var viewModel: ProviderSetupViewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Storage")
+                    .font(.headline)
+                Text("Summaries are saved here as Markdown files. Open the folder to browse, move, or back them up.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Label(viewModel.outputDirectorySummary, systemImage: "folder")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+
+            HStack {
+                Button {
+                    viewModel.revealOutputDirectory()
+                } label: {
+                    Label("Show in Finder", systemImage: "arrow.up.forward.app")
+                }
+                .controlSize(.large)
+
+                Spacer(minLength: 0)
+            }
         }
-        let minutes = (Int(remaining) % 3_600) / 60
-        return hours > 0 ? "Resets in \(hours)h \(minutes)m" : "Resets in \(minutes)m"
+        .settingsCard()
     }
 }
 
@@ -598,6 +580,9 @@ struct StatusTile: View {
     let value: String
     let systemImage: String
     let tint: Color
+    /// When set, the tile shows the app's real icon instead of `systemImage` —
+    /// the glyph then represents the application itself, not its status.
+    var iconImage: NSImage? = nil
     /// When set, the tile becomes clickable and runs this on tap.
     var action: (() -> Void)? = nil
 
@@ -605,9 +590,18 @@ struct StatusTile: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Image(systemName: systemImage)
-                .font(.title2)
-                .foregroundStyle(tint)
+            Group {
+                if let iconImage {
+                    Image(nsImage: iconImage)
+                        .resizable()
+                        .interpolation(.high)
+                        .frame(width: 26, height: 26)
+                } else {
+                    Image(systemName: systemImage)
+                        .font(.title2)
+                        .foregroundStyle(tint)
+                }
+            }
             Text(title)
                 .font(.headline)
             Text(value)
