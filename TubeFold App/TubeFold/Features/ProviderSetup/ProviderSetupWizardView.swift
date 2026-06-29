@@ -1,7 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct ProviderSetupWizard: View {
+struct ProviderSetupWizardView: View {
     @ObservedObject var viewModel: ProviderSetupViewModel
     @Binding var isPresented: Bool
     @State private var showingExecutablePicker = false
@@ -93,7 +93,7 @@ struct ProviderSetupWizard: View {
     private var setupSidebar: some View {
         VStack(alignment: .leading, spacing: 14) {
             ForEach(SetupStep.allCases) { step in
-                StepRow(
+                StepRowView(
                     step: step,
                     isCurrent: viewModel.currentStep == step,
                     isComplete: viewModel.isStepComplete(step)
