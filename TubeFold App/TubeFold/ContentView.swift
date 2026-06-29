@@ -107,6 +107,14 @@ struct MainStatusView: View {
                     tint: .purple,
                     action: { viewModel.revealOutputDirectory() }
                 )
+                if viewModel.extensionConnected {
+                    StatusTile(
+                        title: "Extension",
+                        value: "Connected",
+                        systemImage: "puzzlepiece.extension.fill",
+                        tint: .pink
+                    )
+                }
             }
 
             VStack(alignment: .leading, spacing: 12) {
@@ -128,13 +136,13 @@ struct MainStatusView: View {
             }
             .settingsCard()
 
+            BrowserExtensionSettingsView(viewModel: viewModel)
+
             ProviderModelSettingsView(viewModel: viewModel)
 
             OutputLanguageSettingsView(viewModel: viewModel)
 
             AppBehaviorSettingsView()
-
-            BrowserExtensionSettingsView(viewModel: viewModel)
 
             UsageStatsView(viewModel: viewModel)
 
@@ -326,43 +334,32 @@ struct AppBehaviorSettingsView: View {
     }
 }
 
-/// Soft promo + status for the companion Chrome extension. Shows a calm
-/// "Connected" confirmation once the extension has been seen, and an unobtrusive
-/// install pitch otherwise — never a nag for people who already have it.
+/// Soft install pitch for the companion Chrome extension. It appears only when
+/// the extension hasn't been seen — once connected, the top status row shows an
+/// "Extension · Connected" tile instead, so this card quietly disappears.
 struct BrowserExtensionSettingsView: View {
     @ObservedObject var viewModel: ProviderSetupViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .firstTextBaseline) {
+        if !viewModel.extensionConnected {
+            VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Browser extension")
                         .font(.headline)
-                    Text(viewModel.extensionConnected
-                         ? "The Chrome extension is connected. Send the video you're watching to TubeFold with one click."
-                         : "Install the Chrome extension to send videos straight from a YouTube page — one click, no copy-paste.")
+                    Text("Install the Chrome extension to send videos straight from a YouTube page — one click, no copy-paste.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer(minLength: 16)
-                if viewModel.extensionConnected {
-                    Label("Connected", systemImage: "checkmark.circle.fill")
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(.green)
-                        .labelStyle(.titleAndIcon)
-                }
-            }
 
-            if !viewModel.extensionConnected {
                 Link(destination: TubeFoldLinks.chromeWebStore) {
                     Label("Get the Chrome extension", systemImage: "puzzlepiece.extension")
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
             }
+            .settingsCard()
         }
-        .settingsCard()
     }
 }
 
