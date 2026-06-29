@@ -15,3 +15,8 @@ struct SettingsFieldLabelView: View {
             .foregroundStyle(.secondary)
     }
 }
+
+#Preview {
+    SettingsFieldLabelView("Model")
+        .padding()
+}

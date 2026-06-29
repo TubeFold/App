@@ -38,3 +38,9 @@ struct StepIntroView: View {
         .frame(maxWidth: 540, alignment: .leading)
     }
 }
+
+#Preview {
+    StepIntroView(viewModel: ProviderSetupViewModel())
+        .padding(34)
+        .frame(width: 600, height: 480)
+}

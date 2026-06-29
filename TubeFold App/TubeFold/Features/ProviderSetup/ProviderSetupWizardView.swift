@@ -121,3 +121,8 @@ struct ProviderSetupWizardView: View {
         }
     }
 }
+
+#Preview {
+    ProviderSetupWizardView(viewModel: ProviderSetupViewModel(), isPresented: .constant(true))
+        .frame(width: 820, height: 600)
+}

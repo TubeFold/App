@@ -31,3 +31,9 @@ struct StepConnectionView: View {
         .frame(maxWidth: 600, alignment: .leading)
     }
 }
+
+#Preview {
+    StepConnectionView(viewModel: ProviderSetupViewModel())
+        .padding(34)
+        .frame(width: 660, height: 480)
+}

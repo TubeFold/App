@@ -34,3 +34,9 @@ struct StorageSettingsView: View {
         .settingsCard()
     }
 }
+
+#Preview {
+    StorageSettingsView(viewModel: ProviderSetupViewModel())
+        .padding()
+        .frame(width: 560)
+}

@@ -19,3 +19,13 @@ struct DetailsView: View {
         }
     }
 }
+
+#Preview {
+    DetailsView(details: [
+        "$ codex --version",
+        "codex 0.142.0",
+        "exit code: 0",
+    ])
+    .padding()
+    .frame(width: 560)
+}

@@ -23,3 +23,12 @@ struct StatusCheckItemView: View {
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }
+
+#Preview {
+    HStack(alignment: .top, spacing: 12) {
+        StatusCheckItemView(title: "Installed", isReady: true, detail: "v1.2.3")
+        StatusCheckItemView(title: "Signed in", isReady: false, detail: "Test required")
+    }
+    .padding()
+    .frame(width: 420)
+}

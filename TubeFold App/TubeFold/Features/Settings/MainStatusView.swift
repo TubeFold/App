@@ -80,3 +80,8 @@ struct MainStatusView: View {
         .navigationTitle("Settings")
     }
 }
+
+#Preview {
+    MainStatusView(viewModel: ProviderSetupViewModel(), showingSetup: .constant(false))
+        .frame(width: 640, height: 700)
+}

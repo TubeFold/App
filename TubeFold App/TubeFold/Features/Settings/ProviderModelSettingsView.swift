@@ -73,3 +73,9 @@ struct ProviderModelSettingsView: View {
         .settingsCard()
     }
 }
+
+#Preview {
+    ProviderModelSettingsView(viewModel: ProviderSetupViewModel())
+        .padding()
+        .frame(width: 560)
+}

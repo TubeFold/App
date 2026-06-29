@@ -177,3 +177,8 @@ struct LibraryView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
+
+#Preview {
+    LibraryView()
+        .frame(width: 720, height: 560)
+}

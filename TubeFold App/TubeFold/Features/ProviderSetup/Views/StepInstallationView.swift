@@ -41,3 +41,12 @@ struct StepInstallationView: View {
         .frame(maxWidth: 600, alignment: .leading)
     }
 }
+
+#Preview {
+    StepInstallationView(
+        viewModel: ProviderSetupViewModel(),
+        showingExecutablePicker: .constant(false)
+    )
+    .padding(34)
+    .frame(width: 660, height: 480)
+}

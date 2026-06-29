@@ -81,3 +81,13 @@ struct StatusBadgeView: View {
         }
     }
 }
+
+#Preview {
+    VStack(alignment: .leading, spacing: 8) {
+        StatusBadgeView(status: "queued")
+        StatusBadgeView(status: "generatingSummary")
+        StatusBadgeView(status: "ready")
+        StatusBadgeView(status: "failed")
+    }
+    .padding()
+}

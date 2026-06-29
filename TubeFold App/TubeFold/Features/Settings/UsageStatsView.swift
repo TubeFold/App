@@ -82,3 +82,9 @@ struct UsageStatsView: View {
         return String(tokens)
     }
 }
+
+#Preview {
+    UsageStatsView(viewModel: ProviderSetupViewModel())
+        .padding()
+        .frame(width: 560)
+}

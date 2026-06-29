@@ -20,3 +20,9 @@ struct StepCompleteView: View {
         .frame(maxWidth: 600, alignment: .leading)
     }
 }
+
+#Preview {
+    StepCompleteView(viewModel: ProviderSetupViewModel())
+        .padding(34)
+        .frame(width: 660, height: 360)
+}

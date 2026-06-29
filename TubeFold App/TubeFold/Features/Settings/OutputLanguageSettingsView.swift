@@ -45,3 +45,9 @@ struct OutputLanguageSettingsView: View {
         .settingsCard()
     }
 }
+
+#Preview {
+    OutputLanguageSettingsView(viewModel: ProviderSetupViewModel())
+        .padding()
+        .frame(width: 560)
+}

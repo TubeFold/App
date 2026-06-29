@@ -42,3 +42,9 @@ struct ResetDataSettingsView: View {
         }
     }
 }
+
+#Preview {
+    ResetDataSettingsView(viewModel: ProviderSetupViewModel())
+        .padding()
+        .frame(width: 560)
+}

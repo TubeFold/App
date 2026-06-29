@@ -37,3 +37,9 @@ struct AppBehaviorSettingsView: View {
         .settingsCard()
     }
 }
+
+#Preview {
+    AppBehaviorSettingsView()
+        .padding()
+        .frame(width: 560)
+}

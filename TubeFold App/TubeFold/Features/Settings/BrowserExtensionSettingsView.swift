@@ -28,3 +28,9 @@ struct BrowserExtensionSettingsView: View {
         }
     }
 }
+
+#Preview {
+    BrowserExtensionSettingsView(viewModel: ProviderSetupViewModel())
+        .padding()
+        .frame(width: 560)
+}

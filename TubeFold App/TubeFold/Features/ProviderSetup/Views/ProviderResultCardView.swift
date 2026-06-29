@@ -28,3 +28,15 @@ struct ProviderResultCardView: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 }
+
+#Preview {
+    ProviderResultCardView(
+        title: "Codex CLI",
+        status: "Installed",
+        message: "Found codex 0.142.0 at /opt/homebrew/bin/codex.",
+        systemImage: "checkmark.circle.fill",
+        tint: .green
+    )
+    .padding()
+    .frame(width: 560)
+}

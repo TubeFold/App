@@ -26,3 +26,11 @@ extension RowMiniMenuView where Content == Label<Text, Image> {
         self.label = { Label(title, systemImage: systemImage) }
     }
 }
+
+#Preview {
+    RowMiniMenuView("More", systemImage: "ellipsis") {
+        Button("Show Files") {}
+        Button("Delete", role: .destructive) {}
+    }
+    .padding()
+}

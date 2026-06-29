@@ -46,3 +46,13 @@ struct StatusTileView: View {
         }
     }
 }
+
+#Preview {
+    HStack(spacing: 12) {
+        StatusTileView(title: "App", value: "Ready", systemImage: "macwindow", tint: .indigo)
+        StatusTileView(title: "Codex CLI", value: "gpt-5 · high", systemImage: "terminal", tint: .blue)
+        StatusTileView(title: "Extension", value: "Connected", systemImage: "puzzlepiece.extension", tint: .pink)
+    }
+    .padding()
+    .frame(width: 520, height: 140)
+}
