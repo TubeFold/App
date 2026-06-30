@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import Foundation
 
@@ -12,6 +13,7 @@ final class AppSettings: ObservableObject {
     private enum Keys {
         static let autoOpenTelegraph = "autoOpenTelegraph"
         static let hideMenuBarIcon = "hideMenuBarIcon"
+        static let hideDockIcon = "hideDockIcon"
         static let dismissedExtensionTip = "dismissedExtensionTip"
     }
 
@@ -29,6 +31,30 @@ final class AppSettings: ObservableObject {
         }
     }
 
+    /// Hide the TubeFold icon from the macOS Dock (run as an accessory/agent app).
+    /// The main window stays available. Default: off.
+    @Published var hideDockIcon: Bool {
+        didSet {
+            UserDefaults.standard.set(hideDockIcon, forKey: Keys.hideDockIcon)
+            AppSettings.applyDockIconVisibility(hidden: hideDockIcon)
+        }
+    }
+
+    /// Apply the Dock-icon preference by switching the app's activation policy.
+    /// `.accessory` removes the Dock tile and Cmd-Tab entry; `.regular` restores
+    /// them.
+    ///
+    /// Switching the activation policy deactivates the app and orders its windows
+    /// out, which otherwise reads as "the window closed". We restore it on the
+    /// next runloop tick — after AppKit has finished the transition — so toggling
+    /// the setting only changes the Dock icon, never hides the open window.
+    static func applyDockIconVisibility(hidden: Bool) {
+        NSApp.setActivationPolicy(hidden ? .accessory : .regular)
+        DispatchQueue.main.async {
+            AppDelegate.showMainWindow()
+        }
+    }
+
     /// Set once the user dismisses the "get the browser extension" tip under the
     /// Library add bar, so it never comes back. Default: off (tip can show).
     @Published var dismissedExtensionTip: Bool {
@@ -40,11 +66,13 @@ final class AppSettings: ObservableObject {
         defaults.register(defaults: [
             Keys.autoOpenTelegraph: true,
             Keys.hideMenuBarIcon: false,
+            Keys.hideDockIcon: false,
             Keys.dismissedExtensionTip: false,
         ])
         // Property observers don't fire during init, so read the stored values directly.
         autoOpenTelegraph = defaults.bool(forKey: Keys.autoOpenTelegraph)
         hideMenuBarIcon = defaults.bool(forKey: Keys.hideMenuBarIcon)
+        hideDockIcon = defaults.bool(forKey: Keys.hideDockIcon)
         dismissedExtensionTip = defaults.bool(forKey: Keys.dismissedExtensionTip)
     }
 }

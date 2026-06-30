@@ -385,8 +385,7 @@ final class MenuBarController: NSObject {
     }
 
     @objc private func openApp() {
-        NSApp.activate(ignoringOtherApps: true)
-        NSApp.windows.first?.makeKeyAndOrderFront(nil)
+        AppDelegate.showMainWindow()
     }
 
     @objc private func openLatestSummary() {

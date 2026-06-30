@@ -1,20 +1,41 @@
 import AppKit
 import SwiftUI
 
+/// Bridges SwiftUI's `openWindow` action out to AppKit code (the menu bar /
+/// URL handlers), so we can recreate the main window even after it was closed —
+/// `NSApp.windows` no longer contains it once SwiftUI tears it down.
+@MainActor
+final class MainWindowOpener {
+    static let shared = MainWindowOpener()
+    var open: (() -> Void)?
+}
+
+private struct CaptureWindowOpener: ViewModifier {
+    @Environment(\.openWindow) private var openWindow
+
+    func body(content: Content) -> some View {
+        content.onAppear {
+            MainWindowOpener.shared.open = { openWindow(id: TubeFoldApp.mainWindowID) }
+        }
+    }
+}
+
 @main
 struct TubeFoldApp: App {
+    static let mainWindowID = "main"
+
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: Self.mainWindowID) {
             ContentView()
                 .frame(minWidth: 900, minHeight: 620)
+                .modifier(CaptureWindowOpener())
                 .onOpenURL { url in
                     // Any tubefold:// link (e.g. the extension's "Open App" button)
                     // just brings the app and its window to the front.
                     guard url.scheme == "tubefold" else { return }
-                    NSApp.activate(ignoringOtherApps: true)
-                    NSApp.windows.first(where: { $0.canBecomeMain })?.makeKeyAndOrderFront(nil)
+                    AppDelegate.showMainWindow()
                 }
         }
         .windowStyle(.titleBar)
@@ -42,6 +63,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // silent check every launch — it only shows UI if an update exists.
         updater.checkForUpdatesInBackground()
         MenuBarController.shared.start()
+        // Honor the saved Dock-icon preference on launch.
+        AppSettings.applyDockIconVisibility(hidden: AppSettings.shared.hideDockIcon)
     }
 
     private func activateRunningInstanceIfPresent() -> Bool {
@@ -55,6 +78,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Exit hard so the redundant instance never touches the menu bar or backend
         // the running instance already owns.
         exit(0)
+    }
+
+    /// Bring the main window back to the front, recreating it if SwiftUI has
+    /// already torn it down (e.g. after the Dock icon was hidden and the window
+    /// closed). Works whether the app is `.regular` or `.accessory`.
+    static func showMainWindow() {
+        NSApp.activate(ignoringOtherApps: true)
+        if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {
+            window.makeKeyAndOrderFront(nil)
+        } else {
+            MainWindowOpener.shared.open?()
+        }
+    }
+
+    /// Keep running when the last window closes — the app lives in the menu bar
+    /// (and may have no Dock icon), so closing the window must not quit it.
+    func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
+        false
+    }
+
+    /// Clicking the Dock icon (or otherwise reopening) with no visible window
+    /// restores the main window instead of doing nothing.
+    func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        if !hasVisibleWindows {
+            AppDelegate.showMainWindow()
+        }
+        return true
     }
 
     func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
