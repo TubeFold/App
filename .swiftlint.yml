@@ -1,0 +1,10 @@
+# SwiftLint runs with its default rule set. The only customisation is the lint
+# scope and turning off the two rules that SwiftFormat already owns — letting
+# both tools run on defaults would make them fight (SwiftFormat adds the
+# trailing commas / brace spacing that these rules would then flag).
+included:
+  - TubeFold App
+
+disabled_rules:
+  - trailing_comma
+  - opening_brace

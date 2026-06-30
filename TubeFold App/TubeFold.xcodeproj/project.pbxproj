@@ -72,6 +72,7 @@
 			buildConfigurationList = 000000000000000110000000 /* Build configuration list for PBXNativeTarget "TubeFold" */;
 			buildPhases = (
 				000000000000000160000000 /* SwiftFormat */,
+				000000000000000170000000 /* SwiftLint */,
 				000000000000000120000000 /* Sources */,
 				000000000000000130000000 /* Frameworks */,
 				000000000000000140000000 /* Resources */,
@@ -150,6 +151,22 @@
 				"  \"$SRCROOT/../scripts/format-swift.sh\"\n",
 				"else\n",
 				"  echo \"warning: SwiftFormat not installed — run 'brew install swiftformat'\"\n",
+				"fi\n",
+			);
+		};
+		000000000000000170000000 /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			name = SwiftLint;
+			shellPath = /bin/bash;
+			shellScript = (
+				"# Lints the (already formatted) Swift sources. Findings surface as\n",
+				"# warnings only and never fail the build — SwiftFormat owns formatting,\n",
+				"# SwiftLint is advisory here. Config (incl. lint scope): ../.swiftlint.yml\n",
+				"if command -v swiftlint >/dev/null 2>&1; then\n",
+				"  swiftlint lint --config \"$SRCROOT/../.swiftlint.yml\" --reporter xcode | sed 's/: error:/: warning:/'\n",
+				"else\n",
+				"  echo \"warning: SwiftLint not installed — run 'brew install swiftlint'\"\n",
 				"fi\n",
 			);
 		};
