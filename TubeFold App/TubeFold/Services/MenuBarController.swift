@@ -19,12 +19,20 @@ final class MenuBarController: NSObject {
     private var knownVideoIDs = Set<String>()
     private var knownReadyIDs = Set<String>()
     private var lastReadyVideo: LibraryVideo?
-    private var latestVideo: LibraryVideo?
     private var iconMode: IconMode?
     private var currentSymbol: String?
     /// Whether the Chrome extension is connected. Defaults to `true` so the
     /// "Get the Chrome Extension…" item stays hidden until we know otherwise.
     private var extensionConnected = true
+
+    /// In-flight artifact actions for the latest summary, so the menu items can
+    /// disable themselves while a render/publish is running. Cleared when done.
+    private var pdfRenderingVideoID: String?
+    private var publishingVideoID: String?
+
+    /// The most recent status line, so async completions can rebuild the menu
+    /// without recomputing it.
+    private var lastStatusTitle = "TubeFold is ready"
 
     /// How long the "summary ready" checkmark lingers after a completion before the
     /// icon settles back to the calm app-icon default.
@@ -78,7 +86,6 @@ final class MenuBarController: NSObject {
 
     private func apply(videos: [LibraryVideo]) {
         let sortedVideos = videos.sorted { $0.updatedAt > $1.updatedAt }
-        latestVideo = sortedVideos.first
         let activeVideos = videos.filter(\.isActive)
         let readyVideos = sortedVideos.filter(\.isReady)
         let currentIDs = Set(videos.map(\.id))
@@ -335,6 +342,7 @@ final class MenuBarController: NSObject {
     // MARK: - Menu
 
     private func rebuildMenu(statusTitle: String) {
+        lastStatusTitle = statusTitle
         let menu = NSMenu()
 
         let status = NSMenuItem(title: statusTitle, action: nil, keyEquivalent: "")
@@ -344,20 +352,33 @@ final class MenuBarController: NSObject {
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Open Library", action: #selector(openApp), keyEquivalent: ""))
 
+        menu.addItem(.separator())
+
         let openSummary = NSMenuItem(
-            title: "Open Latest Summary",
+            title: "Open Latest Summary (Markdown)",
             action: #selector(openLatestSummary),
             keyEquivalent: "",
         )
         openSummary.isEnabled = lastReadyVideo?.markdownURL != nil
         menu.addItem(openSummary)
 
-        let openYouTube = NSMenuItem(title: "Open Latest Video", action: #selector(openLatestVideo), keyEquivalent: "")
-        openYouTube.isEnabled = latestVideo?.youtubeURL != nil
-        menu.addItem(openYouTube)
+        let openSummaryPDF = NSMenuItem(
+            title: "Open Latest Summary (PDF)",
+            action: #selector(openLatestSummaryPDF),
+            keyEquivalent: "",
+        )
+        openSummaryPDF.isEnabled = lastReadyVideo?.markdownURL != nil && pdfRenderingVideoID == nil
+        menu.addItem(openSummaryPDF)
+
+        let openSummaryWeb = NSMenuItem(
+            title: "Open Latest Summary (Web)",
+            action: #selector(openLatestSummaryWeb),
+            keyEquivalent: "",
+        )
+        openSummaryWeb.isEnabled = lastReadyVideo != nil && publishingVideoID == nil
+        menu.addItem(openSummaryWeb)
 
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Refresh", action: #selector(refreshFromMenu), keyEquivalent: ""))
 
         let checkForUpdates = NSMenuItem(
             title: "Check for Updates…",
@@ -393,13 +414,59 @@ final class MenuBarController: NSObject {
         NSWorkspace.shared.open(url)
     }
 
-    @objc private func openLatestVideo() {
-        guard let url = latestVideo?.youtubeURL else { return }
-        NSWorkspace.shared.open(url)
+    /// Render the latest summary to PDF and open it in the default viewer, mirroring
+    /// the Library row's "Open PDF" action. Best-effort; a render failure is logged.
+    @objc private func openLatestSummaryPDF() {
+        guard pdfRenderingVideoID == nil,
+              let video = lastReadyVideo,
+              let sourceURL = video.markdownURL,
+              let markdown = try? String(contentsOf: sourceURL, encoding: .utf8) else { return }
+        pdfRenderingVideoID = video.id
+        Task {
+            defer {
+                pdfRenderingVideoID = nil
+                rebuildMenu(statusTitle: lastStatusTitle)
+            }
+            do {
+                let data = try await SummaryPDFRenderer().makePDFData(markdown: markdown, title: video.displayTitle)
+                let dir = FileManager.default.temporaryDirectory.appendingPathComponent("TubeFold", isDirectory: true)
+                try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+                let fileURL = dir.appendingPathComponent(
+                    LibraryViewModel.suggestedFilename(for: video, fallback: sourceURL, fileExtension: "pdf"),
+                )
+                try data.write(to: fileURL)
+                NSWorkspace.shared.open(fileURL)
+            } catch {
+                NSLog("tubefold: latest-summary PDF render failed: %@", error.localizedDescription)
+            }
+        }
+        rebuildMenu(statusTitle: lastStatusTitle)
     }
 
-    @objc private func refreshFromMenu() {
-        refresh()
+    /// Publish the latest summary to Telegraph (if needed) and open the web page,
+    /// reusing the same publish-then-open flow as auto-open.
+    @objc private func openLatestSummaryWeb() {
+        guard publishingVideoID == nil, let video = lastReadyVideo else { return }
+        if let existing = video.telegraphURL, !existing.isEmpty, let url = URL(string: existing) {
+            NSWorkspace.shared.open(url)
+            return
+        }
+        publishingVideoID = video.id
+        Task {
+            defer {
+                publishingVideoID = nil
+                rebuildMenu(statusTitle: lastStatusTitle)
+            }
+            do {
+                let response = try await service.publishTelegraph(videoID: video.id)
+                if let url = URL(string: response.url) {
+                    NSWorkspace.shared.open(url)
+                }
+            } catch {
+                NSLog("tubefold: latest-summary Telegraph publish failed: %@", error.localizedDescription)
+            }
+        }
+        rebuildMenu(statusTitle: lastStatusTitle)
     }
 
     @objc private func checkForUpdatesFromMenu() {
