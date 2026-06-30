@@ -17,6 +17,15 @@ without notes.
 
 ## [Unreleased]
 
+## [0.7] - 2026-06-30
+### Added
+- Run TubeFold without a Dock icon — a new "Hide Dock icon" setting turns it into
+  a menu-bar-only app, with the main window still reachable from the menu bar.
+
+### Changed
+- The menu bar now opens the latest summary directly in Markdown, PDF, or Web
+  (Telegraph) form, replacing the old "Open Latest Video" and "Refresh" items.
+
 ## [0.6] - 2026-06-29
 ### Added
 - Export any summary to PDF.
