@@ -112,6 +112,14 @@
 			knownRegions = (
 				en,
 				ru,
+				"zh-Hans",
+				hi,
+				es,
+				fr,
+				ar,
+				bn,
+				pt,
+				ur,
 				Base,
 			);
 			mainGroup = 000000000000000000000001;
