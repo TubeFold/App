@@ -35,7 +35,9 @@ def main() -> int:
     command = [claude, "--print"]
     if model:
         command.extend(["--model", model])
-    if effort:
+    # "auto" (and empty) mean "don't pin an effort" — let the CLI use the
+    # model's own default effort level instead of forcing one.
+    if effort and effort != "auto":
         command.extend(["--effort", effort])
     command.extend(["--output-format", "json"])
 

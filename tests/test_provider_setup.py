@@ -120,7 +120,7 @@ class ProviderSetupTests(unittest.TestCase):
             diagnostics.save_model_settings("unknown", "unsupported")
             state = diagnostics.state()
             self.assertEqual(state["codexModel"], "gpt-5.4-mini")
-            self.assertEqual(state["codexReasoningEffort"], "medium")
+            self.assertEqual(state["codexReasoningEffort"], "auto")
 
     def test_output_language_is_saved_and_normalized(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

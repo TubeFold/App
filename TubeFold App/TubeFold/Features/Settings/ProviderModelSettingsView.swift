@@ -31,43 +31,23 @@ struct ProviderModelSettingsView: View {
             }
             .disabled(viewModel.isBusy)
 
-            HStack(alignment: .top, spacing: 20) {
-                VStack(alignment: .leading, spacing: 8) {
-                    SettingsFieldLabelView("Model")
-                    Picker(
-                        "Model",
-                        selection: Binding(
-                            get: { viewModel.selectedModel },
-                            set: { viewModel.updateModel($0) },
-                        ),
-                    ) {
-                        ForEach(viewModel.modelOptions) { option in
-                            Text(option.label).tag(option.id)
-                        }
+            VStack(alignment: .leading, spacing: 8) {
+                SettingsFieldLabelView("Model")
+                Picker(
+                    "Model",
+                    selection: Binding(
+                        get: { viewModel.selectedModel },
+                        set: { viewModel.updateModel($0) },
+                    ),
+                ) {
+                    ForEach(viewModel.modelOptions) { option in
+                        Text(option.label).tag(option.id)
                     }
-                    .labelsHidden()
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    SettingsFieldLabelView("Effort")
-                    Picker(
-                        "Effort",
-                        selection: Binding(
-                            get: { viewModel.selectedReasoningEffort },
-                            set: { viewModel.updateReasoningEffort($0) },
-                        ),
-                    ) {
-                        ForEach(viewModel.reasoningEffortOptions) { option in
-                            Text(option.label).tag(option.id)
-                        }
-                    }
-                    .labelsHidden()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
+                .labelsHidden()
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .disabled(viewModel.isBusy)
         }
         .settingsCard()

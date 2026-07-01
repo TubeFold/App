@@ -37,7 +37,9 @@ def main() -> int:
     ]
     if codex_model:
         command.extend(["--model", codex_model])
-    if reasoning_effort:
+    # "auto" (and empty) mean "don't pin an effort" — let the Codex CLI use the
+    # model's own default effort level instead of forcing one.
+    if reasoning_effort and reasoning_effort != "auto":
         command.extend(["-c", f'model_reasoning_effort="{reasoning_effort}"'])
     command.extend(
         [

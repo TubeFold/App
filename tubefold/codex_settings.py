@@ -4,7 +4,7 @@ from typing import Any
 
 
 DEFAULT_CODEX_MODEL = "gpt-5.4-mini"
-DEFAULT_CODEX_REASONING_EFFORT = "medium"
+DEFAULT_CODEX_REASONING_EFFORT = "auto"
 
 CODEX_MODEL_OPTIONS: list[dict[str, str]] = [
     {
@@ -28,10 +28,15 @@ CODEX_REASONING_EFFORT_OPTIONS: list[dict[str, str]] = [
     # "minimal" is deliberately omitted: the Codex CLI injects the web_search and
     # image_gen tools server-side for these models, and the API rejects that
     # combination with reasoning.effort 'minimal' (HTTP 400), so every job fails.
+    # "auto" is a TubeFold-only sentinel: the provider omits model_reasoning_effort
+    # entirely and lets the Codex CLI use the model's default (medium for gpt-5,
+    # never minimal — so it stays clear of the 400 above). Effort ids match the
+    # Codex CLI's own levels; "xhigh" mirrors its "XHigh" — no invented names.
+    {"id": "auto", "label": "Auto", "description": "Let Codex pick the model's default effort."},
     {"id": "low", "label": "Low", "description": "Fast summaries with light reasoning."},
-    {"id": "medium", "label": "Medium", "description": "Recommended balance."},
+    {"id": "medium", "label": "Medium", "description": "Balanced reasoning."},
     {"id": "high", "label": "High", "description": "More careful summaries, slower."},
-    {"id": "xhigh", "label": "Extra High", "description": "Hardest jobs where latency matters less."},
+    {"id": "xhigh", "label": "xhigh", "description": "Extended reasoning for the hardest transcripts."},
 ]
 
 

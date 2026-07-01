@@ -117,7 +117,7 @@ class ClaudeProviderTests(unittest.TestCase):
             diagnostics.save_model_settings("unknown", "unsupported")
             state = diagnostics.state()
             self.assertEqual(state["claudeModel"], "sonnet")
-            self.assertEqual(state["claudeReasoningEffort"], "medium")
+            self.assertEqual(state["claudeReasoningEffort"], "auto")
 
     def test_connection_test_invalid_response(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

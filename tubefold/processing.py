@@ -437,7 +437,10 @@ class ProcessingQueue:
         )
         return {
             "model": str(normalized[descriptor.model_key]),
-            "reasoning_effort": str(normalized[descriptor.effort_key]),
+            # Effort is no longer user-configurable. Always run with "auto" so the
+            # provider omits the effort flag and the CLI uses each model's default,
+            # regardless of any value left in older stored setup state.
+            "reasoning_effort": "auto",
         }
 
     def _run_process(

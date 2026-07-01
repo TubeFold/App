@@ -16,10 +16,7 @@ final class ProviderSetupViewModel: ObservableObject {
     @Published private(set) var selectedProviderID = "codex"
     @Published private(set) var availableProviders: [ProviderInfo] = ProviderInfo.defaults
     @Published private(set) var modelOptions: [CodexModelOption] = CodexModelOption.defaultModelOptions
-    @Published private(set) var reasoningEffortOptions: [CodexModelOption] = CodexModelOption
-        .defaultReasoningEffortOptions
     @Published private(set) var selectedModel = "gpt-5.4-mini"
-    @Published private(set) var selectedReasoningEffort = "medium"
     @Published private(set) var outputLanguage = ProviderSetupViewModel.defaultOutputLanguage
     @Published var outputLanguageDraft = ProviderSetupViewModel.defaultOutputLanguage
     @Published private(set) var usage: UsageSummary?
@@ -82,17 +79,11 @@ final class ProviderSetupViewModel: ObservableObject {
     }
 
     var modelSummary: String {
-        let model = selectedModelOption?.label ?? selectedModel
-        let effort = selectedReasoningEffortOption?.label ?? selectedReasoningEffort
-        return "\(model) • \(effort)"
+        selectedModelOption?.label ?? selectedModel
     }
 
     var selectedModelOption: CodexModelOption? {
         modelOptions.first { $0.id == selectedModel }
-    }
-
-    var selectedReasoningEffortOption: CodexModelOption? {
-        reasoningEffortOptions.first { $0.id == selectedReasoningEffort }
     }
 
     var outputLanguageDirty: Bool {
@@ -244,7 +235,6 @@ final class ProviderSetupViewModel: ObservableObject {
             selectedProviderID = state.provider
             availableProviders = response.providers
             modelOptions = response.modelOptions
-            reasoningEffortOptions = response.reasoningEffortOptions
             setupState = state
             configureModelSettings(from: state)
             applyOutputLanguage(from: state)
@@ -297,7 +287,6 @@ final class ProviderSetupViewModel: ObservableObject {
             setupState = response.state
             availableProviders = response.providers
             modelOptions = response.modelOptions
-            reasoningEffortOptions = response.reasoningEffortOptions
             installationResult = nil
             connectionResult = nil
             configureModelSettings(from: response.state)
@@ -389,11 +378,6 @@ final class ProviderSetupViewModel: ObservableObject {
         Task { await saveModelSettings() }
     }
 
-    func updateReasoningEffort(_ effort: String) {
-        selectedReasoningEffort = effort
-        Task { await saveModelSettings() }
-    }
-
     func saveOutputLanguage() {
         Task { await persistOutputLanguage(outputLanguageDraft) }
     }
@@ -457,7 +441,6 @@ final class ProviderSetupViewModel: ObservableObject {
 
     private func configureModelSettings(from state: ProviderSetupState) {
         selectedModel = state.model(for: selectedProviderID) ?? CodexModelOption.defaultModel(for: selectedProviderID)
-        selectedReasoningEffort = state.reasoningEffort(for: selectedProviderID) ?? "medium"
     }
 
     private func applyOutputLanguage(from state: ProviderSetupState) {
@@ -477,14 +460,15 @@ final class ProviderSetupViewModel: ObservableObject {
 
     private func saveModelSettings() async {
         await runBusy("Saving \(providerDisplayName) settings") {
+            // Effort is no longer user-configurable; always request "auto" so the
+            // CLI uses each model's default effort. See CLAUDE_/CODEX_ settings.
             let response = try await service.saveModelSettings(
                 provider: selectedProviderID,
                 model: selectedModel,
-                reasoningEffort: selectedReasoningEffort,
+                reasoningEffort: "auto",
             )
             setupState = response.state
             modelOptions = response.modelOptions
-            reasoningEffortOptions = response.reasoningEffortOptions
             configureModelSettings(from: response.state)
             apiReachable = true
         }

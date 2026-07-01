@@ -232,7 +232,9 @@ def model_label(provider: str, model: str, reasoning_effort: str = "") -> str:
     model = (model or "").strip()
     reasoning_effort = (reasoning_effort or "").strip()
     label = f"{provider} {model}".strip() if model else provider
-    if reasoning_effort:
+    # "auto" means no effort was pinned (the CLI used the model default), so
+    # don't surface it as a concrete effort level in the header.
+    if reasoning_effort and reasoning_effort != "auto":
         label = f"{label} (effort: {reasoning_effort})"
     return label
 

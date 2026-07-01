@@ -5,12 +5,10 @@ struct ProviderSetupState: Codable {
     let codexExecutablePath: String?
     let codexVersion: String?
     let codexModel: String?
-    let codexReasoningEffort: String?
     let codexConnectedAt: String?
     let claudeExecutablePath: String?
     let claudeVersion: String?
     let claudeModel: String?
-    let claudeReasoningEffort: String?
     let claudeConnectedAt: String?
     let outputLanguage: String?
     let providerSetupCompleted: Bool
@@ -32,10 +30,6 @@ struct ProviderSetupState: Codable {
     func model(for provider: String) -> String? {
         provider == "claude" ? claudeModel : codexModel
     }
-
-    func reasoningEffort(for provider: String) -> String? {
-        provider == "claude" ? claudeReasoningEffort : codexReasoningEffort
-    }
 }
 
 struct ProviderInfo: Decodable, Identifiable, Hashable {
@@ -56,14 +50,12 @@ struct ProviderSetupResponse: Decodable {
     let state: ProviderSetupState
     let providers: [ProviderInfo]
     let modelOptions: [CodexModelOption]
-    let reasoningEffortOptions: [CodexModelOption]
 
     enum CodingKeys: String, CodingKey {
         case provider
         case state
         case providers
         case modelOptions
-        case reasoningEffortOptions
     }
 
     init(from decoder: Decoder) throws {
@@ -74,8 +66,6 @@ struct ProviderSetupResponse: Decodable {
             ?? ProviderInfo.defaults
         modelOptions = try container.decodeIfPresent([CodexModelOption].self, forKey: .modelOptions)
             ?? CodexModelOption.defaultModelOptions
-        reasoningEffortOptions = try container.decodeIfPresent([CodexModelOption].self, forKey: .reasoningEffortOptions)
-            ?? CodexModelOption.defaultReasoningEffortOptions
     }
 }
 
@@ -85,7 +75,6 @@ struct ProviderSelectionResult: Decodable {
     let state: ProviderSetupState
     let providers: [ProviderInfo]
     let modelOptions: [CodexModelOption]
-    let reasoningEffortOptions: [CodexModelOption]
 
     enum CodingKeys: String, CodingKey {
         case status
@@ -93,7 +82,6 @@ struct ProviderSelectionResult: Decodable {
         case state
         case providers
         case modelOptions
-        case reasoningEffortOptions
     }
 
     init(from decoder: Decoder) throws {
@@ -105,8 +93,6 @@ struct ProviderSelectionResult: Decodable {
             ?? ProviderInfo.defaults
         modelOptions = try container.decodeIfPresent([CodexModelOption].self, forKey: .modelOptions)
             ?? CodexModelOption.defaultModelOptions
-        reasoningEffortOptions = try container.decodeIfPresent([CodexModelOption].self, forKey: .reasoningEffortOptions)
-            ?? CodexModelOption.defaultReasoningEffortOptions
     }
 }
 
@@ -121,36 +107,14 @@ struct CodexModelOption: Decodable, Identifiable, Hashable {
         CodexModelOption(id: "gpt-5.4", label: "GPT-5.4", description: "Flagship model for professional work."),
     ]
 
-    /// "minimal" is intentionally absent: the Codex CLI attaches web_search/image_gen
-    /// server-side for these models, which the API rejects with reasoning.effort
-    /// 'minimal' (HTTP 400). Keep this in sync with CODEX_REASONING_EFFORT_OPTIONS.
-    static let defaultReasoningEffortOptions: [CodexModelOption] = [
-        CodexModelOption(id: "low", label: "Low", description: "Fast summaries."),
-        CodexModelOption(id: "medium", label: "Medium", description: "Recommended balance."),
-        CodexModelOption(id: "high", label: "High", description: "More careful summaries."),
-        CodexModelOption(id: "xhigh", label: "Extra High", description: "Hardest jobs."),
-    ]
-
     static let defaultClaudeModelOptions: [CodexModelOption] = [
-        CodexModelOption(id: "sonnet", label: "Sonnet 4.6", description: "Recommended balance of quality and speed."),
+        CodexModelOption(id: "sonnet", label: "Sonnet 5", description: "Recommended balance of quality and speed."),
         CodexModelOption(id: "opus", label: "Opus 4.8", description: "Most capable model for the hardest transcripts."),
         CodexModelOption(id: "haiku", label: "Haiku 4.5", description: "Fastest, most efficient model."),
     ]
 
-    static let defaultClaudeReasoningEffortOptions: [CodexModelOption] = [
-        CodexModelOption(id: "low", label: "Low", description: "Fast summaries with light reasoning."),
-        CodexModelOption(id: "medium", label: "Medium", description: "Recommended balance."),
-        CodexModelOption(id: "high", label: "High", description: "More careful summaries."),
-        CodexModelOption(id: "xhigh", label: "Extra High", description: "Harder jobs."),
-        CodexModelOption(id: "max", label: "Maximum", description: "Deepest reasoning."),
-    ]
-
     static func defaultModelOptions(for provider: String) -> [CodexModelOption] {
         provider == "claude" ? defaultClaudeModelOptions : defaultModelOptions
-    }
-
-    static func defaultReasoningEffortOptions(for provider: String) -> [CodexModelOption] {
-        provider == "claude" ? defaultClaudeReasoningEffortOptions : defaultReasoningEffortOptions
     }
 
     static func defaultModel(for provider: String) -> String {
@@ -187,7 +151,6 @@ struct SaveModelSettingsResult: Decodable {
     let provider: String
     let state: ProviderSetupState
     let modelOptions: [CodexModelOption]
-    let reasoningEffortOptions: [CodexModelOption]
 }
 
 struct ResetDataResult: Decodable {

@@ -103,7 +103,10 @@ class ProcessingTests(unittest.TestCase):
                 "# Summary",
             )
 
-            self.assertIn('model: "Codex GPT-5.5 (effort: high)"', markdown)
+            # Effort is forced to "auto" (no user selection), so the header omits
+            # any "(effort: ...)" suffix regardless of stored setup state.
+            self.assertIn('model: "Codex GPT-5.5"', markdown)
+            self.assertNotIn("effort:", markdown)
 
     def test_claude_selection_drives_markdown_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -142,7 +145,8 @@ class ProcessingTests(unittest.TestCase):
                 "# Summary",
             )
 
-            self.assertIn('model: "Claude Opus 4.8 (effort: high)"', markdown)
+            self.assertIn('model: "Claude Opus 4.8"', markdown)
+            self.assertNotIn("effort:", markdown)
 
 
 if __name__ == "__main__":

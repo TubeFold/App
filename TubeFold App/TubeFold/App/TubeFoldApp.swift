@@ -16,6 +16,10 @@ private struct CaptureWindowOpener: ViewModifier {
     func body(content: Content) -> some View {
         content.onAppear {
             MainWindowOpener.shared.open = { openWindow(id: TubeFoldApp.mainWindowID) }
+            // Apply the saved Dock-icon preference once the window actually
+            // exists, so the launch-time restore in `applyDockIconVisibility`
+            // can always find it instead of racing SwiftUI's window creation.
+            AppSettings.applyDockIconVisibility(hidden: AppSettings.shared.hideDockIcon)
         }
     }
 }
@@ -63,8 +67,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // silent check every launch — it only shows UI if an update exists.
         updater.checkForUpdatesInBackground()
         MenuBarController.shared.start()
-        // Honor the saved Dock-icon preference on launch.
-        AppSettings.applyDockIconVisibility(hidden: AppSettings.shared.hideDockIcon)
+        // The Dock-icon preference is applied once the main window appears
+        // (see `CaptureWindowOpener`), not here — applying it this early can
+        // race SwiftUI's window creation and leave the app with no Dock icon
+        // and no visible window.
     }
 
     private func activateRunningInstanceIfPresent() -> Bool {

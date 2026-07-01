@@ -4,7 +4,7 @@ from typing import Any
 
 
 DEFAULT_CLAUDE_MODEL = "sonnet"
-DEFAULT_CLAUDE_REASONING_EFFORT = "medium"
+DEFAULT_CLAUDE_REASONING_EFFORT = "auto"
 
 CLAUDE_MODEL_OPTIONS: list[dict[str, str]] = [
     {
@@ -14,7 +14,7 @@ CLAUDE_MODEL_OPTIONS: list[dict[str, str]] = [
     },
     {
         "id": "sonnet",
-        "label": "Sonnet 4.6",
+        "label": "Sonnet 5",
         "description": "Recommended balance of quality and speed for everyday summaries.",
     },
     {
@@ -24,12 +24,17 @@ CLAUDE_MODEL_OPTIONS: list[dict[str, str]] = [
     },
 ]
 
+# Effort ids mirror the Claude Code CLI's own `--effort` levels (low, medium,
+# high, xhigh, max) verbatim — Anthropic ships no prettier display names, so we
+# don't invent any. "auto" is a TubeFold-only sentinel: the provider omits
+# `--effort` entirely and lets the CLI pick the model's default.
 CLAUDE_REASONING_EFFORT_OPTIONS: list[dict[str, str]] = [
+    {"id": "auto", "label": "Auto", "description": "Let Claude pick the model's default effort."},
     {"id": "low", "label": "Low", "description": "Fast summaries with light reasoning."},
-    {"id": "medium", "label": "Medium", "description": "Recommended balance."},
+    {"id": "medium", "label": "Medium", "description": "Balanced reasoning."},
     {"id": "high", "label": "High", "description": "More careful summaries, slower."},
-    {"id": "xhigh", "label": "Extra High", "description": "Harder jobs where latency matters less."},
-    {"id": "max", "label": "Maximum", "description": "Deepest reasoning for the toughest transcripts."},
+    {"id": "xhigh", "label": "xhigh", "description": "Extended reasoning for harder transcripts."},
+    {"id": "max", "label": "max", "description": "Deepest reasoning for the toughest transcripts."},
 ]
 
 
