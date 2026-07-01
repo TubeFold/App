@@ -54,7 +54,7 @@ struct UsageStatsView: View {
         HStack(alignment: .firstTextBaseline) {
             Text(UsageStatsView.providerDisplayName(name))
                 .font(.subheadline.weight(.semibold))
-            Text("\(usage.jobs) \(usage.jobs == 1 ? "run" : "runs")")
+            Text("\(usage.jobs) runs")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer(minLength: 12)

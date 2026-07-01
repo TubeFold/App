@@ -45,7 +45,7 @@ final class MenuBarController: NSObject {
         statusItem.button?.wantsLayer = true
         applyMenuBarVisibility()
         setIconMode(.idle, tooltip: "TubeFold")
-        rebuildMenu(statusTitle: "TubeFold is ready")
+        rebuildMenu(statusTitle: String(localized: "TubeFold is ready"))
         refresh()
         timer = Timer.scheduledTimer(
             timeInterval: 6,
@@ -78,8 +78,8 @@ final class MenuBarController: NSObject {
                 }
                 apply(videos: videos)
             } catch {
-                setIconMode(.error, tooltip: "TubeFold needs attention")
-                rebuildMenu(statusTitle: "Could not load Library")
+                setIconMode(.error, tooltip: String(localized: "TubeFold needs attention"))
+                rebuildMenu(statusTitle: String(localized: "Could not load Library"))
             }
         }
     }
@@ -104,18 +104,24 @@ final class MenuBarController: NSObject {
 
         if !activeVideos.isEmpty {
             cancelReadyReset()
-            setIconMode(.processing, tooltip: "\(activeVideos.count) video processing")
-            rebuildMenu(statusTitle: hasNewVideo ? "New video received" : "Processing \(activeVideos.count) video")
+            setIconMode(.processing, tooltip: String(localized: "\(activeVideos.count) video processing"))
+            rebuildMenu(statusTitle: hasNewVideo
+                ? String(localized: "New video received")
+                : String(localized: "Processing \(activeVideos.count) video"))
         } else if let ready = lastReadyVideo, !newlyReady.isEmpty {
             // A summary just finished: pop the checkmark, then auto-settle back to the app icon.
-            setIconMode(.ready, tooltip: "Summary ready: \(ready.displayTitle)")
-            rebuildMenu(statusTitle: "Summary ready")
+            setIconMode(.ready, tooltip: String(localized: "Summary ready: \(ready.displayTitle)"))
+            rebuildMenu(statusTitle: String(localized: "Summary ready"))
             scheduleReadyReset()
         } else if readyResetTimer == nil {
             // Calm default: the app icon. While the post-completion checkmark window is
             // still counting down, leave it alone and let the timer revert us.
-            setIconMode(.idle, tooltip: videos.isEmpty ? "Waiting for videos" : "Library is up to date")
-            rebuildMenu(statusTitle: videos.isEmpty ? "Waiting for videos" : "Library is up to date")
+            setIconMode(.idle, tooltip: videos.isEmpty
+                ? String(localized: "Waiting for videos")
+                : String(localized: "Library is up to date"))
+            rebuildMenu(statusTitle: videos.isEmpty
+                ? String(localized: "Waiting for videos")
+                : String(localized: "Library is up to date"))
         }
 
         // On completion, open the Telegraph page directly — no notification.
@@ -215,7 +221,9 @@ final class MenuBarController: NSObject {
     @objc private func readyResetFired() {
         readyResetTimer = nil
         guard iconMode == .ready else { return }
-        let title = knownVideoIDs.isEmpty ? "Waiting for videos" : "Library is up to date"
+        let title = knownVideoIDs.isEmpty
+            ? String(localized: "Waiting for videos")
+            : String(localized: "Library is up to date")
         setIconMode(.idle, tooltip: title)
         rebuildMenu(statusTitle: title)
     }
@@ -350,12 +358,16 @@ final class MenuBarController: NSObject {
         menu.addItem(status)
 
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Open Library", action: #selector(openApp), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(
+            title: String(localized: "Open Library"),
+            action: #selector(openApp),
+            keyEquivalent: "",
+        ))
 
         menu.addItem(.separator())
 
         let openSummary = NSMenuItem(
-            title: "Open Latest Summary (Markdown)",
+            title: String(localized: "Open Latest Summary (Markdown)"),
             action: #selector(openLatestSummary),
             keyEquivalent: "",
         )
@@ -363,7 +375,7 @@ final class MenuBarController: NSObject {
         menu.addItem(openSummary)
 
         let openSummaryPDF = NSMenuItem(
-            title: "Open Latest Summary (PDF)",
+            title: String(localized: "Open Latest Summary (PDF)"),
             action: #selector(openLatestSummaryPDF),
             keyEquivalent: "",
         )
@@ -371,7 +383,7 @@ final class MenuBarController: NSObject {
         menu.addItem(openSummaryPDF)
 
         let openSummaryWeb = NSMenuItem(
-            title: "Open Latest Summary (Web)",
+            title: String(localized: "Open Latest Summary (Web)"),
             action: #selector(openLatestSummaryWeb),
             keyEquivalent: "",
         )
@@ -381,7 +393,7 @@ final class MenuBarController: NSObject {
         menu.addItem(.separator())
 
         let checkForUpdates = NSMenuItem(
-            title: "Check for Updates…",
+            title: String(localized: "Check for Updates…"),
             action: #selector(checkForUpdatesFromMenu),
             keyEquivalent: "",
         )
@@ -392,14 +404,18 @@ final class MenuBarController: NSObject {
         if !extensionConnected {
             menu.addItem(.separator())
             menu.addItem(NSMenuItem(
-                title: "Get the Chrome Extension…",
+                title: String(localized: "Get the Chrome Extension…"),
                 action: #selector(openChromeStore),
                 keyEquivalent: "",
             ))
         }
 
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Quit TubeFold", action: #selector(quitApp), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(
+            title: String(localized: "Quit TubeFold"),
+            action: #selector(quitApp),
+            keyEquivalent: "q",
+        ))
 
         menu.items.forEach { $0.target = self }
         statusItem.menu = menu

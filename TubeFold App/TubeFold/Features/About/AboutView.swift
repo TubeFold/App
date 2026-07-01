@@ -80,11 +80,11 @@ struct AboutView: View {
 }
 
 private struct AboutLink: Identifiable {
-    let title: String
+    let title: LocalizedStringKey
     let systemImage: String
     let url: String
     var id: String {
-        title
+        url
     }
 }
 
@@ -95,7 +95,7 @@ enum AboutInfo {
     static var versionLine: String {
         let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
-        return "Version \(short) (\(build))"
+        return String(localized: "Version \(short) (\(build))")
     }
 }
 
