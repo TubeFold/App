@@ -15,6 +15,7 @@ from scripts.tubefold_lib import (
     model_label,
     processed_at_now,
     strip_outer_markdown_fence,
+    tubefold_artifact_filename,
     tubefold_footer_markdown,
     validate_provider_response,
     yaml_front_matter,
@@ -181,7 +182,7 @@ class ProcessingQueue:
 
         final_transcript = video_dir / "transcript.txt"
         final_metadata = video_dir / "metadata.json"
-        final_summary = video_dir / "summary.md"
+        final_summary = video_dir / tubefold_artifact_filename(fields["title"], "md")
         shutil.copyfile(transcript_file, final_transcript)
         shutil.copyfile(metadata_json, final_metadata)
         shutil.copyfile(summary_file, final_summary)

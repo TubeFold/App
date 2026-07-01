@@ -429,10 +429,10 @@ final class MenuBarController: NSObject {
             }
             do {
                 let data = try await SummaryPDFRenderer().makePDFData(markdown: markdown, title: video.displayTitle)
-                let dir = FileManager.default.temporaryDirectory.appendingPathComponent("TubeFold", isDirectory: true)
-                try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-                let fileURL = dir.appendingPathComponent(
-                    LibraryViewModel.suggestedFilename(for: video, fallback: sourceURL, fileExtension: "pdf"),
+                let fileURL = LibraryViewModel.renderedArtifactURL(
+                    for: video,
+                    sourceURL: sourceURL,
+                    fileExtension: "pdf",
                 )
                 try data.write(to: fileURL)
                 NSWorkspace.shared.open(fileURL)

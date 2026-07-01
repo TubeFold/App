@@ -4,8 +4,8 @@ struct StatusBadgeView: View {
     let status: String
     @State private var spin = false
 
-    private var isActive: Bool {
-        ["queued", "fetchingMetadata", "fetchingTranscript", "generatingSummary"].contains(status)
+    private var isSpinning: Bool {
+        ["fetchingMetadata", "fetchingTranscript", "generatingSummary"].contains(status)
     }
 
     var body: some View {
@@ -24,7 +24,7 @@ struct StatusBadgeView: View {
     }
 
     private func updateSpin() {
-        if isActive {
+        if isSpinning {
             spin = false
             withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
                 spin = true

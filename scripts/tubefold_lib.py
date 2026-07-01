@@ -195,6 +195,13 @@ def safe_filename(title: str, max_length: int = 120) -> str:
     return value or "Untitled YouTube Video"
 
 
+def tubefold_artifact_filename(title: str, file_extension: str) -> str:
+    sanitized = (title or "").strip() or "YouTube video"
+    sanitized = sanitized.replace("/", "-").replace(":", "-").replace("\n", " ")
+    base = f"[TubeFold] {sanitized}"
+    return f"{base[:200]}.{file_extension}"
+
+
 def unique_markdown_path(output_dir: Path, title: str) -> Path:
     base = safe_filename(title)
     candidate = output_dir / f"{base}.md"

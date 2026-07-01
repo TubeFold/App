@@ -235,30 +235,51 @@ final class LibraryViewModel: ObservableObject {
 
     /// Render the summary to PDF and open it in the default viewer (Preview),
     /// mirroring how "Open Telegraph" opens the article in the browser. The PDF is
-    /// written to a temp dir; the user can then save it from Preview, or use
-    /// "Save PDF…" to pick a location directly.
+    /// written next to the Markdown summary, so "Show Files" exposes every video artifact.
+    ///
+    /// Rendering is skipped when an up-to-date PDF already exists next to the summary:
+    /// if the file is present and no older than the source Markdown, we just reopen it.
+    /// (A regenerated summary rewrites the `.md`, making it newer, so the PDF is rebuilt.)
     func openPDF(_ video: LibraryVideo) {
         guard !pdfRenderingVideoIDs.contains(video.id),
               let sourceURL = video.markdownURL,
               let markdown = try? String(contentsOf: sourceURL, encoding: .utf8) else { return }
+        let fileURL = Self.renderedArtifactURL(for: video, sourceURL: sourceURL, fileExtension: "pdf")
+        if Self.isArtifactUpToDate(fileURL, source: sourceURL) {
+            NSWorkspace.shared.open(fileURL)
+            return
+        }
         pdfRenderingVideoIDs.insert(video.id)
         Task {
             defer { pdfRenderingVideoIDs.remove(video.id) }
             do {
                 let data = try await SummaryPDFRenderer().makePDFData(markdown: markdown, title: video.displayTitle)
-                let dir = FileManager.default.temporaryDirectory.appendingPathComponent("TubeFold", isDirectory: true)
-                try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-                let fileURL = dir.appendingPathComponent(Self.suggestedFilename(
-                    for: video,
-                    fallback: sourceURL,
-                    fileExtension: "pdf",
-                ))
                 try data.write(to: fileURL)
                 NSWorkspace.shared.open(fileURL)
             } catch {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+
+    /// True when `artifact` exists and is no older than `source` — i.e. it was
+    /// rendered from the current summary and can be reopened without re-rendering.
+    static func isArtifactUpToDate(_ artifact: URL, source: URL) -> Bool {
+        let keys: Set<URLResourceKey> = [.contentModificationDateKey]
+        guard let artifactDate = try? artifact.resourceValues(forKeys: keys).contentModificationDate else {
+            return false
+        }
+        guard let sourceDate = try? source.resourceValues(forKeys: keys).contentModificationDate else {
+            // No source timestamp to compare against — trust the existing artifact.
+            return true
+        }
+        return artifactDate >= sourceDate
+    }
+
+    static func renderedArtifactURL(for video: LibraryVideo, sourceURL: URL, fileExtension: String) -> URL {
+        sourceURL
+            .deletingLastPathComponent()
+            .appendingPathComponent(suggestedFilename(for: video, fallback: sourceURL, fileExtension: fileExtension))
     }
 
     /// Filename for a rendered artifact: "[TubeFold] <video title>.<ext>",

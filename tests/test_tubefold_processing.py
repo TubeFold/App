@@ -68,6 +68,7 @@ class ProcessingTests(unittest.TestCase):
             transcript_path = Path(video["transcript_path"])
             self.assertTrue(summary_path.exists())
             self.assertTrue(transcript_path.exists())
+            self.assertEqual(summary_path.name, "[TubeFold] Hello - World- Demo.md")
             summary = summary_path.read_text(encoding="utf-8")
             self.assertIn('model: "fake"', summary)
             self.assertIn("# Fake Summary", summary)
