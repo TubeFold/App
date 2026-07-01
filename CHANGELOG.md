@@ -17,6 +17,19 @@ without notes.
 
 ## [Unreleased]
 
+## [0.8] - 2026-07-01
+### Added
+- Sonnet 5 is now available as a Claude model option.
+
+### Changed
+- Removed the reasoning-effort picker — TubeFold now always uses each model's own
+  default effort, so there's one less thing to configure.
+- Exported PDFs are saved next to their Markdown summary (reachable via "Show
+  Files") instead of a temporary folder, and are reused when still up to date.
+
+### Fixed
+- Fixed a race that could leave the Dock icon visible when "Hide Dock icon" was on.
+
 ## [0.7] - 2026-06-30
 ### Added
 - Run TubeFold without a Dock icon — a new "Hide Dock icon" setting turns it into
