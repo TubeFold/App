@@ -104,6 +104,10 @@ final class LibraryViewModel: ObservableObject {
     }
 
     private func loadSuggestion() async {
+        guard AppSettings.shared.showWatchSuggestions else {
+            suggestion = nil
+            return
+        }
         // Best-effort: a missing/old backend simply means no suggestion. Never let it
         // clobber the main library error state.
         do {

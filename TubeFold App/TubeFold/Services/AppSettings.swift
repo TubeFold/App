@@ -15,6 +15,7 @@ final class AppSettings: ObservableObject {
         static let hideMenuBarIcon = "hideMenuBarIcon"
         static let hideDockIcon = "hideDockIcon"
         static let dismissedExtensionTip = "dismissedExtensionTip"
+        static let showWatchSuggestions = "showWatchSuggestions"
     }
 
     /// When a summary becomes ready, publish it to Telegraph and open the page
@@ -61,6 +62,12 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(dismissedExtensionTip, forKey: Keys.dismissedExtensionTip) }
     }
 
+    /// Show the "Recently watched" suggestion banner in the Library, fed by the
+    /// Chrome extension's watch activity. Default: on.
+    @Published var showWatchSuggestions: Bool {
+        didSet { UserDefaults.standard.set(showWatchSuggestions, forKey: Keys.showWatchSuggestions) }
+    }
+
     private init() {
         let defaults = UserDefaults.standard
         defaults.register(defaults: [
@@ -68,11 +75,13 @@ final class AppSettings: ObservableObject {
             Keys.hideMenuBarIcon: false,
             Keys.hideDockIcon: false,
             Keys.dismissedExtensionTip: false,
+            Keys.showWatchSuggestions: true,
         ])
         // Property observers don't fire during init, so read the stored values directly.
         autoOpenTelegraph = defaults.bool(forKey: Keys.autoOpenTelegraph)
         hideMenuBarIcon = defaults.bool(forKey: Keys.hideMenuBarIcon)
         hideDockIcon = defaults.bool(forKey: Keys.hideDockIcon)
         dismissedExtensionTip = defaults.bool(forKey: Keys.dismissedExtensionTip)
+        showWatchSuggestions = defaults.bool(forKey: Keys.showWatchSuggestions)
     }
 }

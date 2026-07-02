@@ -1,0 +1,23 @@
+name: Feature request
+description: Propose an improvement or new capability
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The workflow or moment where TubeFold falls short — the problem matters more than the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: What do you do instead today?
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution (optional)
+  - type: markdown
+    attributes:
+      value: |
+        Note: features requiring TubeFold-operated servers, telemetry, or bundled API keys are out of scope by design — see [DECISIONS.md](https://github.com/TubeFold/App/blob/main/docs/marketing/DECISIONS.md).

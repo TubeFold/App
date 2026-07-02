@@ -5029,6 +5029,64 @@
         }
       }
     },
+    "Show a \"Recently watched\" banner in the Library for videos you watch on YouTube, reported by the Chrome extension.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показывать в Библиотеке баннер «Недавно просмотренные» для видео, которые вы смотрите на YouTube (их сообщает расширение Chrome)."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在资料库中为你在 YouTube 上观看的视频显示“最近观看”横幅（由 Chrome 扩展程序报告）。"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chrome एक्सटेंशन द्वारा रिपोर्ट किए गए, YouTube पर देखे गए वीडियो के लिए लाइब्रेरी में \"हाल में देखे गए\" बैनर दिखाएं।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muestra en la Biblioteca un banner de \"Vistos recientemente\" para los vídeos que ves en YouTube, notificados por la extensión de Chrome."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Affiche dans la Bibliothèque une bannière « Regardées récemment » pour les vidéos que vous regardez sur YouTube, signalées par l’extension Chrome."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار شعار \"شوهد مؤخرًا\" في المكتبة للفيديوهات التي تشاهدها على YouTube، والتي يبلغ عنها امتداد Chrome."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chrome এক্সটেনশনের জানানো, YouTube-এ আপনার দেখা ভিডিওর জন্য লাইব্রেরিতে \"সম্প্রতি দেখা\" ব্যানার দেখান।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra na Biblioteca um banner \"Assistidos recentemente\" para os vídeos que você assiste no YouTube, informados pela extensão do Chrome."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chrome ایکسٹینشن کی اطلاع کردہ، YouTube پر دیکھی گئی ویڈیوز کے لیے لائبریری میں \"حال ہی میں دیکھی گئی\" بینر دکھائیں۔"
+          }
+        }
+      }
+    },
     "Show in Finder": {
       "localizations": {
         "ru": {
@@ -5141,6 +5199,64 @@
           "stringUnit": {
             "state": "translated",
             "value": "اسٹوریج"
+          }
+        }
+      }
+    },
+    "Suggest recently watched videos": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Предлагать недавно просмотренные видео"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "推荐最近观看的视频"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "हाल में देखे गए वीडियो सुझाएं"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sugerir vídeos vistos recientemente"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suggérer les vidéos regardées récemment"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اقتراح الفيديوهات التي تمت مشاهدتها مؤخرًا"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সম্প্রতি দেখা ভিডিও সাজেস্ট করুন"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sugerir vídeos assistidos recentemente"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حال ہی میں دیکھی گئی ویڈیوز تجویز کریں"
           }
         }
       }

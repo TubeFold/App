@@ -24,6 +24,16 @@ struct AppBehaviorSettingsView: View {
                 }
             }
 
+            Toggle(isOn: $settings.showWatchSuggestions) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Suggest recently watched videos")
+                    Text("Show a \"Recently watched\" banner in the Library for videos you watch on YouTube, reported by the Chrome extension.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
             Toggle(isOn: $settings.hideMenuBarIcon) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Hide menu bar icon")

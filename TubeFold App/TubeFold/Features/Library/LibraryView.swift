@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LibraryView: View {
     @StateObject private var viewModel = LibraryViewModel()
+    @ObservedObject private var appSettings = AppSettings.shared
     @State private var videoPendingDeletion: LibraryVideo?
 
     var body: some View {
@@ -11,7 +12,7 @@ struct LibraryView: View {
             // A video that's already in the library sits in the list below, so suggesting it
             // here would only duplicate it — hide the banner in that case. (The backend already
             // filters these out; this guards against an older/stale backend doing otherwise.)
-            if let suggestion = viewModel.suggestion, !suggestion.inLibrary {
+            if appSettings.showWatchSuggestions, let suggestion = viewModel.suggestion, !suggestion.inLibrary {
                 SuggestionBannerView(suggestion: suggestion, viewModel: viewModel)
             }
 

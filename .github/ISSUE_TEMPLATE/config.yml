@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question / help
+    url: https://github.com/TubeFold/App/discussions
+    about: Setup questions and workflow discussion belong in Discussions.
+  - name: Security report
+    url: https://github.com/TubeFold/App/security/advisories/new
+    about: Please report vulnerabilities privately.
+  - name: Chrome extension issues
+    url: https://github.com/TubeFold/extension/issues
+    about: Bugs in the browser extension live in its own repo.

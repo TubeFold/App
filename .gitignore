@@ -243,3 +243,6 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+/TubeFold App/.claude
+/docs
+/TubeFold App/.playwright-cli

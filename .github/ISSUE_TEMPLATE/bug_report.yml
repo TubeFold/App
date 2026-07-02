@@ -1,0 +1,43 @@
+name: Bug report
+description: Something broke or behaved unexpectedly
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: TubeFold version
+      description: About window or `brew info tubefold/tap/tubefold`
+      placeholder: "0.8"
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Provider
+      options: [Claude Code, Codex CLI, Both, Not sure / N/A]
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "26.1"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Steps to reproduce, what you expected, what you got. If a summary job failed, paste the error shown in the app.
+    validations:
+      required: true
+  - type: textarea
+    id: video
+    attributes:
+      label: Video URL (if relevant)
+      description: Only if you're comfortable sharing it — it helps reproduce transcript issues.
+  - type: input
+    id: found_via
+    attributes:
+      label: (Optional) How did you find TubeFold?
+      description: Helps a solo maintainer know what's working — feel free to skip.
