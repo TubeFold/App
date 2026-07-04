@@ -26,6 +26,9 @@ without notes.
   API with a multi-client fallback, making fetches faster and more reliable.
 - The `tubefold` command-line tool runs on the same engine as the app
   (`install.sh` builds it with the Swift toolchain).
+- PDF export now produces proper A4 pages with margins instead of one long
+  continuous page; page breaks never cut through a line of text and links
+  stay clickable.
 
 ### Fixed
 
