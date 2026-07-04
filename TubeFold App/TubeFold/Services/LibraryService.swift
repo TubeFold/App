@@ -1,105 +1,74 @@
 import Foundation
+import TubeFoldKit
 
+/// Library operations — direct calls into the in-process backend (the old
+/// localhost HTTP round-trips are gone; the payload shapes are unchanged).
 struct LibraryService {
-    private let baseURL = URL(string: "http://127.0.0.1:43821")!
-    private let backend = BackendProcessController.shared
+    private var backend: TubeFoldBackend {
+        TubeFoldBackend.shared
+    }
 
     func listVideos() async throws -> [LibraryVideo] {
-        let response: VideoLibraryResponse = try await request(path: "/api/v1/videos")
-        return response.videos
+        try await mapErrors {
+            let payloads = try await backend.listVideoPayloads()
+            return try TubeFoldBackend.decode(["videos": payloads]) as VideoLibraryResponse
+        }.videos
     }
 
     func createSummary(url: String) async throws -> CreateSummaryResponse {
-        try await request(
-            path: "/api/v1/summaries",
-            method: "POST",
-            body: CreateSummaryRequest(url: url, source: "macos-app"),
-        )
+        try await mapErrors {
+            let outcome = try await backend.createSummary(rawURL: url, source: "macos-app")
+            return CreateSummaryResponse(jobId: outcome.jobID, videoId: outcome.videoID, status: outcome.status)
+        }
     }
 
     func latestWatchSuggestion() async throws -> WatchSuggestion? {
-        let response: WatchSuggestionResponse = try await request(path: "/api/v1/watch-activity")
-        return response.suggestion
+        try await mapErrors {
+            guard let payload = try await backend.watchSuggestionPayload() else { return nil }
+            return try TubeFoldBackend.decode(payload) as WatchSuggestion
+        }
     }
 
     func extensionStatus() async throws -> ExtensionStatus {
-        try await request(path: "/api/v1/extension-status")
+        try await mapErrors {
+            try await TubeFoldBackend.decode(backend.extensionStatusPayload())
+        }
     }
 
     func dismissWatchSuggestion(youtubeID: String) async throws {
-        let _: StatusResponse = try await request(
-            path: "/api/v1/watch-activity/dismiss",
-            method: "POST",
-            body: DismissWatchRequest(youtubeVideoID: youtubeID),
-        )
+        try await mapErrors {
+            try await backend.dismissWatchActivity(rawVideoID: youtubeID)
+        }
     }
 
     func regenerate(videoID: String) async throws {
-        let _: RegenerateVideoResponse = try await request(path: "/api/v1/videos/\(videoID)/regenerate", method: "POST")
+        try await mapErrors {
+            _ = try await backend.regenerate(videoID: videoID)
+        }
     }
 
     func publishTelegraph(videoID: String) async throws -> PublishTelegraphResponse {
-        try await request(path: "/api/v1/videos/\(videoID)/publish-telegraph", method: "POST")
+        try await mapErrors {
+            let result = try await backend.publishTelegraph(videoID: videoID)
+            return PublishTelegraphResponse(url: result.url, status: result.status)
+        }
     }
 
     func delete(videoID: String) async throws {
-        let _: DeleteVideoResponse = try await request(path: "/api/v1/videos/\(videoID)", method: "DELETE")
+        try await mapErrors {
+            try await backend.deleteVideo(videoID: videoID)
+        }
     }
 
-    private func request<Response: Decodable>(path: String, method: String = "GET") async throws -> Response {
-        try await request(path: path, method: method, body: CreateSummaryRequest?.none)
-    }
-
-    private func request<Response: Decodable>(
-        path: String,
-        method: String,
-        body: (some Encodable)?,
-    ) async throws -> Response {
-        try await backend.ensureRunning()
-
-        guard let url = URL(string: path, relativeTo: baseURL)?.absoluteURL else {
-            throw ProviderSetupAPIError(message: "Invalid local API path: \(path)")
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = method
-        request.timeoutInterval = 30
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-
-        if let body {
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try JSONEncoder().encode(body)
-        }
-
+    private func mapErrors<T>(_ body: () async throws -> T) async throws -> T {
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw ProviderSetupAPIError(message: "TubeFold returned an invalid response.")
-            }
-            guard (200 ..< 300).contains(httpResponse.statusCode) else {
-                throw ProviderSetupAPIError(message: Self.errorMessage(from: data, status: httpResponse.statusCode))
-            }
-            return try JSONDecoder().decode(Response.self, from: data)
+            return try await body()
+        } catch let error as BackendAPIError {
+            throw ProviderSetupAPIError(message: error.message)
         } catch let error as ProviderSetupAPIError {
             throw error
         } catch {
-            throw ProviderSetupAPIError(message: "Could not reach the TubeFold helper.")
+            throw ProviderSetupAPIError(message: error.localizedDescription)
         }
     }
-
-    private static func errorMessage(from data: Data, status: Int) -> String {
-        if let envelope = try? JSONDecoder().decode(APIErrorEnvelope.self, from: data) {
-            return envelope.error.message
-        }
-        return String(data: data, encoding: .utf8) ?? "HTTP \(status)"
-    }
-}
-
-private struct APIErrorEnvelope: Decodable {
-    struct Body: Decodable {
-        let code: String
-        let message: String
-    }
-
-    let error: Body
 }

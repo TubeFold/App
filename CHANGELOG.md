@@ -17,6 +17,21 @@ without notes.
 
 ## [Unreleased]
 
+### Changed
+
+- The whole summarization engine now runs inside the app, with no helper
+  process or bundled runtime — the app is ~10× smaller and starts summarizing
+  immediately.
+- Transcripts and video metadata are fetched directly from YouTube's player
+  API with a multi-client fallback, making fetches faster and more reliable.
+- The `tubefold` command-line tool runs on the same engine as the app
+  (`install.sh` builds it with the Swift toolchain).
+
+### Fixed
+
+- Settings now re-checks whether the Chrome extension is connected every time
+  the Settings tab is opened, instead of only once at launch.
+
 ## [0.8] - 2026-07-01
 ### Added
 - Sonnet 5 is now available as a Claude model option.
@@ -71,6 +86,6 @@ without notes.
 ### Added
 - First public release: turn a YouTube URL into a Markdown summary using your own
   Codex or Claude CLI subscription — no API keys, no cloud.
-- macOS app with an embedded Python backend and Sparkle auto-update.
+- macOS app with a local summarization backend and Sparkle auto-update.
 - Library with delete, token-usage stats, Telegraph publishing, reading-time
   estimates, an output-language setting, and watch-activity suggestions.

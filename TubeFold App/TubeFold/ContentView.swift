@@ -38,9 +38,13 @@ struct ContentView: View {
             }
         }
         .onChange(of: selectedSection) { _, section in
-            // Refresh usage stats every time the user opens Settings.
+            // Refresh usage stats and the extension tile every time the user
+            // opens Settings — the extension may have connected since launch.
             if section == .settings {
-                Task { await viewModel.refreshUsage() }
+                Task {
+                    await viewModel.refreshUsage()
+                    await viewModel.refreshExtensionStatus()
+                }
             }
         }
         .sheet(isPresented: $showingSetup) {

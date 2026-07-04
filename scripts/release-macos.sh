@@ -5,9 +5,9 @@
 # ready-to-ship .zip under build/release/.
 #
 # This wraps the whole release chain so it's one command locally and the body
-# of a GitHub Actions job on a tag. The embedded Python is signed by the Xcode
-# build phase (scripts/embed-macos-backend.sh); this script signs the outer app
-# via the project's Release settings and handles notarize + staple.
+# of a GitHub Actions job on a tag. The app is pure Swift (TubeFoldKit runs
+# in-process — no embedded runtime to sign separately); this script signs the
+# app via the project's Release settings and handles notarize + staple.
 #
 # Required environment:
 #   TUBEFOLD_TEAM_ID            Apple Developer Team ID (10 chars), e.g. AB12CD34EF
@@ -69,10 +69,9 @@ else
   die "Provide notary auth: TUBEFOLD_NOTARY_PROFILE, the TUBEFOLD_NOTARY_KEY/KEY_ID/ISSUER trio, or TUBEFOLD_NOTARY_APPLE_ID + TUBEFOLD_NOTARY_APP_PASSWORD."
 fi
 
-# Resolve the Developer ID Application identity. The embed build phase signs the
-# embedded Python with this — it MUST be the Developer ID, not Xcode's archive
-# identity (which is "Apple Development" under automatic signing and would never
-# notarize, since -exportArchive does not re-sign Contents/Resources).
+# Resolve the Developer ID Application identity used for the archive signing
+# pass (must be Developer ID for notarization, not Xcode's automatic
+# "Apple Development" identity).
 if [[ -z "${TUBEFOLD_CODESIGN_IDENTITY:-}" ]]; then
   TUBEFOLD_CODESIGN_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null \
     | awk -F'"' '/Developer ID Application/ {print $2; exit}')"
@@ -85,9 +84,8 @@ rm -rf "$build_dir"
 mkdir -p "$build_dir"
 
 # --- 1. Archive ------------------------------------------------------------
-# Sign the outer app with the Developer ID too, so the whole bundle is
-# distribution-signed in one pass. TUBEFOLD_CODESIGN_IDENTITY is exported above,
-# so the Embed Python Backend phase signs the backend with the same identity.
+# Sign the app with the Developer ID so the whole bundle is
+# distribution-signed in one pass.
 log "Archiving ($configuration)…"
 xcodebuild \
   -project "$project" \
@@ -125,8 +123,8 @@ xcodebuild -exportArchive \
 [[ -d "$app_path" ]] || die "Expected app not found after export: $app_path"
 
 # --- 3. Notarize -----------------------------------------------------------
-# ditto (not zip) preserves symlinks and the framework's bundle structure;
-# a plain `zip` corrupts the Python.framework and notarization fails.
+# ditto (not zip) preserves symlinks and framework bundle structure
+# (Sparkle.framework), which a plain `zip` corrupts.
 log "Zipping for notarization…"
 /usr/bin/ditto -c -k --keepParent "$app_path" "$notary_zip"
 

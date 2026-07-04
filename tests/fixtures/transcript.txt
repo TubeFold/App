@@ -1,2 +1,0 @@
-Pierwsza linia transkryptu z polskimi znakami.
-Druga linia zawiera Unicode: Привет и zażółć gęślą jaźń.

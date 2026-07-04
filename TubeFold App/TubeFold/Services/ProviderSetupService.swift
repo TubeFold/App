@@ -1,44 +1,45 @@
 import Foundation
+import TubeFoldKit
 
+/// Provider onboarding/settings — direct async calls into the in-process
+/// backend (no HTTP). Response models keep the old API payload shapes.
 struct ProviderSetupService {
-    private let baseURL = URL(string: "http://127.0.0.1:43821")!
-    private let backend = BackendProcessController.shared
+    private var backend: TubeFoldBackend {
+        TubeFoldBackend.shared
+    }
 
     func loadSetup() async throws -> ProviderSetupResponse {
-        try await request(path: "/api/v1/provider-setup", method: "GET", body: StringRequest?.none)
+        try await mapErrors {
+            try TubeFoldBackend.decode(backend.providerSetupPayload())
+        }
     }
 
     func loadState() async throws -> ProviderSetupState {
-        let response = try await loadSetup()
-        return response.state
+        try await loadSetup().state
     }
 
     func selectProvider(_ provider: String) async throws -> ProviderSelectionResult {
-        try await request(
-            path: "/api/v1/provider-setup/select",
-            method: "POST",
-            body: SelectProviderRequest(provider: provider),
-        )
+        try await mapErrors {
+            try TubeFoldBackend.decode(backend.selectProvider(provider))
+        }
     }
 
     func detect(provider: String, path: String?) async throws -> InstallationResult {
-        try await request(
-            path: "/api/v1/provider-setup/\(provider)/detect",
-            method: "POST",
-            body: StringRequest(path: path),
-        )
+        try await mapErrors {
+            try await TubeFoldBackend.decode(backend.detectProviderInstallation(providerID: provider, path: path))
+        }
     }
 
     func test(provider: String, path: String?) async throws -> ConnectionTestResult {
-        try await request(
-            path: "/api/v1/provider-setup/\(provider)/test",
-            method: "POST",
-            body: StringRequest(path: path),
-        )
+        try await mapErrors {
+            try await TubeFoldBackend.decode(backend.testProviderConnection(providerID: provider, path: path))
+        }
     }
 
     func completeSetup() async throws -> CompleteSetupResult {
-        try await request(path: "/api/v1/provider-setup/complete", method: "POST", body: StringRequest?.none)
+        try await mapErrors {
+            try TubeFoldBackend.decode(backend.completeProviderSetup())
+        }
     }
 
     func saveModelSettings(
@@ -46,70 +47,49 @@ struct ProviderSetupService {
         model: String,
         reasoningEffort: String,
     ) async throws -> SaveModelSettingsResult {
-        try await request(
-            path: "/api/v1/provider-setup/\(provider)/model",
-            method: "POST",
-            body: ModelSettingsRequest(model: model, reasoningEffort: reasoningEffort),
-        )
+        try await mapErrors {
+            try TubeFoldBackend.decode(backend.saveModelSettings(
+                providerID: provider,
+                model: model,
+                reasoningEffort: reasoningEffort,
+            ))
+        }
     }
 
     func loadUsage() async throws -> UsageSummary {
-        try await request(path: "/api/v1/usage", method: "GET", body: StringRequest?.none)
+        try await mapErrors {
+            try await TubeFoldBackend.decode(backend.usagePayload())
+        }
     }
 
     func loadExtensionStatus() async throws -> ExtensionStatus {
-        try await request(path: "/api/v1/extension-status", method: "GET", body: StringRequest?.none)
+        try await mapErrors {
+            try await TubeFoldBackend.decode(backend.extensionStatusPayload())
+        }
     }
 
     func saveOutputLanguage(_ outputLanguage: String) async throws -> SaveModelSettingsResult {
-        try await request(
-            path: "/api/v1/provider-setup/output-language",
-            method: "POST",
-            body: OutputLanguageRequest(outputLanguage: outputLanguage),
-        )
+        try await mapErrors {
+            try TubeFoldBackend.decode(backend.saveOutputLanguage(outputLanguage))
+        }
     }
 
     func resetData() async throws -> ResetDataResult {
-        try await request(path: "/api/v1/reset", method: "POST", body: StringRequest?.none)
+        try await mapErrors {
+            let removed = try await backend.resetAllData()
+            return ResetDataResult(status: "reset", removed: removed)
+        }
     }
 
-    private func request<Response: Decodable>(
-        path: String,
-        method: String,
-        body: (some Encodable)?,
-    ) async throws -> Response {
-        try await backend.ensureRunning()
-
-        guard let url = URL(string: path, relativeTo: baseURL)?.absoluteURL else {
-            throw ProviderSetupAPIError(message: "Invalid local API path: \(path)")
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = method
-        request.timeoutInterval = 95
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-
-        if let body {
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try JSONEncoder().encode(body)
-        }
-
+    private func mapErrors<T>(_ body: () async throws -> T) async throws -> T {
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw ProviderSetupAPIError(message: "TubeFold returned an invalid response.")
-            }
-            guard (200 ..< 300).contains(httpResponse.statusCode) else {
-                let text = String(data: data, encoding: .utf8) ?? "HTTP \(httpResponse.statusCode)"
-                throw ProviderSetupAPIError(message: text)
-            }
-            return try JSONDecoder().decode(Response.self, from: data)
+            return try await body()
+        } catch let error as BackendAPIError {
+            throw ProviderSetupAPIError(message: error.message)
         } catch let error as ProviderSetupAPIError {
             throw error
         } catch {
-            throw ProviderSetupAPIError(
-                message: "TubeFold could not talk to its local helper. Reopen the app and try again.",
-            )
+            throw ProviderSetupAPIError(message: error.localizedDescription)
         }
     }
 }

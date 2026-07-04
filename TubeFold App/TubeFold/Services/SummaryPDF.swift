@@ -10,7 +10,7 @@ import WebKit
 /// snapshotted to PDF via `WKWebView.createPDF`. We render our *own* Markdown,
 /// which uses a deliberately narrow syntax (the pipeline controls the prompt), so
 /// a full CommonMark parser would be overkill — `SummaryMarkdown` mirrors the same
-/// constructs the Telegraph publisher already handles on the Python side.
+/// constructs the Telegraph publisher already handles.
 ///
 /// `createPDF` (rather than `NSPrintOperation`) is deliberate: printing a headless
 /// `WKWebView` trips "the NSPrintOperation view's frame was not initialized
@@ -101,11 +101,11 @@ final class SummaryPDFRenderer: NSObject, WKNavigationDelegate {
 /// ordered/unordered lists, blockquotes, fenced code, horizontal rules, and inline
 /// bold/italic/strikethrough/code/links. Unknown syntax degrades to plain text.
 ///
-/// This mirrors `telegraph.markdown_to_nodes` on the Python side, with two
+/// This mirrors TubeFoldKit's Telegraph markdown parsing, with two
 /// deliberate differences: the leading `# Title` is kept (the PDF wants it) and the
 /// `_Generated with TubeFold_` footer is left in place.
 enum SummaryMarkdown {
-    /// Project credit, mirroring `scripts/tubefold_lib.PROJECT_NAME`/`PROJECT_URL`.
+    /// Project credit, mirroring `SummaryText.projectName`/`projectURL`.
     private static let projectName = "TubeFold"
     private static let projectURL = "https://tubefold.github.io/"
 
@@ -318,7 +318,7 @@ enum SummaryMarkdown {
     }
 
     /// Drop a trailing `_Generated with [TubeFold](…)_` credit footer (we render a
-    /// richer one). Mirrors `tubefold_lib.strip_tubefold_footer`.
+    /// richer one). Mirrors `SummaryText.stripTubeFoldFooter`.
     private static func stripFooter(_ markdown: String) -> String {
         let ns = markdown as NSString
         let range = NSRange(location: 0, length: ns.length)
@@ -439,7 +439,7 @@ enum SummaryMarkdown {
         return (line as NSString).substring(with: range)
     }
 
-    /// Mirrors Python's `next(g for g in match.groups() if g is not None)` — the
+    /// Picks the first non-nil capture group — the
     /// first non-empty alternation group (bold/italic each have two).
     private static func firstNonEmptyGroup(_ match: NSTextCheckingResult, _ ns: NSString) -> String {
         for i in 1 ..< match.numberOfRanges {

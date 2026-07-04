@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import TubeFoldKit
 
 /// Bridges SwiftUI's `openWindow` action out to AppKit code (the menu bar /
 /// URL handlers), so we can recreate the main window even after it was closed —
@@ -34,6 +35,10 @@ struct TubeFoldApp: App {
         WindowGroup(id: Self.mainWindowID) {
             ContentView()
                 .frame(minWidth: 900, minHeight: 620)
+                // Route external events (tubefold:// opens) into this window if
+                // it already exists — without this, WindowGroup creates a brand
+                // new window for every incoming URL.
+                .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
                 .modifier(CaptureWindowOpener())
                 .onOpenURL { url in
                     // Any tubefold:// link (e.g. the extension's "Open App" button)
@@ -59,6 +64,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // while LaunchServices opened a tubefold:// link against a different bundle
         // path), focus that one and bail instead of standing up a second instance.
         if activateRunningInstanceIfPresent() { return }
+        // Bring up the in-process backend: reclaims orphaned jobs, drains the
+        // queue, and serves the Chrome extension on 127.0.0.1:43821.
+        TubeFoldBackend.shared.startServing()
         // Start Sparkle: kicks off the automatic background update check and keeps
         // the updater alive for the manual "Check for Updates…" menu item.
         let updater = UpdaterController.shared
@@ -115,12 +123,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
         MenuBarController.shared.stop()
-        BackendProcessController.shared.stop()
+        TubeFoldBackend.shared.stopServing()
         return .terminateNow
     }
 
     func applicationWillTerminate(_: Notification) {
         MenuBarController.shared.stop()
-        BackendProcessController.shared.stop()
+        TubeFoldBackend.shared.stopServing()
     }
 }
