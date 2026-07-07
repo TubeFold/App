@@ -62,13 +62,16 @@ public struct ProviderSetupStore: Sendable {
             "lastSuccessfulConnectionTest": NSNull(),
             "preferredOutputDirectory": defaults.preferredOutputDirectory,
         ]
+        var outputLanguageConfigured = !defaults.outputLanguage.isEmpty
         if let data = try? Data(contentsOf: url),
            let parsed = try? JSONSerialization.jsonObject(with: data),
            let stored = parsed as? [String: Any] {
+            outputLanguageConfigured = outputLanguageConfigured || stored.keys.contains("outputLanguage")
             for (key, value) in stored {
                 state[key] = value
             }
         }
+        state["outputLanguageConfigured"] = outputLanguageConfigured
         return Self.normalize(state)
     }
 

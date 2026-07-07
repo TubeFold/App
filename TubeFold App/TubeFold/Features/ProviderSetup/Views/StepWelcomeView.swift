@@ -21,6 +21,7 @@ struct StepWelcomeView: View {
             }
 
             VStack(alignment: .leading, spacing: 14) {
+                Label("Choose the summary output language", systemImage: "textformat")
                 Label("Choose Codex CLI or Claude Code CLI", systemImage: "terminal")
                 Label("TubeFold checks that the provider is installed", systemImage: "checkmark.shield")
                 Label("A quick test confirms the provider is signed in", systemImage: "bolt.fill")

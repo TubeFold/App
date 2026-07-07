@@ -11,6 +11,7 @@ struct ProviderSetupState: Codable {
     let claudeModel: String?
     let claudeConnectedAt: String?
     let outputLanguage: String?
+    let outputLanguageConfigured: Bool?
     let providerSetupCompleted: Bool
     let lastSuccessfulConnectionTest: String?
     let preferredOutputDirectory: String?
@@ -40,8 +41,20 @@ struct ProviderInfo: Decodable, Identifiable, Hashable {
     let version: String?
 
     static let defaults: [ProviderInfo] = [
-        ProviderInfo(id: "codex", displayName: "Codex CLI", configured: false, executablePath: nil, version: nil),
-        ProviderInfo(id: "claude", displayName: "Claude Code CLI", configured: false, executablePath: nil, version: nil),
+        ProviderInfo(
+            id: "codex",
+            displayName: "Codex CLI",
+            configured: false,
+            executablePath: nil,
+            version: nil,
+        ),
+        ProviderInfo(
+            id: "claude",
+            displayName: "Claude Code CLI",
+            configured: false,
+            executablePath: nil,
+            version: nil,
+        ),
     ]
 }
 

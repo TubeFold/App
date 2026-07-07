@@ -24,6 +24,7 @@ private func temporaryDataDir() throws -> URL {
         #expect(state["claudeModel"] as? String == "sonnet")
         #expect(state["codexReasoningEffort"] as? String == "auto")
         #expect(state["outputLanguage"] as? String == "English")
+        #expect(state["outputLanguageConfigured"] as? Bool == false)
         #expect(state["providerSetupCompleted"] as? Bool == false)
         #expect(state["codexExecutablePath"] is NSNull)
     }
@@ -52,6 +53,7 @@ private func temporaryDataDir() throws -> URL {
 
         try store.update(["outputLanguage": " Русский \n язык "])
         #expect(store.outputLanguage() == "Русский язык")
+        #expect(store.load()["outputLanguageConfigured"] as? Bool == true)
 
         try store.update(["outputLanguage": "   "])
         #expect(store.outputLanguage() == "English")

@@ -9,7 +9,8 @@ struct OutputLanguageSettingsView: View {
                 Text("Output language")
                     .font(.headline)
                 Text(
-                    "The default language is English. You can specify any language here (examples: English, 简体中文, Español, 日本語, 한국어, Français). Applied to new summaries.",
+                    "The default follows the app language. You can specify any language here "
+                        + "(examples: English, Español, Français, Polski, Русский, 简体中文). Applied to new summaries.",
                 )
                 .font(.callout)
                 .foregroundStyle(.secondary)

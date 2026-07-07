@@ -114,6 +114,8 @@ struct ProviderSetupWizardView: View {
         switch viewModel.currentStep {
         case .welcome:
             StepWelcomeView()
+        case .outputLanguage:
+            StepOutputLanguageView(viewModel: viewModel)
         case .beforeBegin:
             StepIntroView(viewModel: viewModel)
         case .checkInstallation:

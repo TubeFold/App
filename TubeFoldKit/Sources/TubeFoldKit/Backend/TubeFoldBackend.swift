@@ -531,7 +531,10 @@ public final class TubeFoldBackend: Sendable {
     /// `POST /api/v1/provider-setup/output-language`.
     public func saveOutputLanguage(_ value: String?) throws -> [String: Any] {
         let diagnostics = selectedDiagnostics()
-        let state = try setupStore.update(["outputLanguage": OutputLanguage.normalize(value)])
+        let state = try setupStore.update([
+            "outputLanguage": OutputLanguage.normalize(value),
+            "outputLanguageConfigured": true,
+        ])
         var payload: [String: Any] = [
             "status": "saved",
             "provider": diagnostics.providerID,

@@ -25,7 +25,11 @@ final class ProviderSetupViewModel: ObservableObject {
     /// status check resolves; flips to the real value once the backend answers.
     @Published private(set) var extensionConnected = true
 
-    static let defaultOutputLanguage = "English"
+    static var defaultOutputLanguage: String {
+        localizedAppLanguageName() ?? backendDefaultOutputLanguage
+    }
+
+    private static let backendDefaultOutputLanguage = "English"
 
     private let service = ProviderSetupService()
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TubeFold", category: "ProviderSetup")
@@ -144,6 +148,8 @@ final class ProviderSetupViewModel: ObservableObject {
         switch currentStep {
         case .welcome:
             "Get Started"
+        case .outputLanguage:
+            "Next"
         case .beforeBegin:
             "Next"
         case .checkInstallation:
@@ -157,9 +163,7 @@ final class ProviderSetupViewModel: ObservableObject {
 
     var primaryButtonSystemImage: String {
         switch currentStep {
-        case .welcome:
-            "chevron.right"
-        case .beforeBegin:
+        case .welcome, .outputLanguage, .beforeBegin:
             "chevron.right"
         case .checkInstallation:
             installationSucceeded ? "chevron.right" : "arrow.clockwise"
@@ -172,7 +176,7 @@ final class ProviderSetupViewModel: ObservableObject {
 
     var canAdvance: Bool {
         switch currentStep {
-        case .welcome, .beforeBegin, .checkInstallation, .complete:
+        case .welcome, .outputLanguage, .beforeBegin, .checkInstallation, .complete:
             true
         case .testConnection:
             installationSucceeded || connectionSucceeded
@@ -346,7 +350,9 @@ final class ProviderSetupViewModel: ObservableObject {
     func advance() async {
         switch currentStep {
         case .welcome:
-            setCurrentStep(.beforeBegin, reason: "advance.welcome")
+            setCurrentStep(.outputLanguage, reason: "advance.welcome")
+        case .outputLanguage:
+            await saveOutputLanguageAndContinue()
         case .beforeBegin:
             setCurrentStep(.checkInstallation, reason: "advance.beforeBegin")
             await prepareCurrentStepIfNeeded()
@@ -433,9 +439,7 @@ final class ProviderSetupViewModel: ObservableObject {
 
     func isStepComplete(_ step: SetupStep) -> Bool {
         switch step {
-        case .welcome:
-            currentStep.rawValue > step.rawValue
-        case .beforeBegin:
+        case .welcome, .outputLanguage, .beforeBegin:
             currentStep.rawValue > step.rawValue
         case .checkInstallation:
             installationSucceeded && currentStep.rawValue > step.rawValue
@@ -528,18 +532,31 @@ final class ProviderSetupViewModel: ObservableObject {
     }
 
     private func applyOutputLanguage(from state: ProviderSetupState) {
-        let value = state.outputLanguage ?? ProviderSetupViewModel.defaultOutputLanguage
+        let backendValue = state.outputLanguage ?? Self.backendDefaultOutputLanguage
+        let shouldUseAppDefault = !state.providerSetupCompleted
+            && state.outputLanguageConfigured != true
+            && backendValue == Self.backendDefaultOutputLanguage
+        let value = shouldUseAppDefault ? Self.defaultOutputLanguage : backendValue
         outputLanguage = value
         outputLanguageDraft = value
     }
 
-    private func persistOutputLanguage(_ value: String) async {
+    @discardableResult
+    private func persistOutputLanguage(_ value: String) async -> Bool {
+        var saved = false
         await runBusy("Saving language") {
             let response = try await service.saveOutputLanguage(value)
             setupState = response.state
             applyOutputLanguage(from: response.state)
             apiReachable = true
+            saved = true
         }
+        return saved
+    }
+
+    private func saveOutputLanguageAndContinue() async {
+        guard await persistOutputLanguage(outputLanguageDraft) else { return }
+        setCurrentStep(.beforeBegin, reason: "advance.outputLanguage.saved")
     }
 
     private func saveModelSettings() async {
@@ -556,5 +573,25 @@ final class ProviderSetupViewModel: ObservableObject {
             configureModelSettings(from: response.state)
             apiReachable = true
         }
+    }
+
+    private static func localizedAppLanguageName() -> String? {
+        let appLocalization = Bundle.main.preferredLocalizations
+            .first { !$0.isEmpty && $0 != "Base" }
+        return outputLanguageName(for: appLocalization)
+            ?? outputLanguageName(for: Locale.preferredLanguages.first)
+    }
+
+    private static func outputLanguageName(for identifier: String?) -> String? {
+        guard let identifier, !identifier.isEmpty, identifier != "Base" else { return nil }
+        let normalizedIdentifier = identifier.replacingOccurrences(of: "_", with: "-")
+        let languageCode = Locale(identifier: normalizedIdentifier)
+            .language.languageCode?.identifier ?? normalizedIdentifier
+        guard let name = Locale(identifier: "en_US_POSIX").localizedString(forLanguageCode: languageCode),
+              !name.isEmpty
+        else {
+            return nil
+        }
+        return name
     }
 }
