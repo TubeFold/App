@@ -17,6 +17,8 @@ without notes.
 
 ## [Unreleased]
 
+## [0.9] - 2026-07-07
+
 ### Changed
 
 - The whole summarization engine now runs inside the app, with no helper
@@ -24,16 +26,10 @@ without notes.
   immediately.
 - Transcripts and video metadata are fetched directly from YouTube's player
   API with a multi-client fallback, making fetches faster and more reliable.
-- The `tubefold` command-line tool runs on the same engine as the app
-  (`install.sh` builds it with the Swift toolchain).
+- Provider setup and first-run onboarding are now smoother and clearer.
 - PDF export now produces proper A4 pages with margins instead of one long
   continuous page; page breaks never cut through a line of text and links
   stay clickable.
-
-### Fixed
-
-- Settings now re-checks whether the Chrome extension is connected every time
-  the Settings tab is opened, instead of only once at launch.
 
 ## [0.8] - 2026-07-01
 ### Added
