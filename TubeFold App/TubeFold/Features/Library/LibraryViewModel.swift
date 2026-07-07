@@ -91,11 +91,11 @@ final class LibraryViewModel: ObservableObject {
         }
     }
 
-    /// The subtle "get the extension" line under the add bar. Shown only once the
-    /// library has content (the empty state carries its own bigger pitch), when the
-    /// extension isn't connected, and only until the user dismisses it for good.
+    /// The subtle "get the extension" line under the add bar. Shown on the fifth
+    /// library video, when the extension isn't connected, and only until the user
+    /// dismisses it for good.
     var showExtensionTip: Bool {
-        !videos.isEmpty && !extensionConnected && !AppSettings.shared.dismissedExtensionTip
+        videos.count == 3 && !extensionConnected && !AppSettings.shared.dismissedExtensionTip
     }
 
     func dismissExtensionTip() {
