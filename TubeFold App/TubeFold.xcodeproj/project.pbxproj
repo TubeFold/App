@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		4312DB8A2FEF1E58003CA83B /* TubeFold.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4312DB892FEF1E58003CA83B /* TubeFold.icon */; };
 		5A0000000000000000000003 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 5A0000000000000000000002 /* Sparkle */; };
+		5B0000000000000000000003 /* TubeFoldKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5B0000000000000000000002 /* TubeFoldKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +43,7 @@
 			isa = PBXFrameworksBuildPhase;
 			files = (
 				5A0000000000000000000003 /* Sparkle in Frameworks */,
+				5B0000000000000000000003 /* TubeFoldKit in Frameworks */,
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -76,7 +78,6 @@
 				000000000000000120000000 /* Sources */,
 				000000000000000130000000 /* Frameworks */,
 				000000000000000140000000 /* Resources */,
-				000000000000000150000000 /* Embed Python Backend */,
 			);
 			buildRules = (
 			);
@@ -86,6 +87,7 @@
 			name = TubeFold;
 			packageProductDependencies = (
 				5A0000000000000000000002 /* Sparkle */,
+				5B0000000000000000000002 /* TubeFoldKit */,
 			);
 			productName = TubeFold;
 			productReference = 000000000000000000000120 /* TubeFold.app */;
@@ -126,6 +128,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				5A0000000000000000000001 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				5B0000000000000000000001 /* XCLocalSwiftPackageReference "../TubeFoldKit" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 000000000000000000000020 /* Products */;
@@ -177,19 +180,6 @@
 				"else\n",
 				"  echo \"warning: SwiftLint not installed — run 'brew install swiftlint'\"\n",
 				"fi\n",
-			);
-		};
-		000000000000000150000000 /* Embed Python Backend */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			name = "Embed Python Backend";
-			outputPaths = (
-				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/TubeFoldBackend",
-			);
-			shellPath = /bin/bash;
-			shellScript = (
-				"\"$SRCROOT/../scripts/embed-macos-backend.sh\"",
-				"",
 			);
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -446,6 +436,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		5B0000000000000000000001 /* XCLocalSwiftPackageReference "../TubeFoldKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../TubeFoldKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		5A0000000000000000000001 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -462,6 +459,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 5A0000000000000000000001 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		5B0000000000000000000002 /* TubeFoldKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TubeFoldKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

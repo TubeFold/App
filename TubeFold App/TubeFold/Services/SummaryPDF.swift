@@ -1,98 +1,97 @@
 import AppKit
 import Foundation
-import WebKit
 
-/// Turns a summary's Markdown into PDF data, entirely with Apple frameworks (no
-/// third-party Markdown or PDF dependency).
+/// Turns a summary's Markdown into paginated A4 PDF data, entirely with Apple
+/// frameworks (no third-party Markdown or PDF dependency).
 ///
 /// The flow is: our own small Markdown → HTML converter (`SummaryMarkdown`),
-/// wrapped in a styled HTML document, loaded into an offscreen `WKWebView`, then
-/// snapshotted to PDF via `WKWebView.createPDF`. We render our *own* Markdown,
-/// which uses a deliberately narrow syntax (the pipeline controls the prompt), so
-/// a full CommonMark parser would be overkill — `SummaryMarkdown` mirrors the same
-/// constructs the Telegraph publisher already handles on the Python side.
+/// wrapped in a styled HTML document, converted to an `NSAttributedString`,
+/// laid out in an offscreen `NSTextView`, then printed to PDF via
+/// `NSPrintOperation.pdfOperation`. TextKit paginates properly: page breaks
+/// land between lines (never through them), every page is A4 with real
+/// margins, and links stay clickable.
 ///
-/// `createPDF` (rather than `NSPrintOperation`) is deliberate: printing a headless
-/// `WKWebView` trips "the NSPrintOperation view's frame was not initialized
-/// properly before knowsPageRange" and crashes. `createPDF` has no print-view
-/// machinery, so it's reliable off-screen. The trade-off is that it emits a single
-/// continuous page (no hard page breaks) sized to the content — fine for a summary
-/// meant to be read/shared, the same way the Telegraph article is one long page.
+/// TextKit (rather than a `WKWebView`) is deliberate: WebKit's `createPDF`
+/// emits one endless page, and its print machinery crashes off-screen
+/// ("the NSPrintOperation view's frame was not initialized properly before
+/// knowsPageRange"). An `NSTextView` has none of those problems headless.
 @MainActor
-final class SummaryPDFRenderer: NSObject, WKNavigationDelegate {
+final class SummaryPDFRenderer {
     enum RenderError: LocalizedError {
-        case loadFailed(Error)
-        case pdfFailed(Error)
+        case layoutFailed
+        case pdfFailed
 
         var errorDescription: String? {
             switch self {
-            case let .loadFailed(error):
-                "Couldn't lay out the summary for PDF: \(error.localizedDescription)"
-            case let .pdfFailed(error):
-                "Couldn't render the PDF: \(error.localizedDescription)"
+            case .layoutFailed:
+                "Couldn't lay out the summary for PDF."
+            case .pdfFailed:
+                "Couldn't render the PDF."
             }
         }
     }
 
-    /// Page width in points (US Letter at 72 dpi). Height grows with the content.
-    private static let pageWidth: CGFloat = 612
+    /// A4 in points (210 × 297 mm at 72 dpi).
+    private static let paperSize = NSSize(width: 595.28, height: 841.89)
+    private static let margins = NSEdgeInsets(top: 48, left: 56, bottom: 52, right: 56)
 
-    // Held for the lifetime of a single render so the web view isn't deallocated
-    // mid-snapshot.
-    private var webView: WKWebView?
-    private var continuation: CheckedContinuation<Data, Error>?
-
-    /// Render `markdown` to PDF data. `title` becomes the document title.
+    /// Render `markdown` to paginated PDF data. `title` becomes the document title.
     func makePDFData(markdown: String, title: String) async throws -> Data {
         let html = SummaryMarkdown.htmlDocument(markdown: markdown, title: title)
-        let frame = NSRect(x: 0, y: 0, width: Self.pageWidth, height: 792)
-        let webView = WKWebView(frame: frame, configuration: WKWebViewConfiguration())
-        webView.navigationDelegate = self
-        self.webView = webView
-
-        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-            self.continuation = continuation
-            webView.loadHTMLString(html, baseURL: nil)
+        guard let htmlData = html.data(using: .utf8),
+              let attributed = NSAttributedString(
+                  html: htmlData,
+                  options: [
+                      .documentType: NSAttributedString.DocumentType.html,
+                      .characterEncoding: String.Encoding.utf8.rawValue,
+                  ],
+                  documentAttributes: nil,
+              )
+        else {
+            throw RenderError.layoutFailed
         }
-    }
 
-    func webView(_ webView: WKWebView, didFinish _: WKNavigation!) {
-        // Grow the web view to the full content height so `createPDF` captures all
-        // of it in one page (it captures the view's bounds), then snapshot.
-        webView.evaluateJavaScript("document.body.scrollHeight") { [weak self] value, _ in
-            guard let self else { return }
-            if let height = (value as? NSNumber)?.doubleValue, height > 0 {
-                webView.frame.size.height = CGFloat(height)
-            }
-            webView.createPDF(configuration: WKPDFConfiguration()) { result in
-                switch result {
-                case let .success(data):
-                    self.finish(.success(data))
-                case let .failure(error):
-                    self.finish(.failure(.pdfFailed(error)))
-                }
-            }
+        let printInfo = NSPrintInfo()
+        printInfo.paperSize = Self.paperSize
+        printInfo.topMargin = Self.margins.top
+        printInfo.bottomMargin = Self.margins.bottom
+        printInfo.leftMargin = Self.margins.left
+        printInfo.rightMargin = Self.margins.right
+        printInfo.horizontalPagination = .fit
+        printInfo.verticalPagination = .automatic
+        printInfo.isHorizontallyCentered = false
+        printInfo.isVerticallyCentered = false
+
+        // Lay the text out at the printable width; the print operation slices
+        // the resulting column into pages (adjusting breaks to line bounds).
+        let contentWidth = Self.paperSize.width - Self.margins.left - Self.margins.right
+        let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: contentWidth, height: 1))
+        textView.textContainerInset = .zero
+        textView.textContainer?.lineFragmentPadding = 0
+        textView.textStorage?.setAttributedString(attributed)
+
+        guard let layoutManager = textView.layoutManager, let textContainer = textView.textContainer else {
+            throw RenderError.layoutFailed
         }
-    }
+        layoutManager.ensureLayout(for: textContainer)
+        let usedHeight = layoutManager.usedRect(for: textContainer).height
+        textView.frame.size.height = ceil(usedHeight) + 1
 
-    func webView(_: WKWebView, didFail _: WKNavigation!, withError error: Error) {
-        finish(.failure(.loadFailed(error)))
-    }
+        // A save-to-PDF print job is the only NSPrintOperation flavor that
+        // paginates (`pdfOperation(with:inside:)` snapshots one huge page).
+        let outputURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("tubefold-pdf-\(UUID().uuidString).pdf")
+        defer { try? FileManager.default.removeItem(at: outputURL) }
+        printInfo.jobDisposition = .save
+        printInfo.dictionary()[NSPrintInfo.AttributeKey.jobSavingURL] = outputURL
 
-    func webView(_: WKWebView, didFailProvisionalNavigation _: WKNavigation!, withError error: Error) {
-        finish(.failure(.loadFailed(error)))
-    }
-
-    private func finish(_ result: Result<Data, RenderError>) {
-        guard let continuation else { return }
-        self.continuation = nil
-        webView = nil
-        switch result {
-        case let .success(data):
-            continuation.resume(returning: data)
-        case let .failure(error):
-            continuation.resume(throwing: error)
+        let operation = NSPrintOperation(view: textView, printInfo: printInfo)
+        operation.showsPrintPanel = false
+        operation.showsProgressPanel = false
+        guard operation.run(), let data = try? Data(contentsOf: outputURL), !data.isEmpty else {
+            throw RenderError.pdfFailed
         }
+        return data
     }
 }
 
@@ -101,11 +100,11 @@ final class SummaryPDFRenderer: NSObject, WKNavigationDelegate {
 /// ordered/unordered lists, blockquotes, fenced code, horizontal rules, and inline
 /// bold/italic/strikethrough/code/links. Unknown syntax degrades to plain text.
 ///
-/// This mirrors `telegraph.markdown_to_nodes` on the Python side, with two
+/// This mirrors TubeFoldKit's Telegraph markdown parsing, with two
 /// deliberate differences: the leading `# Title` is kept (the PDF wants it) and the
 /// `_Generated with TubeFold_` footer is left in place.
 enum SummaryMarkdown {
-    /// Project credit, mirroring `scripts/tubefold_lib.PROJECT_NAME`/`PROJECT_URL`.
+    /// Project credit, mirroring `SummaryText.projectName`/`projectURL`.
     private static let projectName = "TubeFold"
     private static let projectURL = "https://tubefold.github.io/"
 
@@ -318,7 +317,7 @@ enum SummaryMarkdown {
     }
 
     /// Drop a trailing `_Generated with [TubeFold](…)_` credit footer (we render a
-    /// richer one). Mirrors `tubefold_lib.strip_tubefold_footer`.
+    /// richer one). Mirrors `SummaryText.stripTubeFoldFooter`.
     private static func stripFooter(_ markdown: String) -> String {
         let ns = markdown as NSString
         let range = NSRange(location: 0, length: ns.length)
@@ -439,7 +438,7 @@ enum SummaryMarkdown {
         return (line as NSString).substring(with: range)
     }
 
-    /// Mirrors Python's `next(g for g in match.groups() if g is not None)` — the
+    /// Picks the first non-nil capture group — the
     /// first non-empty alternation group (bold/italic each have two).
     private static func firstNonEmptyGroup(_ match: NSTextCheckingResult, _ ns: NSString) -> String {
         for i in 1 ..< match.numberOfRanges {
@@ -473,10 +472,9 @@ enum SummaryMarkdown {
       font-size: 12pt;
       line-height: 1.55;
       color: #1a1a1a;
-      /* createPDF captures the body box, so margins live here (not in print info). */
+      /* Page margins come from NSPrintInfo, not the document. */
       margin: 0;
-      padding: 48pt 56pt;
-      box-sizing: border-box;
+      padding: 0;
     }
     header { margin: 0 0 1.6em; }
     header h1 { margin: 0; }

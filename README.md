@@ -65,9 +65,9 @@ YouTube URL
 
 ## Customize
 
-- **Prompts** are Markdown files in [`prompts/`](prompts/) with `{{TITLE}}`, `{{TRANSCRIPT}}`, `{{OUTPUT_LANGUAGE}}`-style placeholders — edit them to change the note structure.
+- **Prompts** are Markdown files in [`TubeFoldKit/Sources/TubeFoldKit/Resources/prompts/`](TubeFoldKit/Sources/TubeFoldKit/Resources/prompts/) with `{{TITLE}}`, `{{TRANSCRIPT}}`, `{{OUTPUT_LANGUAGE}}`-style placeholders — edit them to change the note structure.
 - **Output language** is a setting (any language; the summary language is independent of the video's).
-- **Providers** are drop-in executables — see [`providers/`](providers/) and the contract in [CLAUDE.md](CLAUDE.md).
+- **Providers** are Swift `SummaryProvider` implementations; custom drop-in executables honoring the `provider <prompt_file> <output_file>` contract still work — see [CLAUDE.md](CLAUDE.md).
 - **Config layering** for the CLI: defaults → `~/.config/tubefold/config.env` → environment → flags.
 
 ## FAQ
