@@ -1,4 +1,8 @@
-# <img src=".github/assets/logo.png" height="28" align="top" alt=""> TubeFold
+<p align="left">
+  <img src=".github/assets/logo.png" width="120" alt="TubeFold">
+</p>
+
+# TubeFold
 
 **Turn YouTube videos into Markdown notes — with the AI subscription you already pay for.**
 
