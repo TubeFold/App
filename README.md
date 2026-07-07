@@ -92,9 +92,7 @@ Longer-term candidates and rationale: [docs/marketing/ROADMAP_RECOMMENDATIONS.md
 
 ## Contributing
 
-Bug reports and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Good first contributions: prompt templates, additional provider scripts, and docs. Security reports: [SECURITY.md](SECURITY.md).
-
-Related repos: [Chrome extension](https://github.com/TubeFold/extension) · [Homebrew tap](https://github.com/TubeFold/homebrew-tap) · [Website](https://github.com/TubeFold/tubefold.github.io)
+Bug reports and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
