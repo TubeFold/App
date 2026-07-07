@@ -4,6 +4,10 @@
 
 # TubeFold
 
+[![Platform macOS](https://img.shields.io/badge/platform-macOS-000000)](https://github.com/TubeFold/App/releases/latest)
+[![Version](https://img.shields.io/github/v/release/TubeFold/App?label=version)](https://github.com/TubeFold/App/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/TubeFold/App/total?label=downloads)](https://github.com/TubeFold/App/releases)
+
 **Turn YouTube videos into Markdown notes — with the AI subscription you already pay for.**
 
 TubeFold is a native macOS app. Paste a YouTube link (or click once in the Chrome extension) and it fetches the transcript, runs it through **your own Claude Code or Codex CLI**, and saves a structured Markdown note — key ideas, arguments, takeaways, sources — into a local library on your Mac.
