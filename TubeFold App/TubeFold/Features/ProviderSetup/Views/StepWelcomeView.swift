@@ -2,8 +2,8 @@ import AppKit
 import SwiftUI
 
 struct StepWelcomeView: View {
-    private let introText = "TubeFold turns YouTube videos into saved summaries using a signed-in "
-        + "command-line provider on this Mac."
+    private let introText = "TubeFold turns YouTube videos into saved summaries using your ChatGPT/OpenAI "
+        + "or Claude account."
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
@@ -22,16 +22,16 @@ struct StepWelcomeView: View {
 
             VStack(alignment: .leading, spacing: 14) {
                 Label("Choose the summary output language", systemImage: "textformat")
-                Label("Choose Codex CLI or Claude Code CLI", systemImage: "terminal")
-                Label("TubeFold checks that the provider is installed", systemImage: "checkmark.shield")
-                Label("A quick test confirms the provider is signed in", systemImage: "bolt.fill")
+                Label("Choose ChatGPT/OpenAI or Claude/Anthropic", systemImage: "person.crop.circle.badge.checkmark")
+                Label("TubeFold guides you through the required CLI install", systemImage: "terminal")
+                Label("A quick test confirms the CLI is signed in", systemImage: "bolt.fill")
             }
             .font(.headline)
             .foregroundStyle(.primary)
             .padding(18)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
 
-            Text("You will use your own provider subscription. No API key is needed.")
+            Text("No API key is needed. TubeFold runs the provider's official command-line tool on this Mac.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

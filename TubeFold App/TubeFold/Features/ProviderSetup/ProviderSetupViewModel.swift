@@ -30,6 +30,8 @@ final class ProviderSetupViewModel: ObservableObject {
     }
 
     private static let backendDefaultOutputLanguage = "English"
+    static let codexCLIInstallCommand = "curl -fsSL https://chatgpt.com/codex/install.sh | sh"
+    static let codexCLIInstallGuideURL = URL(string: "https://developers.openai.com/codex/cli")!
 
     private let service = ProviderSetupService()
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TubeFold", category: "ProviderSetup")
@@ -37,6 +39,16 @@ final class ProviderSetupViewModel: ObservableObject {
     var providerDisplayName: String {
         availableProviders.first { $0.id == selectedProviderID }?.displayName
             ?? (selectedProviderID == "claude" ? "Claude Code CLI" : "Codex CLI")
+    }
+
+    func providerAccountName(for providerID: String) -> String {
+        providerID == "claude" ? "Claude" : "ChatGPT"
+    }
+
+    func providerAccountSubtitle(for providerID: String) -> String {
+        providerID == "claude"
+            ? "Uses Claude Code CLI"
+            : "Uses Codex CLI"
     }
 
     var isSetupComplete: Bool {
@@ -205,11 +217,37 @@ final class ProviderSetupViewModel: ObservableObject {
             ?? "TubeFold will look for \(providerDisplayName) automatically. You can also choose it manually."
     }
 
+    var shouldShowCodexCLIInstallHelp: Bool {
+        selectedProviderID == "codex"
+            && installationResult?.details["errorCategory"]?.stringValue == "installationMissing"
+    }
+
+    var codexAppInstalled: Bool {
+        installationResult?.details["codexAppInstalled"]?.boolValue == true
+    }
+
+    var codexAppPath: String? {
+        installationResult?.details["codexAppPath"]?.stringValue
+    }
+
+    var chatGPTAppInstalled: Bool {
+        installationResult?.details["chatGPTAppInstalled"]?.boolValue == true
+    }
+
+    var chatGPTAppPath: String? {
+        installationResult?.details["chatGPTAppPath"]?.stringValue
+    }
+
     var installationDetails: [String] {
         guard let result = installationResult else { return [] }
         var lines = result.checkedPaths.map { "checked: \($0)" }
         lines.append(contentsOf: result.details.formattedLines)
         return lines
+    }
+
+    var installationHasError: Bool {
+        guard let result = installationResult else { return false }
+        return result.status != "installed"
     }
 
     var connectionStatusTitle: String {
@@ -239,6 +277,11 @@ final class ProviderSetupViewModel: ObservableObject {
 
     var connectionDetails: [String] {
         connectionResult?.details.formattedLines ?? []
+    }
+
+    var connectionHasError: Bool {
+        guard let result = connectionResult else { return false }
+        return result.status != "success"
     }
 
     func loadState() async {

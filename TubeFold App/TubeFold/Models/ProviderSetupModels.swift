@@ -215,6 +215,20 @@ enum JSONValue: Decodable {
             "null"
         }
     }
+
+    var stringValue: String? {
+        if case let .string(value) = self {
+            return value
+        }
+        return nil
+    }
+
+    var boolValue: Bool? {
+        if case let .bool(value) = self {
+            return value
+        }
+        return nil
+    }
 }
 
 extension [String: JSONValue] {

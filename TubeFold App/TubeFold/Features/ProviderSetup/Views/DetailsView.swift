@@ -3,6 +3,7 @@ import SwiftUI
 
 struct DetailsView: View {
     let details: [String]
+    let showsCopyButton: Bool
     @State private var copied = false
 
     var body: some View {
@@ -14,25 +15,30 @@ struct DetailsView: View {
                             .font(.system(.caption, design: .monospaced))
                             .textSelection(.enabled)
                             .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
                 .padding(.top, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
             } label: {
                 HStack(spacing: 10) {
                     Text("Details")
 
-                    Button {
-                        copyLogs()
-                    } label: {
-                        Label(copied ? "Copied" : "Copy all logs", systemImage: copied ? "checkmark" : "doc.on.doc")
+                    if showsCopyButton {
+                        Button {
+                            copyLogs()
+                        } label: {
+                            Label(copied ? "Copied" : "Copy all logs", systemImage: copied ? "checkmark" : "doc.on.doc")
+                        }
+                        .buttonStyle(.borderless)
+                        .controlSize(.small)
+                        .help("Copy all diagnostic logs")
+                        .accessibilityLabel("Copy all diagnostic logs")
+                        .disabled(details.isEmpty)
                     }
-                    .buttonStyle(.borderless)
-                    .controlSize(.small)
-                    .help("Copy all diagnostic logs")
-                    .accessibilityLabel("Copy all diagnostic logs")
-                    .disabled(details.isEmpty)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -52,7 +58,7 @@ struct DetailsView: View {
         "$ codex --version",
         "codex 0.142.0",
         "exit code: 0",
-    ])
-    .padding()
-    .frame(width: 560)
+    ], showsCopyButton: true)
+        .padding()
+        .frame(width: 560)
 }

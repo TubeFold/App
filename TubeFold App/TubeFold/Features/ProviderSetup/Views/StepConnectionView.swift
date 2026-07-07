@@ -20,7 +20,10 @@ struct StepConnectionView: View {
                 tint: viewModel.connectionSucceeded ? .green : .orange,
             )
 
-            DetailsView(details: viewModel.connectionDetails)
+            DetailsView(
+                details: viewModel.connectionDetails,
+                showsCopyButton: viewModel.connectionHasError,
+            )
         }
         .frame(maxWidth: 600, alignment: .leading)
     }

@@ -201,6 +201,29 @@ private func temporaryDataDir() throws -> URL {
         #expect(store.load()[descriptor.pathKey] as? String == stablePath.path)
     }
 
+    @Test func macAppInstallationDetectsApplicationBundle() throws {
+        let dir = try temporaryDataDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let app = dir.appendingPathComponent("Codex.app", isDirectory: true)
+        let chatGPT = dir.appendingPathComponent("ChatGPT.app", isDirectory: true)
+        try FileManager.default.createDirectory(at: app, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: chatGPT, withIntermediateDirectories: true)
+
+        let found = TubeFoldBackend.codexAppInstallation(searchPaths: [app.path])
+        #expect(found.installed)
+        #expect(found.path == app.path)
+
+        let foundChatGPT = TubeFoldBackend.chatGPTAppInstallation(searchPaths: [chatGPT.path])
+        #expect(foundChatGPT.installed)
+        #expect(foundChatGPT.path == chatGPT.path)
+
+        let missing = TubeFoldBackend.codexAppInstallation(searchPaths: [
+            dir.appendingPathComponent("Missing.app").path,
+        ])
+        #expect(!missing.installed)
+        #expect(missing.path == nil)
+    }
+
     @Test func providerSummariesReportConfiguration() throws {
         let dir = try temporaryDataDir()
         defer { try? FileManager.default.removeItem(at: dir) }

@@ -558,6 +558,37 @@ public final class TubeFoldBackend: Sendable {
     public func detectProviderInstallation(providerID: String, path: String? = nil) async -> [String: Any] {
         let diagnostics = diagnostics(for: providerID)
         let result = await diagnostics.detectInstallation(requestedPath: path)
+        let codexApp = providerID == ProviderDescriptors.codex.id
+            ? Self.codexAppInstallation()
+            : (installed: false, path: nil)
+        let chatGPTApp = providerID == ProviderDescriptors.codex.id
+            ? Self.chatGPTAppInstallation()
+            : (installed: false, path: nil)
+        var details: [String: Any] = [
+            "executablePath": result.path as Any,
+            "version": result.version as Any,
+            "timestamp": isoString(Date()),
+            "errorCategory": result.status == .installed
+                ? "none"
+                : (result.status == .notInstalled ? "installationMissing" : "installationInvalid"),
+        ]
+        if providerID == ProviderDescriptors.codex.id {
+            details["codexAppInstalled"] = codexApp.installed
+            if let appPath = codexApp.path {
+                details["codexAppPath"] = appPath
+            }
+            details["chatGPTAppInstalled"] = chatGPTApp.installed
+            if let appPath = chatGPTApp.path {
+                details["chatGPTAppPath"] = appPath
+            }
+        }
+        let userMessage = if result.status == .notInstalled, chatGPTApp.installed {
+            "ChatGPT app is installed, but Codex CLI was not found."
+        } else if result.status == .notInstalled, codexApp.installed {
+            "Codex app is installed, but Codex CLI was not found."
+        } else {
+            result.userMessage
+        }
         return [
             "status": result.status.rawValue,
             "provider": result.provider,
@@ -565,15 +596,8 @@ public final class TubeFoldBackend: Sendable {
             "path": result.path as Any,
             "version": result.version as Any,
             "checkedPaths": result.checkedPaths,
-            "userMessage": result.userMessage,
-            "details": [
-                "executablePath": result.path as Any,
-                "version": result.version as Any,
-                "timestamp": isoString(Date()),
-                "errorCategory": result.status == .installed
-                    ? "none"
-                    : (result.status == .notInstalled ? "installationMissing" : "installationInvalid"),
-            ] as [String: Any],
+            "userMessage": userMessage,
+            "details": details,
         ]
     }
 
@@ -625,6 +649,35 @@ public final class TubeFoldBackend: Sendable {
 
     func isoString(_ date: Date) -> String {
         ISO8601DateFormatter().string(from: date)
+    }
+
+    static func codexAppInstallation(
+        searchPaths: [String] = [
+            "/Applications/Codex.app",
+            "~/Applications/Codex.app",
+        ]
+    ) -> (installed: Bool, path: String?) {
+        appInstallation(searchPaths: searchPaths)
+    }
+
+    static func chatGPTAppInstallation(
+        searchPaths: [String] = [
+            "/Applications/ChatGPT.app",
+            "~/Applications/ChatGPT.app",
+        ]
+    ) -> (installed: Bool, path: String?) {
+        appInstallation(searchPaths: searchPaths)
+    }
+
+    private static func appInstallation(searchPaths: [String]) -> (installed: Bool, path: String?) {
+        for searchPath in searchPaths {
+            let path = NSString(string: searchPath).expandingTildeInPath
+            var isDirectory: ObjCBool = false
+            if FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), isDirectory.boolValue {
+                return (true, path)
+            }
+        }
+        return (false, nil)
     }
 
     private func optionalString(_ value: String?) -> String? {
