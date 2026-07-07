@@ -155,6 +155,15 @@ private func request(_ videoID: String = "dQw4w9WgXcQ", title: String? = "A Vide
         #expect(try await store.extensionLastSeen() != nil)
     }
 
+    @Test func resetCanAlsoWipeMetaForFreshInstallTesting() async throws {
+        let store = try VideoStore.inMemory()
+        try await store.markExtensionSeen()
+
+        let counts = try await store.reset(includeAppMeta: true)
+        #expect(counts["app_meta"] == 1)
+        #expect(try await store.extensionLastSeen() == nil)
+    }
+
     @Test func watchSuggestionSkipsLibraryAndKeepsDismissal() async throws {
         let store = try VideoStore.inMemory()
 

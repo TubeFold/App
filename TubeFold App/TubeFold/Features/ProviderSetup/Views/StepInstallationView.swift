@@ -2,7 +2,6 @@ import SwiftUI
 
 struct StepInstallationView: View {
     @ObservedObject var viewModel: ProviderSetupViewModel
-    @Binding var showingExecutablePicker: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -26,14 +25,6 @@ struct StepInstallationView: View {
                     Label("Re-check", systemImage: "arrow.clockwise")
                 }
                 .disabled(viewModel.isBusy)
-
-                Button {
-                    showingExecutablePicker = true
-                } label: {
-                    Label("Choose Executable", systemImage: "folder")
-                }
-                .disabled(viewModel.isBusy)
-                .help("Pick the \(viewModel.providerDisplayName) executable manually")
             }
 
             DetailsView(details: viewModel.installationDetails)
@@ -43,10 +34,7 @@ struct StepInstallationView: View {
 }
 
 #Preview {
-    StepInstallationView(
-        viewModel: ProviderSetupViewModel(),
-        showingExecutablePicker: .constant(false),
-    )
-    .padding(34)
-    .frame(width: 660, height: 480)
+    StepInstallationView(viewModel: ProviderSetupViewModel())
+        .padding(34)
+        .frame(width: 660, height: 480)
 }

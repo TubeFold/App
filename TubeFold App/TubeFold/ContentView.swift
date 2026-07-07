@@ -32,7 +32,7 @@ struct ContentView: View {
             showingSetup = viewModel.shouldPresentSetupOnLaunch
         }
         .onChange(of: viewModel.requiresRepair) { _, needsRepair in
-            if needsRepair {
+            if needsRepair, !showingSetup {
                 viewModel.startRepair()
                 showingSetup = true
             }

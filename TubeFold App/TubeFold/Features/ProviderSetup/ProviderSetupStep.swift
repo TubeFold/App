@@ -1,6 +1,7 @@
 import Foundation
 
 enum SetupStep: Int, CaseIterable, Identifiable {
+    case welcome
     case beforeBegin
     case checkInstallation
     case testConnection
@@ -12,8 +13,10 @@ enum SetupStep: Int, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
+        case .welcome:
+            "Welcome"
         case .beforeBegin:
-            "Before you begin"
+            "Choose provider"
         case .checkInstallation:
             "Check installation"
         case .testConnection:

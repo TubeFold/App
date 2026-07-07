@@ -20,14 +20,6 @@ struct StepConnectionView: View {
                 tint: viewModel.connectionSucceeded ? .green : .orange,
             )
 
-            Button {
-                Task { await viewModel.testConnection() }
-            } label: {
-                Label("Test Connection", systemImage: "bolt.fill")
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(viewModel.isBusy || !viewModel.installationSucceeded)
-
             DetailsView(details: viewModel.connectionDetails)
         }
         .frame(maxWidth: 600, alignment: .leading)

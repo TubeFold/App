@@ -16,6 +16,14 @@ final class AppSettings: ObservableObject {
         static let hideDockIcon = "hideDockIcon"
         static let dismissedExtensionTip = "dismissedExtensionTip"
         static let showWatchSuggestions = "showWatchSuggestions"
+
+        static let all = [
+            autoOpenTelegraph,
+            hideMenuBarIcon,
+            hideDockIcon,
+            dismissedExtensionTip,
+            showWatchSuggestions,
+        ]
     }
 
     /// When a summary becomes ready, publish it to Telegraph and open the page
@@ -83,5 +91,17 @@ final class AppSettings: ObservableObject {
         hideDockIcon = defaults.bool(forKey: Keys.hideDockIcon)
         dismissedExtensionTip = defaults.bool(forKey: Keys.dismissedExtensionTip)
         showWatchSuggestions = defaults.bool(forKey: Keys.showWatchSuggestions)
+    }
+
+    func resetForFirstRunTesting() {
+        let defaults = UserDefaults.standard
+        for key in Keys.all {
+            defaults.removeObject(forKey: key)
+        }
+        autoOpenTelegraph = true
+        hideMenuBarIcon = false
+        hideDockIcon = false
+        dismissedExtensionTip = false
+        showWatchSuggestions = true
     }
 }

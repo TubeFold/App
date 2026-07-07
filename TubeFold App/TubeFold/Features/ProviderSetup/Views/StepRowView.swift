@@ -28,6 +28,7 @@ struct StepRowView: View {
 
 #Preview {
     VStack(alignment: .leading, spacing: 14) {
+        StepRowView(step: .welcome, isCurrent: false, isComplete: true)
         StepRowView(step: .beforeBegin, isCurrent: false, isComplete: true)
         StepRowView(step: .checkInstallation, isCurrent: true, isComplete: false)
         StepRowView(step: .testConnection, isCurrent: false, isComplete: false)

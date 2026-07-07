@@ -81,6 +81,13 @@ struct ProviderSetupService {
         }
     }
 
+    func resetFirstRunState() async throws -> ResetDataResult {
+        try await mapErrors {
+            let removed = try await backend.resetFirstRunState()
+            return ResetDataResult(status: "reset", removed: removed)
+        }
+    }
+
     private func mapErrors<T>(_ body: () async throws -> T) async throws -> T {
         do {
             return try await body()

@@ -109,6 +109,14 @@ public struct ProviderSetupStore: Sendable {
         return try save(state)
     }
 
+    public func reset() throws -> Bool {
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            return false
+        }
+        try FileManager.default.removeItem(at: url)
+        return true
+    }
+
     /// Switch the active provider and recompute the global completion flags
     /// from that provider's stored `*ConnectedAt`.
     @discardableResult

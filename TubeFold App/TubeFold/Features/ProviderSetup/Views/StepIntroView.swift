@@ -32,7 +32,7 @@ struct StepIntroView: View {
                 Label("Before you continue", systemImage: "terminal")
                     .font(.headline)
                 Text(
-                    "Make sure \(viewModel.providerDisplayName) is installed and signed in. TubeFold will find it automatically, or you can choose the executable yourself.",
+                    "Make sure \(viewModel.providerDisplayName) is installed and signed in. TubeFold will find it automatically.",
                 )
                 .foregroundStyle(.secondary)
             }

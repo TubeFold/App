@@ -133,6 +133,7 @@ public final class TubeFoldBackend: Sendable {
                 "watchActivity": true,
                 "libraryDelete": true,
                 "resetData": true,
+                "resetFirstRunState": true,
             ],
         ]
     }
@@ -225,6 +226,18 @@ public final class TubeFoldBackend: Sendable {
             try? FileManager.default.removeItem(at: directory)
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         }
+        return removed
+    }
+
+    /// Testing/dev reset: simulate a fresh install as closely as possible
+    /// without touching external accounts such as Telegraph.
+    public func resetFirstRunState() async throws -> [String: Int] {
+        var removed = try await store.reset(includeAppMeta: true)
+        for directory in [config.videosDirectory, config.jobsDirectory, config.logsDirectory] {
+            try? FileManager.default.removeItem(at: directory)
+            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
+        removed["provider_setup"] = try setupStore.reset() ? 1 : 0
         return removed
     }
 

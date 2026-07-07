@@ -68,18 +68,17 @@ public struct ProviderDescriptor: Sendable {
         case "claude":
             // Claude Code prints the final message to stdout in --print mode.
             var args = [executable, "--print", "--model", model]
-            if !effort.isEmpty {
+            if !effort.isEmpty, effort != "auto" {
                 args += ["--effort", effort]
             }
             args += ["--output-format", "text"]
             return (args, true)
         default:
             // Codex writes its final message to --output-last-message.
-            return ([
+            var args = [
                 executable,
                 "exec",
                 "--model", model,
-                "-c", "model_reasoning_effort=\"\(effort)\"",
                 "--sandbox", "read-only",
                 "--cd", workdir.path,
                 "--skip-git-repo-check",
@@ -88,7 +87,11 @@ public struct ProviderDescriptor: Sendable {
                 "--color", "never",
                 "--output-last-message", outputFile.path,
                 "-",
-            ], false)
+            ]
+            if !effort.isEmpty, effort != "auto" {
+                args.insert(contentsOf: ["-c", "model_reasoning_effort=\"\(effort)\""], at: 4)
+            }
+            return (args, false)
         }
     }
 }

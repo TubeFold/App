@@ -164,6 +164,10 @@ public actor ExtensionServer {
             let removed = try await backend.resetAllData()
             return try .json(["status": "reset", "removed": removed])
 
+        case ("POST", "/api/v1/reset-first-run-state"):
+            let removed = try await backend.resetFirstRunState()
+            return try .json(["status": "reset", "removed": removed])
+
         case ("POST", "/api/v1/provider-setup/select"):
             let body = try request.jsonBody()
             return try .json(backend.selectProvider(string(body, "provider") ?? ""))

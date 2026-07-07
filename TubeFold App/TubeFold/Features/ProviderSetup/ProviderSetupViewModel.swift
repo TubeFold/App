@@ -1,10 +1,11 @@
 import AppKit
 import Combine
 import Foundation
+import OSLog
 
 @MainActor
 final class ProviderSetupViewModel: ObservableObject {
-    @Published private(set) var currentStep: SetupStep = .beforeBegin
+    @Published private(set) var currentStep: SetupStep = .welcome
     @Published private(set) var setupState: ProviderSetupState?
     @Published private(set) var installationResult: InstallationResult?
     @Published private(set) var connectionResult: ConnectionTestResult?
@@ -27,6 +28,7 @@ final class ProviderSetupViewModel: ObservableObject {
     static let defaultOutputLanguage = "English"
 
     private let service = ProviderSetupService()
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TubeFold", category: "ProviderSetup")
 
     var providerDisplayName: String {
         availableProviders.first { $0.id == selectedProviderID }?.displayName
@@ -42,7 +44,10 @@ final class ProviderSetupViewModel: ObservableObject {
     }
 
     var requiresRepair: Bool {
-        hasLoadedState && apiReachable && (hasInstallationFailure || hasConnectionFailure)
+        hasLoadedState
+            && apiReachable
+            && setupState?.providerSetupCompleted == true
+            && (hasInstallationFailure || hasConnectionFailure)
     }
 
     var installationSucceeded: Bool {
@@ -137,6 +142,8 @@ final class ProviderSetupViewModel: ObservableObject {
 
     var primaryButtonTitle: String {
         switch currentStep {
+        case .welcome:
+            "Get Started"
         case .beforeBegin:
             "Next"
         case .checkInstallation:
@@ -150,6 +157,8 @@ final class ProviderSetupViewModel: ObservableObject {
 
     var primaryButtonSystemImage: String {
         switch currentStep {
+        case .welcome:
+            "chevron.right"
         case .beforeBegin:
             "chevron.right"
         case .checkInstallation:
@@ -163,7 +172,7 @@ final class ProviderSetupViewModel: ObservableObject {
 
     var canAdvance: Bool {
         switch currentStep {
-        case .beforeBegin, .checkInstallation, .complete:
+        case .welcome, .beforeBegin, .checkInstallation, .complete:
             true
         case .testConnection:
             installationSucceeded || connectionSucceeded
@@ -229,6 +238,7 @@ final class ProviderSetupViewModel: ObservableObject {
     }
 
     func loadState() async {
+        var lastAutomaticallyConfiguredStep = currentStep
         await runBusy("Starting TubeFold") {
             let response = try await service.loadSetup()
             let state = response.state
@@ -239,7 +249,10 @@ final class ProviderSetupViewModel: ObservableObject {
             configureModelSettings(from: state)
             applyOutputLanguage(from: state)
             apiReachable = true
-            configureStep(from: state)
+            if currentStep == lastAutomaticallyConfiguredStep {
+                configureStep(from: state, reason: "loadState.initial", allowBackward: false)
+                lastAutomaticallyConfiguredStep = currentStep
+            }
 
             if let executablePath = state.executablePath(for: selectedProviderID) {
                 let result = try await service.detect(provider: selectedProviderID, path: executablePath)
@@ -247,7 +260,9 @@ final class ProviderSetupViewModel: ObservableObject {
                 setupState = try await service.loadState()
                 if let setupState {
                     configureModelSettings(from: setupState)
-                    configureStep(from: setupState)
+                    if currentStep == lastAutomaticallyConfiguredStep {
+                        configureStep(from: setupState, reason: "loadState.afterDetect", allowBackward: false)
+                    }
                 }
             }
 
@@ -279,8 +294,25 @@ final class ProviderSetupViewModel: ObservableObject {
         }
     }
 
+    func resetFirstRunState(quitAfterReset: Bool = false) async {
+        var didReset = false
+        await runBusy("Resetting first-run state") {
+            _ = try await service.resetFirstRunState()
+            AppSettings.shared.resetForFirstRunTesting()
+            resetLoadedState()
+            didReset = true
+        }
+        guard didReset else { return }
+        if quitAfterReset {
+            NSApp.terminate(nil)
+            return
+        }
+        await loadState()
+    }
+
     func selectProvider(_ provider: String) async {
         guard provider != selectedProviderID else { return }
+        let stepBeforeSelection = currentStep
         await runBusy("Switching provider") {
             let response = try await service.selectProvider(provider)
             selectedProviderID = response.provider
@@ -290,12 +322,17 @@ final class ProviderSetupViewModel: ObservableObject {
             installationResult = nil
             connectionResult = nil
             configureModelSettings(from: response.state)
-            configureStep(from: response.state)
             apiReachable = true
 
             if let executablePath = response.state.executablePath(for: selectedProviderID) {
                 installationResult = try await service.detect(provider: selectedProviderID, path: executablePath)
                 setupState = try await service.loadState()
+            }
+
+            if stepBeforeSelection == .complete {
+                configureStep(from: setupState ?? response.state, reason: "selectProvider.complete")
+            } else {
+                setCurrentStep(stepBeforeSelection, reason: "selectProvider.preserveStep")
             }
         }
     }
@@ -308,22 +345,25 @@ final class ProviderSetupViewModel: ObservableObject {
 
     func advance() async {
         switch currentStep {
+        case .welcome:
+            setCurrentStep(.beforeBegin, reason: "advance.welcome")
         case .beforeBegin:
-            currentStep = .checkInstallation
+            setCurrentStep(.checkInstallation, reason: "advance.beforeBegin")
             await prepareCurrentStepIfNeeded()
         case .checkInstallation:
             if !installationSucceeded {
                 await detectInstallation(path: setupState?.executablePath(for: selectedProviderID))
             }
             if installationSucceeded {
-                currentStep = .testConnection
+                setCurrentStep(.testConnection, reason: "advance.checkInstallation.installed")
             }
         case .testConnection:
-            if !connectionSucceeded {
-                await testConnection()
-            }
             if connectionSucceeded {
-                currentStep = .complete
+                setCurrentStep(.complete, reason: "advance.testConnection.alreadySucceeded")
+                return
+            }
+            if await testConnection() {
+                setCurrentStep(.complete, reason: "advance.testConnection.succeeded")
             }
         case .complete:
             await completeSetup()
@@ -332,12 +372,12 @@ final class ProviderSetupViewModel: ObservableObject {
 
     func goBack() {
         guard let previous = SetupStep(rawValue: currentStep.rawValue - 1) else { return }
-        currentStep = previous
+        setCurrentStep(previous, reason: "goBack")
     }
 
     func startRepair() {
         connectionResult = nil
-        currentStep = .checkInstallation
+        setCurrentStep(.checkInstallation, reason: "startRepair")
     }
 
     func detectInstallation(path: String?) async {
@@ -351,16 +391,20 @@ final class ProviderSetupViewModel: ObservableObject {
         }
     }
 
-    func testConnection() async {
+    @discardableResult
+    func testConnection() async -> Bool {
+        var succeeded = false
         await runBusy("Testing \(providerDisplayName)") {
             let path = installationResult?.path ?? setupState?.executablePath(for: selectedProviderID)
             let result = try await service.test(provider: selectedProviderID, path: path)
             connectionResult = result
             apiReachable = true
             if result.status == "success" {
+                succeeded = true
                 setupState = try await service.loadState()
             }
         }
+        return succeeded
     }
 
     func completeSetup() async {
@@ -368,7 +412,7 @@ final class ProviderSetupViewModel: ObservableObject {
             let response = try await service.completeSetup()
             setupState = response.state
             configureModelSettings(from: response.state)
-            currentStep = .complete
+            setCurrentStep(.complete, reason: "completeSetup.saved")
             apiReachable = true
         }
     }
@@ -389,8 +433,10 @@ final class ProviderSetupViewModel: ObservableObject {
 
     func isStepComplete(_ step: SetupStep) -> Bool {
         switch step {
+        case .welcome:
+            currentStep.rawValue > step.rawValue
         case .beforeBegin:
-            currentStep.rawValue > step.rawValue || hasLoadedState
+            currentStep.rawValue > step.rawValue
         case .checkInstallation:
             installationSucceeded && currentStep.rawValue > step.rawValue
         case .testConnection:
@@ -417,6 +463,23 @@ final class ProviderSetupViewModel: ObservableObject {
         }
     }
 
+    private func resetLoadedState() {
+        setCurrentStep(.welcome, reason: "resetLoadedState")
+        setupState = nil
+        installationResult = nil
+        connectionResult = nil
+        hasLoadedState = false
+        apiReachable = false
+        selectedProviderID = "codex"
+        availableProviders = ProviderInfo.defaults
+        modelOptions = CodexModelOption.defaultModelOptions
+        selectedModel = CodexModelOption.defaultModel(for: "codex")
+        outputLanguage = Self.defaultOutputLanguage
+        outputLanguageDraft = Self.defaultOutputLanguage
+        usage = .empty
+        extensionConnected = false
+    }
+
     private var hasInstallationFailure: Bool {
         guard let status = installationResult?.status else { return false }
         return status != "installed"
@@ -427,16 +490,37 @@ final class ProviderSetupViewModel: ObservableObject {
         return status != "success"
     }
 
-    private func configureStep(from state: ProviderSetupState) {
-        if hasInstallationFailure || hasConnectionFailure {
-            currentStep = .checkInstallation
+    private func configureStep(from state: ProviderSetupState, reason: String, allowBackward: Bool = true) {
+        let nextStep: SetupStep = if hasInstallationFailure || hasConnectionFailure {
+            .checkInstallation
         } else if state.providerSetupCompleted {
-            currentStep = .complete
+            .complete
         } else if state.executablePath(for: selectedProviderID) != nil || state.lastSuccessfulConnectionTest != nil {
-            currentStep = .checkInstallation
+            .checkInstallation
         } else {
-            currentStep = .beforeBegin
+            .welcome
         }
+        setCurrentStep(nextStep, reason: reason, allowBackward: allowBackward)
+    }
+
+    private func setCurrentStep(_ step: SetupStep, reason: String, allowBackward: Bool = true) {
+        let previous = currentStep
+        if !allowBackward, step.rawValue < previous.rawValue {
+            logger.info("Step suppressed \(previous.title, privacy: .public) -> \(step.title, privacy: .public)")
+            logger.info("Step reason \(reason, privacy: .public)")
+            return
+        }
+
+        guard previous != step else {
+            logger.debug(
+                "Provider setup step kept \(step.title, privacy: .public), reason: \(reason, privacy: .public)",
+            )
+            return
+        }
+
+        currentStep = step
+        logger.info("Step \(previous.title, privacy: .public) -> \(step.title, privacy: .public)")
+        logger.info("Step reason \(reason, privacy: .public)")
     }
 
     private func configureModelSettings(from state: ProviderSetupState) {

@@ -159,20 +159,26 @@ public actor VideoStore {
         return youtubeVideoID
     }
 
-    /// Wipe every data row (videos, jobs, watch activity); the schema and
-    /// `AppMeta` (extension presence) are preserved. Returns rows removed per
-    /// table (`videos`/`jobs`/`watch_activity`).
-    public func reset() throws -> [String: Int] {
+    /// Wipe data rows; the schema is preserved. By default `AppMeta`
+    /// (extension presence) survives because the normal reset is a library
+    /// wipe, not a fresh-install simulation.
+    public func reset(includeAppMeta: Bool = false) throws -> [String: Int] {
         // Object-by-object (not a batch delete): the Job→Video inverse makes
         // executeBatchDeleteRequest trip over its own relationship trigger.
         let jobs = try modelContext.fetch(FetchDescriptor<Job>())
         let videos = try modelContext.fetch(FetchDescriptor<Video>())
         let watchRows = try modelContext.fetch(FetchDescriptor<WatchActivity>())
+        let appMetaRows = includeAppMeta ? try modelContext.fetch(FetchDescriptor<AppMeta>()) : []
         jobs.forEach(modelContext.delete)
         videos.forEach(modelContext.delete)
         watchRows.forEach(modelContext.delete)
+        appMetaRows.forEach(modelContext.delete)
         try modelContext.save()
-        return ["jobs": jobs.count, "videos": videos.count, "watch_activity": watchRows.count]
+        var removed = ["jobs": jobs.count, "videos": videos.count, "watch_activity": watchRows.count]
+        if includeAppMeta {
+            removed["app_meta"] = appMetaRows.count
+        }
+        return removed
     }
 
     // MARK: - Watch activity

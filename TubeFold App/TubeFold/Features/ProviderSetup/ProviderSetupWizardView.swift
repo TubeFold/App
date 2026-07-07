@@ -1,10 +1,8 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct ProviderSetupWizardView: View {
     @ObservedObject var viewModel: ProviderSetupViewModel
     @Binding var isPresented: Bool
-    @State private var showingExecutablePicker = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -16,18 +14,29 @@ struct ProviderSetupWizardView: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
-                    Button {
-                        if viewModel.currentStep == .beforeBegin {
-                            isPresented = false
-                        } else {
+                    if viewModel.currentStep != .welcome {
+                        Button {
                             viewModel.goBack()
+                        } label: {
+                            Label("Back", systemImage: "chevron.left")
                         }
-                    } label: {
-                        Label("Back", systemImage: "chevron.left")
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
 
                     Spacer()
+
+                    Button {
+                        isPresented = false
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .semibold))
+                            .frame(width: 28, height: 28)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .help("Close setup")
+                    .accessibilityLabel("Close setup")
+                    .keyboardShortcut(.cancelAction)
                 }
                 .padding(.bottom, 26)
 
@@ -84,14 +93,6 @@ struct ProviderSetupWizardView: View {
         .task(id: viewModel.currentStep) {
             await viewModel.prepareCurrentStepIfNeeded()
         }
-        .fileImporter(
-            isPresented: $showingExecutablePicker,
-            allowedContentTypes: [.item],
-            allowsMultipleSelection: false,
-        ) { result in
-            guard case let .success(urls) = result, let url = urls.first else { return }
-            Task { await viewModel.detectInstallation(path: url.path) }
-        }
     }
 
     private var setupSidebar: some View {
@@ -111,13 +112,12 @@ struct ProviderSetupWizardView: View {
     @ViewBuilder
     private var stepContent: some View {
         switch viewModel.currentStep {
+        case .welcome:
+            StepWelcomeView()
         case .beforeBegin:
             StepIntroView(viewModel: viewModel)
         case .checkInstallation:
-            StepInstallationView(
-                viewModel: viewModel,
-                showingExecutablePicker: $showingExecutablePicker,
-            )
+            StepInstallationView(viewModel: viewModel)
         case .testConnection:
             StepConnectionView(viewModel: viewModel)
         case .complete:

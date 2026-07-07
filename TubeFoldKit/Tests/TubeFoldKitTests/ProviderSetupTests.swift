@@ -98,6 +98,107 @@ private func temporaryDataDir() throws -> URL {
         #expect(store.load()["futureKey"] as? String == "kept")
     }
 
+    @Test func resetRemovesStoredSetupFile() throws {
+        let dir = try temporaryDataDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = ProviderSetupStore(dataDirectory: dir)
+        try store.update([
+            "providerSetupCompleted": true,
+            "codexExecutablePath": "/usr/local/bin/codex",
+        ])
+
+        #expect(try store.reset())
+        let state = store.load()
+        #expect(state["providerSetupCompleted"] as? Bool == false)
+        #expect(state["codexExecutablePath"] is NSNull)
+        #expect(try store.reset() == false)
+    }
+
+    @Test func backendFirstRunResetClearsProviderSetupAndExtensionMeta() async throws {
+        let dir = try temporaryDataDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let backend = TubeFoldBackend(
+            config: PipelineConfiguration(dataDirectory: dir, provider: "fake"),
+            store: try VideoStore.inMemory(),
+            providerOverride: FakeProvider()
+        )
+        try backend.setupStore.update([
+            "providerSetupCompleted": true,
+            "codexExecutablePath": "/usr/local/bin/codex",
+            "codexConnectedAt": "2026-07-01T10:00:00Z",
+            "lastSuccessfulConnectionTest": "2026-07-01T10:00:00Z",
+        ])
+        try await backend.store.markExtensionSeen()
+
+        let removed = try await backend.resetFirstRunState()
+        #expect(removed["provider_setup"] == 1)
+        #expect(removed["app_meta"] == 1)
+
+        let setup = backend.providerSetupPayload()["state"] as? [String: Any]
+        #expect(setup?["providerSetupCompleted"] as? Bool == false)
+        #expect(setup?["codexExecutablePath"] is NSNull)
+        let extensionStatus = try await backend.extensionStatusPayload()
+        #expect(extensionStatus["connected"] as? Bool == false)
+    }
+
+    @Test func detectionStoresStableSymlinkPathAndRefreshesVersion() async throws {
+        let dir = try temporaryDataDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let binDir = dir.appendingPathComponent("bin", isDirectory: true)
+        let versionsDir = dir.appendingPathComponent("versions", isDirectory: true)
+        try FileManager.default.createDirectory(at: binDir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: versionsDir, withIntermediateDirectories: true)
+
+        func makeExecutable(version: String) throws -> URL {
+            let executable = versionsDir
+                .appendingPathComponent(version, isDirectory: true)
+                .appendingPathComponent("codex")
+            try FileManager.default.createDirectory(
+                at: executable.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try "#!/bin/sh\necho codex-cli \(version)\n"
+                .write(to: executable, atomically: true, encoding: .utf8)
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executable.path)
+            return executable
+        }
+
+        let v1 = try makeExecutable(version: "1.0.0")
+        let v2 = try makeExecutable(version: "2.0.0")
+        let stablePath = binDir.appendingPathComponent("codex")
+        try FileManager.default.createSymbolicLink(at: stablePath, withDestinationURL: v1)
+
+        let descriptor = ProviderDescriptor(
+            id: "testcodex",
+            displayName: "Test Codex",
+            binaryName: "missing-\(UUID().uuidString)",
+            marker: "OK",
+            markerExact: true,
+            modelOptions: [ProviderOption(id: "model", label: "Model", description: "")],
+            effortOptions: [ProviderOption(id: "auto", label: "Auto", description: "")],
+            defaultModel: "model",
+            defaultEffort: "auto",
+            homebrewPaths: []
+        )
+        let store = ProviderSetupStore(dataDirectory: dir)
+        let diagnostics = ProviderDiagnostics(descriptor: descriptor, store: store)
+
+        let first = await diagnostics.detectInstallation(requestedPath: stablePath.path)
+        #expect(first.status == .installed)
+        #expect(first.path == stablePath.path)
+        #expect(first.version == "codex-cli 1.0.0")
+        #expect(store.load()[descriptor.pathKey] as? String == stablePath.path)
+
+        try FileManager.default.removeItem(at: stablePath)
+        try FileManager.default.createSymbolicLink(at: stablePath, withDestinationURL: v2)
+
+        let second = await diagnostics.detectInstallation(requestedPath: stablePath.path)
+        #expect(second.status == .installed)
+        #expect(second.path == stablePath.path)
+        #expect(second.version == "codex-cli 2.0.0")
+        #expect(store.load()[descriptor.pathKey] as? String == stablePath.path)
+    }
+
     @Test func providerSummariesReportConfiguration() throws {
         let dir = try temporaryDataDir()
         defer { try? FileManager.default.removeItem(at: dir) }
@@ -128,12 +229,22 @@ private func temporaryDataDir() throws -> URL {
         #expect(codexArgs.contains("--output-last-message"))
         #expect(codexArgs.last == "-")
 
+        let (codexAutoArgs, _) = ProviderDescriptors.codex.connectionCommand(
+            executable: "/bin/codex", model: "gpt-5.4-mini", effort: "auto", workdir: workdir, outputFile: output
+        )
+        #expect(!codexAutoArgs.contains { $0.contains("model_reasoning_effort") })
+
         let (claudeArgs, claudeStdout) = ProviderDescriptors.claude.connectionCommand(
             executable: "/bin/claude", model: "sonnet", effort: "high", workdir: workdir, outputFile: output
         )
         #expect(claudeStdout)
         #expect(claudeArgs.contains("--print"))
         #expect(claudeArgs.contains("--effort"))
+
+        let (claudeAutoArgs, _) = ProviderDescriptors.claude.connectionCommand(
+            executable: "/bin/claude", model: "sonnet", effort: "auto", workdir: workdir, outputFile: output
+        )
+        #expect(!claudeAutoArgs.contains("--effort"))
     }
 
     @Test func classifyResultCategories() {
@@ -165,6 +276,9 @@ private func temporaryDataDir() throws -> URL {
         #expect(ProviderDiagnostics.classifyResult(
             result(1, stderr: "could not resolve host"), outputText: "", descriptor: descriptor
         ) == .networkError)
+        #expect(ProviderDiagnostics.classifyResult(
+            result(1, stderr: "invalid_request_error invalid_enum_value"), outputText: "", descriptor: descriptor
+        ) == .processFailed)
         #expect(ProviderDiagnostics.classifyResult(
             result(3, stderr: "boom"), outputText: "", descriptor: descriptor
         ) == .processFailed)

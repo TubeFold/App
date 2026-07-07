@@ -60,8 +60,7 @@ public struct ProviderDiagnostics: Sendable {
         var checked: [String] = []
         for candidate in candidatePaths(requestedPath: requestedPath) {
             guard !candidate.isEmpty else { continue }
-            let path = URL(fileURLWithPath: NSString(string: candidate).expandingTildeInPath)
-                .resolvingSymlinksInPath().path
+            let path = Self.expandedPath(candidate)
             checked.append(path)
             guard FileManager.default.fileExists(atPath: path) else { continue }
             guard FileManager.default.isExecutableFile(atPath: path) else {
@@ -149,8 +148,7 @@ public struct ProviderDiagnostics: Sendable {
             pathValue = detectedPath
         }
 
-        let exePath = URL(fileURLWithPath: NSString(string: pathValue ?? "").expandingTildeInPath)
-            .resolvingSymlinksInPath().path
+        let exePath = Self.expandedPath(pathValue ?? "")
         guard FileManager.default.fileExists(atPath: exePath),
               FileManager.default.isExecutableFile(atPath: exePath) else {
             markSetupIncomplete(clearPath: false)
@@ -282,27 +280,36 @@ public struct ProviderDiagnostics: Sendable {
     func candidatePaths(requestedPath: String?) -> [String] {
         let state = store.load()
         var candidates: [String] = []
-        if let requestedPath, !requestedPath.isEmpty {
+        let storedPath = state[descriptor.pathKey] as? String
+        let requestedIsStored = requestedPath == storedPath
+        if let requestedPath, !requestedPath.isEmpty, !requestedIsStored {
             candidates.append(requestedPath)
-        }
-        if let storedPath = state[descriptor.pathKey] as? String, !storedPath.isEmpty {
-            candidates.append(storedPath)
         }
         if let shellPath = Self.detectViaLoginShell(binaryName: descriptor.binaryName) {
             candidates.append(shellPath)
         }
         candidates.append(contentsOf: descriptor.homebrewPaths)
+        if let requestedPath, !requestedPath.isEmpty, requestedIsStored {
+            candidates.append(requestedPath)
+        }
+        if let storedPath, !storedPath.isEmpty, !requestedIsStored {
+            candidates.append(storedPath)
+        }
 
         var seen = Set<String>()
         var deduped: [String] = []
         for candidate in candidates {
-            let expanded = URL(fileURLWithPath: NSString(string: candidate).expandingTildeInPath)
-                .resolvingSymlinksInPath().path
-            if seen.insert(expanded).inserted {
+            let expanded = Self.expandedPath(candidate)
+            let identity = URL(fileURLWithPath: expanded).resolvingSymlinksInPath().path
+            if seen.insert(identity).inserted {
                 deduped.append(expanded)
             }
         }
         return deduped
+    }
+
+    static func expandedPath(_ value: String) -> String {
+        URL(fileURLWithPath: NSString(string: value).expandingTildeInPath).standardized.path
     }
 
     /// Resolve a binary through the user's login shell so PATH customizations
@@ -364,6 +371,9 @@ public struct ProviderDiagnostics: Sendable {
         }
         if combined.contains("rate limit") || combined.contains("usage limit") || combined.contains("quota") {
             return .usageLimitReached
+        }
+        if combined.contains("invalid_request_error") || combined.contains("invalid_enum_value") {
+            return .processFailed
         }
         if combined.contains("network") || combined.contains("connection")
             || combined.contains("could not resolve") || combined.contains("timed out") {
