@@ -97,8 +97,6 @@ You need a working `claude` or `codex` CLI signed into your account. Summaries r
 - [ ] Obsidian integration (save notes directly into a vault folder)
 - [ ] In-library search
 
-Longer-term candidates and rationale: [docs/marketing/ROADMAP_RECOMMENDATIONS.md](docs/marketing/ROADMAP_RECOMMENDATIONS.md). Want something? [Open an issue](https://github.com/TubeFold/App/issues).
-
 ## Contributing
 
 Bug reports and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
