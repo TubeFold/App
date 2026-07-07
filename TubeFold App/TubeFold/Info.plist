@@ -8,6 +8,8 @@
 	<string>CpKFF8Hvx0euD3p1ETOjyUPj0VMXjacQCbmPAYnmkyQ=</string>
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
+	<key>LSMultipleInstancesProhibited</key>
+	<true/>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
