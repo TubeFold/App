@@ -71,7 +71,7 @@ final class AppSettings: ObservableObject {
     }
 
     /// Show the "Recently watched" suggestion banner in the Library, fed by the
-    /// Chrome extension's watch activity. Default: on.
+    /// Chrome extension's watch activity. Default: off.
     @Published var showWatchSuggestions: Bool {
         didSet { UserDefaults.standard.set(showWatchSuggestions, forKey: Keys.showWatchSuggestions) }
     }
@@ -83,7 +83,7 @@ final class AppSettings: ObservableObject {
             Keys.hideMenuBarIcon: false,
             Keys.hideDockIcon: false,
             Keys.dismissedExtensionTip: false,
-            Keys.showWatchSuggestions: true,
+            Keys.showWatchSuggestions: false,
         ])
         // Property observers don't fire during init, so read the stored values directly.
         autoOpenTelegraph = defaults.bool(forKey: Keys.autoOpenTelegraph)
@@ -102,6 +102,6 @@ final class AppSettings: ObservableObject {
         hideMenuBarIcon = false
         hideDockIcon = false
         dismissedExtensionTip = false
-        showWatchSuggestions = true
+        showWatchSuggestions = false
     }
 }

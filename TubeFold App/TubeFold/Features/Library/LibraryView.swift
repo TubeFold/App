@@ -164,18 +164,9 @@ struct LibraryView: View {
                 .foregroundStyle(.secondary)
             Text("No videos yet")
                 .font(.title2.weight(.semibold))
-            Text("Paste a YouTube link above, or send one from the Chrome extension, and it will appear here.")
+            Text("Paste a YouTube link above to create your first summary.")
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-
-            if !viewModel.extensionConnected {
-                Link(destination: TubeFoldLinks.chromeWebStore) {
-                    Label("Get the Chrome extension", systemImage: "puzzlepiece.extension")
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .padding(.top, 4)
-            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

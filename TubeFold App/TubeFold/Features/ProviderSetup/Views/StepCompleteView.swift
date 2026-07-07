@@ -10,9 +10,9 @@ struct StepCompleteView: View {
             Text("\(viewModel.providerDisplayName) is ready. You can reopen this setup any time from Settings.")
                 .foregroundStyle(.secondary)
             ProviderResultCardView(
-                title: "Provider",
-                status: "Ready",
-                message: viewModel.providerSummary,
+                title: viewModel.providerDisplayName,
+                status: "Connected",
+                message: "Ready to summarize videos.",
                 systemImage: "sparkles",
                 tint: .green,
             )

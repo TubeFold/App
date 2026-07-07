@@ -156,14 +156,22 @@
 			name = SwiftFormat;
 			shellPath = /bin/bash;
 			shellScript = (
-				"# Formats Swift sources in place before they are compiled.\n",
-				"# Runs before the Sources phase, so the freshly formatted files\n",
-				"# are what gets built — no second build needed. Config: ../.swiftformat\n",
-				"if command -v swiftformat >/dev/null 2>&1; then\n",
-				"  \"$SRCROOT/../scripts/format-swift.sh\"\n",
-				"else\n",
-				"  echo \"warning: SwiftFormat not installed — run 'brew install swiftformat'\"\n",
-				"fi\n",
+				"# Formats Swift sources in place before they are compiled.",
+				"",
+				"# Runs before the Sources phase, so the freshly formatted files",
+				"",
+				"# are what gets built — no second build needed. Config: ../.swiftformat",
+				"",
+				"if command -v swiftformat >/dev/null 2>&1; then",
+				"",
+				"  \"$SRCROOT/../scripts/format-swift.sh\"",
+				"",
+				"else",
+				"",
+				"  echo \"warning: SwiftFormat not installed — run 'brew install swiftformat'\"",
+				"",
+				"fi",
+				"",
 			);
 		};
 		000000000000000170000000 /* SwiftLint */ = {
@@ -172,14 +180,22 @@
 			name = SwiftLint;
 			shellPath = /bin/bash;
 			shellScript = (
-				"# Lints the (already formatted) Swift sources. Findings surface as\n",
-				"# warnings only and never fail the build — SwiftFormat owns formatting,\n",
-				"# SwiftLint is advisory here. Config (incl. lint scope): ../.swiftlint.yml\n",
-				"if command -v swiftlint >/dev/null 2>&1; then\n",
-				"  swiftlint lint --config \"$SRCROOT/../.swiftlint.yml\" --reporter xcode | sed 's/: error:/: warning:/'\n",
-				"else\n",
-				"  echo \"warning: SwiftLint not installed — run 'brew install swiftlint'\"\n",
-				"fi\n",
+				"# Lints the (already formatted) Swift sources. Findings surface as",
+				"",
+				"# warnings only and never fail the build — SwiftFormat owns formatting,",
+				"",
+				"# SwiftLint is advisory here. Config (incl. lint scope): ../.swiftlint.yml",
+				"",
+				"if command -v swiftlint >/dev/null 2>&1; then",
+				"",
+				"  swiftlint lint --config \"$SRCROOT/../.swiftlint.yml\" --reporter xcode | sed 's/: error:/: warning:/'",
+				"",
+				"else",
+				"",
+				"  echo \"warning: SwiftLint not installed — run 'brew install swiftlint'\"",
+				"",
+				"fi",
+				"",
 			);
 		};
 /* End PBXShellScriptBuildPhase section */

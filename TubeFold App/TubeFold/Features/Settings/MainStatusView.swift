@@ -7,29 +7,6 @@ struct MainStatusView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                HStack(spacing: 12) {
-                    StatusTileView(
-                        title: "App",
-                        value: viewModel.apiReachable ? "Ready" : "Starting helper",
-                        systemImage: "macwindow",
-                        tint: viewModel.apiReachable ? .indigo : .orange,
-                    )
-                    StatusTileView(
-                        title: viewModel.providerDisplayName,
-                        value: viewModel.providerSummary,
-                        systemImage: "terminal",
-                        tint: .blue,
-                    )
-                    if viewModel.extensionConnected {
-                        StatusTileView(
-                            title: "Extension",
-                            value: "Connected",
-                            systemImage: "puzzlepiece.extension",
-                            tint: .pink,
-                        )
-                    }
-                }
-
                 VStack(alignment: .leading, spacing: 16) {
                     Text("\(viewModel.providerDisplayName) Status")
                         .font(.headline)

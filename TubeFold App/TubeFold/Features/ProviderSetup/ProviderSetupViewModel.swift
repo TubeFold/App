@@ -112,7 +112,7 @@ final class ProviderSetupViewModel: ObservableObject {
     }
 
     var outputDirectorySummary: String {
-        setupState?.preferredOutputDirectory ?? "Default summaries folder"
+        outputDirectoryURL.path
     }
 
     /// Resolved on-disk location where summaries are saved. Falls back to the
