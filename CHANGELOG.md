@@ -17,6 +17,18 @@ without notes.
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-07-08
+
+### Changed
+
+- Provider setup is clearer: each provider shows an icon and the app now
+  detects whether its CLI is installed.
+
+### Fixed
+
+- Reopening the app no longer spawns a duplicate window — the main window is
+  reliably restored instead.
+
 ## [0.9] - 2026-07-07
 
 ### Changed
