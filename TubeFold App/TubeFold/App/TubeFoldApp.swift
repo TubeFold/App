@@ -100,6 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     static func showMainWindow() {
         NSApp.activate(ignoringOtherApps: true)
         if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {
+            if window.isMiniaturized { window.deminiaturize(nil) }
             window.makeKeyAndOrderFront(nil)
         } else {
             MainWindowOpener.shared.open?()
@@ -112,17 +113,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         false
     }
 
-    /// Clicking the Dock icon (or otherwise reopening) with no visible window
-    /// restores the main window instead of doing nothing.
-    func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows: Bool) -> Bool {
-        if !hasVisibleWindows {
-            // Restore the window ourselves and return `false` so AppKit/SwiftUI does
-            // NOT also run its own default reopen — returning `true` here makes the
-            // WindowGroup recreate a second window on top of the one we just opened.
-            AppDelegate.showMainWindow()
-            return false
-        }
-        return true
+    /// Clicking the Dock icon (or otherwise reopening) restores/focuses the single
+    /// main window instead of spawning another one.
+    func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows _: Bool) -> Bool {
+        // Always bring the existing window forward ourselves and return `false` so
+        // neither AppKit nor SwiftUI's `WindowGroup` runs its default reopen — that
+        // default recreates a second window even when one is already visible.
+        AppDelegate.showMainWindow()
+        return false
     }
 
     func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
