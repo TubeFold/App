@@ -23,7 +23,7 @@ struct BrowserExtensionSettingsView: View {
                 Link(destination: TubeFoldLinks.chromeWebStore) {
                     Label("Get the Chrome extension", systemImage: "puzzlepiece.extension")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.bordered)
                 .controlSize(.large)
             }
             .settingsCard()

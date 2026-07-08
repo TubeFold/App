@@ -116,7 +116,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// restores the main window instead of doing nothing.
     func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows: Bool) -> Bool {
         if !hasVisibleWindows {
+            // Restore the window ourselves and return `false` so AppKit/SwiftUI does
+            // NOT also run its own default reopen — returning `true` here makes the
+            // WindowGroup recreate a second window on top of the one we just opened.
             AppDelegate.showMainWindow()
+            return false
         }
         return true
     }
