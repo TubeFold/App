@@ -111,6 +111,14 @@ struct LibraryVideoRowView: View {
     @ViewBuilder
     private var moreMenuItems: some View {
         Button {
+            viewModel.openYouTube(video)
+        } label: {
+            Label("Open YouTube", systemImage: "play.rectangle")
+        }
+
+        Divider()
+
+        Button {
             viewModel.revealMarkdown(video)
         } label: {
             Label("Show Files", systemImage: "folder")

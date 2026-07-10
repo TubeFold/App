@@ -510,24 +510,6 @@
         "ar" : {
           "variations" : {
             "plural" : {
-              "zero" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld مشاهدة"
-                }
-              },
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld مشاهدة"
-                }
-              },
-              "two" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld مشاهدتان"
-                }
-              },
               "few" : {
                 "stringUnit" : {
                   "state" : "translated",
@@ -540,7 +522,25 @@
                   "value" : "%lld مشاهدة"
                 }
               },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld مشاهدة"
+                }
+              },
               "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld مشاهدة"
+                }
+              },
+              "two" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld مشاهدتان"
+                }
+              },
+              "zero" : {
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld مشاهدة"
@@ -660,12 +660,6 @@
         "ru" : {
           "variations" : {
             "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld просмотр"
-                }
-              },
               "few" : {
                 "stringUnit" : {
                   "state" : "translated",
@@ -676,6 +670,12 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld просмотров"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld просмотр"
                 }
               },
               "other" : {
@@ -2485,64 +2485,6 @@
         }
       }
     },
-    "Create new account" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "إنشاء حساب جديد"
-          }
-        },
-        "bn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "নতুন অ্যাকাউন্ট তৈরি করুন"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Crear cuenta nueva"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Créer un compte"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "नया खाता बनाएं"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Criar nova conta"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Создать новый аккаунт"
-          }
-        },
-        "ur" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "نیا اکاؤنٹ بنائیں"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "创建新账户"
-          }
-        }
-      }
-    },
     "Delete" : {
       "localizations" : {
         "ar" : {
@@ -3003,64 +2945,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "反馈"
-          }
-        }
-      }
-    },
-    "Future articles will be published under a fresh tubefold- account. Already published articles stay online under the old account and can no longer be updated from TubeFold — re-publishing a summary creates a new page. The old credentials are kept in telegraph-account.json." : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ستُنشر المقالات الجديدة عبر حساب tubefold- جديد. تبقى المقالات المنشورة سابقًا متاحة على الإنترنت تحت الحساب القديم ولا يمكن تحديثها من TubeFold بعد الآن — إعادة نشر ملخص تنشئ صفحة جديدة. تُحفظ بيانات الاعتماد القديمة في telegraph-account.json."
-          }
-        },
-        "bn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ভবিষ্যতের নিবন্ধগুলি একটি নতুন tubefold- অ্যাকাউন্টের অধীনে প্রকাশিত হবে। ইতিমধ্যে প্রকাশিত নিবন্ধগুলি পুরনো অ্যাকাউন্টের অধীনে অনলাইনে থাকবে এবং TubeFold থেকে আর আপডেট করা যাবে না — সারাংশ পুনরায় প্রকাশ করলে নতুন পৃষ্ঠা তৈরি হবে। পুরনো শংসাপত্রগুলি telegraph-account.json-এ সংরক্ষিত থাকে।"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los próximos artículos se publicarán con una cuenta tubefold- nueva. Los artículos ya publicados permanecen en línea con la cuenta antigua y ya no se pueden actualizar desde TubeFold: volver a publicar un resumen crea una página nueva. Las credenciales antiguas se conservan en telegraph-account.json."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les prochains articles seront publiés sous un nouveau compte tubefold-. Les articles déjà publiés restent en ligne sous l’ancien compte et ne peuvent plus être mis à jour depuis TubeFold — republier un résumé crée une nouvelle page. Les anciens identifiants sont conservés dans telegraph-account.json."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "आगे के लेख एक नए tubefold- खाते के तहत प्रकाशित होंगे। पहले से प्रकाशित लेख पुराने खाते के तहत ऑनलाइन रहेंगे और अब TubeFold से अपडेट नहीं किए जा सकते — सारांश को दोबारा प्रकाशित करने पर नया पेज बनेगा। पुराने क्रेडेंशियल telegraph-account.json में सुरक्षित रहते हैं।"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Os próximos artigos serão publicados com uma nova conta tubefold-. Os artigos já publicados permanecem online com a conta antiga e não podem mais ser atualizados pelo TubeFold — republicar um resumo cria uma nova página. As credenciais antigas ficam guardadas em telegraph-account.json."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Новые статьи будут публиковаться от нового аккаунта tubefold-. Уже опубликованные статьи останутся в сети под старым аккаунтом, и обновлять их из TubeFold больше не получится — повторная публикация сводки создаст новую страницу. Старые учётные данные сохраняются в telegraph-account.json."
-          }
-        },
-        "ur" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "آئندہ مضامین ایک نئے tubefold- اکاؤنٹ کے تحت شائع ہوں گے۔ پہلے سے شائع شدہ مضامین پرانے اکاؤنٹ کے تحت آن لائن رہیں گے اور اب TubeFold سے اپ ڈیٹ نہیں کیے جا سکتے — خلاصہ دوبارہ شائع کرنے سے نیا صفحہ بنے گا۔ پرانی اسناد telegraph-account.json میں محفوظ رہتی ہیں۔"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "今后的文章将使用新的 tubefold- 账户发布。已发布的文章仍以旧账户保留在线，且无法再通过 TubeFold 更新——重新发布摘要会创建新页面。旧凭据保存在 telegraph-account.json 中。"
           }
         }
       }
@@ -3935,6 +3819,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更多"
+          }
+        }
+      }
+    },
+    "New summaries will be published under a fresh account. Articles already published stay online, but TubeFold can no longer update them." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "سيتم نشر الملخصات الجديدة ضمن حساب جديد. تبقى المقالات المنشورة سابقًا متاحة على الإنترنت، لكن لن يتمكن TubeFold من تحديثها بعد الآن."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "নতুন সারাংশগুলি একটি নতুন অ্যাকাউন্টের অধীনে প্রকাশিত হবে। ইতিমধ্যে প্রকাশিত নিবন্ধগুলি অনলাইনে থাকবে, কিন্তু TubeFold আর সেগুলি আপডেট করতে পারবে না।"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los nuevos resúmenes se publicarán con una cuenta nueva. Los artículos ya publicados seguirán en línea, pero TubeFold ya no podrá actualizarlos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les nouveaux résumés seront publiés sous un nouveau compte. Les articles déjà publiés restent en ligne, mais TubeFold ne pourra plus les mettre à jour."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "नए सारांश एक नए खाते के तहत प्रकाशित होंगे। पहले से प्रकाशित लेख ऑनलाइन बने रहेंगे, लेकिन TubeFold उन्हें अब अपडेट नहीं कर पाएगा।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os novos resumos serão publicados com uma conta nova. Os artigos já publicados continuam online, mas o TubeFold não poderá mais atualizá-los."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новые сводки будут публиковаться под новым аккаунтом. Уже опубликованные статьи останутся в сети, но TubeFold больше не сможет их обновлять."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "نئے خلاصے ایک نئے اکاؤنٹ کے تحت شائع ہوں گے۔ پہلے سے شائع شدہ مضامین آن لائن رہیں گے، لیکن TubeFold انہیں مزید اپ ڈیٹ نہیں کر سکے گا۔"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新的摘要将使用新账户发布。已发布的文章仍会保留在线上，但 TubeFold 将无法再更新它们。"
           }
         }
       }
@@ -4873,6 +4815,7 @@
         }
       }
     },
+    "Open YouTube" : {},
     "Opening…" : {
       "localizations" : {
         "ar" : {
@@ -6035,6 +5978,64 @@
         }
       }
     },
+    "Reset account" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إعادة تعيين الحساب"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "অ্যাকাউন্ট রিসেট করুন"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restablecer cuenta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réinitialiser le compte"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "खाता रीसेट करें"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redefinir conta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить аккаунт"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اکاؤنٹ ری سیٹ کریں"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置账户"
+          }
+        }
+      }
+    },
     "Reset and quit" : {
       "comment" : "A button that resets the app to its first-run state and quits.",
       "isCommentAutoGenerated" : true,
@@ -6211,6 +6212,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "要重置首次运行设置吗？"
+          }
+        }
+      }
+    },
+    "Reset Telegraph account?" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "هل تريد إعادة تعيين حساب Telegraph؟"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telegraph অ্যাকাউন্ট রিসেট করবেন?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Restablecer la cuenta de Telegraph?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réinitialiser le compte Telegraph ?"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telegraph खाता रीसेट करें?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redefinir a conta do Telegraph?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить аккаунт Telegraph?"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telegraph اکاؤنٹ ری سیٹ کریں؟"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要重置 Telegraph 账户吗？"
           }
         }
       }
@@ -6735,122 +6794,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "显示日志"
-          }
-        }
-      }
-    },
-    "Start a new Telegraph account?" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "هل تريد بدء حساب Telegraph جديد؟"
-          }
-        },
-        "bn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "নতুন Telegraph অ্যাকাউন্ট শুরু করবেন?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Crear una cuenta de Telegraph nueva?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Créer un nouveau compte Telegraph ?"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "नया Telegraph खाता शुरू करें?"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Criar uma nova conta do Telegraph?"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Начать новый аккаунт Telegraph?"
-          }
-        },
-        "ur" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "نیا Telegraph اکاؤنٹ شروع کریں؟"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "要启用新的 Telegraph 账户吗？"
-          }
-        }
-      }
-    },
-    "Start new account…" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "بدء حساب جديد…"
-          }
-        },
-        "bn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "নতুন অ্যাকাউন্ট শুরু করুন…"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Crear cuenta nueva…"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Créer un compte…"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "नया खाता शुरू करें…"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Criar nova conta…"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Начать новый аккаунт…"
-          }
-        },
-        "ur" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "نیا اکاؤنٹ شروع کریں…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用新账户…"
           }
         }
       }
@@ -8438,6 +8381,7 @@
       }
     },
     "YouTube" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
