@@ -112,18 +112,20 @@ struct ProviderSelectionResult: Decodable {
 struct CodexModelOption: Decodable, Identifiable, Hashable {
     let id: String
     let label: String
-    let description: String
 
     static let defaultModelOptions: [CodexModelOption] = [
-        CodexModelOption(id: "gpt-5.4-mini", label: "GPT-5.4 Mini", description: "Fast, efficient mini model."),
-        CodexModelOption(id: "gpt-5.5", label: "GPT-5.5", description: "Recommended Codex model for complex work."),
-        CodexModelOption(id: "gpt-5.4", label: "GPT-5.4", description: "Flagship model for professional work."),
+        CodexModelOption(id: "gpt-5.6-sol", label: "GPT-5.6 Sol"),
+        CodexModelOption(id: "gpt-5.6-terra", label: "GPT-5.6 Terra"),
+        CodexModelOption(id: "gpt-5.6-luna", label: "GPT-5.6 Luna"),
+        CodexModelOption(id: "gpt-5.5", label: "GPT-5.5"),
+        CodexModelOption(id: "gpt-5.4", label: "GPT-5.4"),
+        CodexModelOption(id: "gpt-5.4-mini", label: "GPT-5.4 Mini"),
     ]
 
     static let defaultClaudeModelOptions: [CodexModelOption] = [
-        CodexModelOption(id: "sonnet", label: "Sonnet 5", description: "Recommended balance of quality and speed."),
-        CodexModelOption(id: "opus", label: "Opus 4.8", description: "Most capable model for the hardest transcripts."),
-        CodexModelOption(id: "haiku", label: "Haiku 4.5", description: "Fastest, most efficient model."),
+        CodexModelOption(id: "sonnet", label: "Sonnet 5"),
+        CodexModelOption(id: "opus", label: "Opus 4.8"),
+        CodexModelOption(id: "haiku", label: "Haiku 4.5"),
     ]
 
     static func defaultModelOptions(for provider: String) -> [CodexModelOption] {
