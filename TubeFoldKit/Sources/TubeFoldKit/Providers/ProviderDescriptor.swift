@@ -4,12 +4,10 @@ import Foundation
 public struct ProviderOption: Sendable, Equatable, Codable {
     public let id: String
     public let label: String
-    public let description: String
 
-    public init(id: String, label: String, description: String) {
+    public init(id: String, label: String) {
         self.id = id
         self.label = label
-        self.description = description
     }
 }
 
@@ -111,21 +109,12 @@ public enum ProviderDescriptors {
         marker: connectionMarker,
         markerExact: true,
         modelOptions: [
-            ProviderOption(
-                id: "gpt-5.5",
-                label: "GPT-5.5",
-                description: "Recommended Codex model for complex coding, computer use, knowledge work, and research."
-            ),
-            ProviderOption(
-                id: "gpt-5.4",
-                label: "GPT-5.4",
-                description: "Flagship model for professional work with strong coding, reasoning, and tool use."
-            ),
-            ProviderOption(
-                id: "gpt-5.4-mini",
-                label: "GPT-5.4 Mini",
-                description: "Fast, efficient mini model for responsive coding tasks and subagents."
-            ),
+            ProviderOption(id: "gpt-5.6-sol", label: "GPT-5.6 Sol"),
+            ProviderOption(id: "gpt-5.6-terra", label: "GPT-5.6 Terra"),
+            ProviderOption(id: "gpt-5.6-luna", label: "GPT-5.6 Luna"),
+            ProviderOption(id: "gpt-5.5", label: "GPT-5.5"),
+            ProviderOption(id: "gpt-5.4", label: "GPT-5.4"),
+            ProviderOption(id: "gpt-5.4-mini", label: "GPT-5.4 Mini"),
         ],
         // "minimal" is deliberately omitted: the Codex CLI injects the
         // web_search and image_gen tools server-side for these models, and the
@@ -134,11 +123,11 @@ public enum ProviderDescriptors {
         // the provider omits model_reasoning_effort entirely and lets the
         // Codex CLI use the model's default.
         effortOptions: [
-            ProviderOption(id: "auto", label: "Auto", description: "Let Codex pick the model's default effort."),
-            ProviderOption(id: "low", label: "Low", description: "Fast summaries with light reasoning."),
-            ProviderOption(id: "medium", label: "Medium", description: "Balanced reasoning."),
-            ProviderOption(id: "high", label: "High", description: "More careful summaries, slower."),
-            ProviderOption(id: "xhigh", label: "xhigh", description: "Extended reasoning for the hardest transcripts."),
+            ProviderOption(id: "auto", label: "Auto"),
+            ProviderOption(id: "low", label: "Low"),
+            ProviderOption(id: "medium", label: "Medium"),
+            ProviderOption(id: "high", label: "High"),
+            ProviderOption(id: "xhigh", label: "xhigh"),
         ],
         defaultModel: defaultCodexModel,
         defaultEffort: defaultEffort,
@@ -156,31 +145,19 @@ public enum ProviderDescriptors {
         marker: claudeConnectionMarker,
         markerExact: false,
         modelOptions: [
-            ProviderOption(
-                id: "opus",
-                label: "Opus 4.8",
-                description: "Most capable Claude model for the hardest, longest transcripts."
-            ),
-            ProviderOption(
-                id: "sonnet",
-                label: "Sonnet 5",
-                description: "Recommended balance of quality and speed for everyday summaries."
-            ),
-            ProviderOption(
-                id: "haiku",
-                label: "Haiku 4.5",
-                description: "Fastest, most efficient model for quick summaries."
-            ),
+            ProviderOption(id: "opus", label: "Opus 4.8"),
+            ProviderOption(id: "sonnet", label: "Sonnet 5"),
+            ProviderOption(id: "haiku", label: "Haiku 4.5"),
         ],
         // Effort ids mirror the Claude Code CLI's own `--effort` levels
         // verbatim; "auto" is the same TubeFold-only sentinel as for Codex.
         effortOptions: [
-            ProviderOption(id: "auto", label: "Auto", description: "Let Claude pick the model's default effort."),
-            ProviderOption(id: "low", label: "Low", description: "Fast summaries with light reasoning."),
-            ProviderOption(id: "medium", label: "Medium", description: "Balanced reasoning."),
-            ProviderOption(id: "high", label: "High", description: "More careful summaries, slower."),
-            ProviderOption(id: "xhigh", label: "xhigh", description: "Extended reasoning for harder transcripts."),
-            ProviderOption(id: "max", label: "max", description: "Deepest reasoning for the toughest transcripts."),
+            ProviderOption(id: "auto", label: "Auto"),
+            ProviderOption(id: "low", label: "Low"),
+            ProviderOption(id: "medium", label: "Medium"),
+            ProviderOption(id: "high", label: "High"),
+            ProviderOption(id: "xhigh", label: "xhigh"),
+            ProviderOption(id: "max", label: "max"),
         ],
         defaultModel: defaultClaudeModel,
         defaultEffort: defaultEffort,

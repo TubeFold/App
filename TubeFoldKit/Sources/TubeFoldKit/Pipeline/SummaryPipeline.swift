@@ -484,7 +484,7 @@ public actor SummaryPipeline {
                 code: ProviderDescriptors.descriptor(for: providerID) != nil
                     ? "\(providerID)_process_failed"
                     : "summary_process_failed",
-                userMessage: "Could not generate summary.",
+                userMessage: ProviderFailure.userMessage(providerID: providerID, stderr: stderr),
                 technicalMessage: "exit \(exitCode): \(detail)\n\(stderr)"
             )
         case .emptyOutput:

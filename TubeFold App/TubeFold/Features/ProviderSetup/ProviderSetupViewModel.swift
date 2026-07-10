@@ -21,6 +21,7 @@ final class ProviderSetupViewModel: ObservableObject {
     @Published private(set) var outputLanguage = ProviderSetupViewModel.defaultOutputLanguage
     @Published var outputLanguageDraft = ProviderSetupViewModel.defaultOutputLanguage
     @Published private(set) var usage: UsageSummary?
+    @Published private(set) var providerUpdateCommandCopied = false
     /// Defaults to `true` so we never flash an install pitch before the first
     /// status check resolves; flips to the real value once the backend answers.
     @Published private(set) var extensionConnected = true
@@ -31,10 +32,12 @@ final class ProviderSetupViewModel: ObservableObject {
 
     private static let backendDefaultOutputLanguage = "English"
     static let codexCLIInstallCommand = "curl -fsSL https://chatgpt.com/codex/install.sh | sh"
+    static let codexCLIUpdateCommand = "codex update"
     static let codexCLIInstallGuideURL = URL(string: "https://developers.openai.com/codex/cli")!
 
     private let service = ProviderSetupService()
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TubeFold", category: "ProviderSetup")
+    private var providerUpdateCommandCopiedTask: Task<Void, Never>?
 
     var providerDisplayName: String {
         availableProviders.first { $0.id == selectedProviderID }?.displayName
@@ -96,7 +99,22 @@ final class ProviderSetupViewModel: ObservableObject {
     }
 
     var versionSummary: String {
-        installationResult?.version ?? setupState?.version(for: selectedProviderID) ?? "Unknown version"
+        if providerUpdateAvailable,
+           let installedVersion = installationResult?.details["installedVersion"]?.stringValue,
+           let latestVersion = installationResult?.details["latestVersion"]?.stringValue
+        {
+            return "\(installedVersion) → \(latestVersion)"
+        }
+        return installationResult?.version ?? setupState?.version(for: selectedProviderID) ?? "Unknown version"
+    }
+
+    var providerInstallationStatusTitle: String {
+        providerUpdateAvailable ? "Update available" : "Installed"
+    }
+
+    var providerUpdateAvailable: Bool {
+        selectedProviderID == "codex"
+            && installationResult?.details["updateAvailable"]?.boolValue == true
     }
 
     var modelSummary: String {
@@ -332,6 +350,30 @@ final class ProviderSetupViewModel: ObservableObject {
     func refreshExtensionStatus() async {
         guard let status = try? await service.loadExtensionStatus() else { return }
         extensionConnected = status.connected
+    }
+
+    /// Re-check the installed binary and the latest stable Codex release when
+    /// Settings is opened. Network failures never turn a healthy installation
+    /// into a warning.
+    func refreshProviderInstallation() async {
+        guard let path = setupState?.executablePath(for: selectedProviderID),
+              let result = try? await service.detect(provider: selectedProviderID, path: path)
+        else {
+            return
+        }
+        installationResult = result
+    }
+
+    func copyProviderUpdateCommand() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(Self.codexCLIUpdateCommand, forType: .string)
+        providerUpdateCommandCopiedTask?.cancel()
+        providerUpdateCommandCopied = true
+        providerUpdateCommandCopiedTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            self?.providerUpdateCommandCopied = false
+        }
     }
 
     func resetData() async {

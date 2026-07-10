@@ -265,6 +265,17 @@ public final class TubeFoldBackend: Sendable {
                 jobLogPath = candidate.path
             }
         }
+        var errorMessage = video.errorMessage
+        if video.status == .failed,
+           errorMessage == "Could not generate summary.",
+           let jobLogPath,
+           let contents = try? String(
+            contentsOf: URL(fileURLWithPath: jobLogPath).appendingPathComponent("job.log"),
+            encoding: .utf8
+           ),
+           let recovered = ProviderFailure.userMessageFromJobLog(contents, providerID: "codex") {
+            errorMessage = recovered
+        }
         return [
             "id": video.id,
             "youtubeVideoID": video.youtubeVideoID,
@@ -282,7 +293,7 @@ public final class TubeFoldBackend: Sendable {
             "transcriptPath": video.transcriptPath as Any,
             "summaryPath": video.summaryPath as Any,
             "errorCode": video.errorCode as Any,
-            "errorMessage": video.errorMessage as Any,
+            "errorMessage": errorMessage as Any,
             "latestJobID": video.latestJob?.id as Any,
             "latestJobStatus": video.latestJob?.status.rawValue as Any,
             "latestJobCreatedAt": video.latestJob.map { isoString($0.createdAt) } as Any,
@@ -464,8 +475,8 @@ public final class TubeFoldBackend: Sendable {
 
     private func modelOptionsPayload(_ descriptor: ProviderDescriptor) -> [String: Any] {
         [
-            "modelOptions": descriptor.modelOptions.map { ["id": $0.id, "label": $0.label, "description": $0.description] },
-            "reasoningEffortOptions": descriptor.effortOptions.map { ["id": $0.id, "label": $0.label, "description": $0.description] },
+            "modelOptions": descriptor.modelOptions.map { ["id": $0.id, "label": $0.label] },
+            "reasoningEffortOptions": descriptor.effortOptions.map { ["id": $0.id, "label": $0.label] },
         ]
     }
 
@@ -572,6 +583,15 @@ public final class TubeFoldBackend: Sendable {
                 ? "none"
                 : (result.status == .notInstalled ? "installationMissing" : "installationInvalid"),
         ]
+        if providerID == ProviderDescriptors.codex.id,
+           result.status == .installed,
+           let installedVersion = result.version,
+           let update = await CodexUpdateChecker.check(installedVersion: installedVersion) {
+            details["installedVersion"] = update.installedVersion
+            details["latestVersion"] = update.latestVersion
+            details["updateAvailable"] = update.updateAvailable
+            details["updateCommand"] = "codex update"
+        }
         if providerID == ProviderDescriptors.codex.id {
             details["codexAppInstalled"] = codexApp.installed
             if let appPath = codexApp.path {

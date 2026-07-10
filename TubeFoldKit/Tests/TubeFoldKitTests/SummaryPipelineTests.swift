@@ -182,6 +182,56 @@ private struct ExplodingProvider: SummaryProvider {
         #expect(video?.errorMessage == "Could not generate summary.")
     }
 
+    @Test func codexUpgradeRequirementIsSurfacedToTheUser() {
+        let providerMessage = """
+        The 'gpt-5.6-sol' model requires a newer version of Codex. Please upgrade to the latest app or CLI and try again.
+        """
+        let error = ProviderRunError.processFailed(
+            exitCode: 1,
+            detail: "invalid request (model/reasoning-effort/tools combination)",
+            stderr: providerMessage
+        )
+
+        let processingError = SummaryPipeline.processingError(from: error, providerID: "codex")
+
+        #expect(processingError.code == "codex_process_failed")
+        #expect(processingError.userMessage == providerMessage)
+    }
+
+    @Test func codexUpgradeRequirementIsRecoveredFromLegacyJobLog() {
+        let providerMessage = """
+        The 'gpt-5.6-sol' model requires a newer version of Codex. Please upgrade to the latest app or CLI and try again.
+        """
+        let log = #"provider failed provider=codex: processFailed(exitCode: 1, detail: "invalid request", stderr: "{\"type\":\"error\",\"status\":400,\"error\":{\"type\":\"invalid_request_error\",\"message\":\"The \'gpt-5.6-sol\' model requires a newer version of Codex. Please upgrade to the latest app or CLI and try again.\"}}")"#
+
+        #expect(ProviderFailure.userMessageFromJobLog(log, providerID: "codex") == providerMessage)
+    }
+
+    @Test func codexUsageLimitIsSurfacedToTheUser() {
+        let providerMessage = """
+        You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 1:38 PM.
+        """
+        let error = ProviderRunError.processFailed(
+            exitCode: 1,
+            detail: "rate limit or quota problem",
+            stderr: providerMessage
+        )
+
+        let processingError = SummaryPipeline.processingError(from: error, providerID: "codex")
+
+        #expect(processingError.code == "codex_process_failed")
+        #expect(processingError.userMessage == providerMessage)
+    }
+
+    @Test func codexUsageLimitIsRecoveredFromLegacyJobLog() {
+        let providerMessage = """
+        You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 1:38 PM.
+        """
+        let log = #"provider failed provider=codex: processFailed(exitCode: 1, detail: "rate limit or quota problem", stderr: "You\'ve hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 1:38 PM.")"#
+
+        #expect(ProviderFailure.userMessageFromJobLog(log, providerID: "codex") == providerMessage)
+    }
+
     @Test func modelLabelUsesDisplayNameWithoutEffort() async throws {
         // Port of test_codex_markdown_includes_model_metadata /
         // test_claude_selection_drives_markdown_metadata: the front matter

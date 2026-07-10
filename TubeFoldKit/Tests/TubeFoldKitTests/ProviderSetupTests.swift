@@ -36,14 +36,27 @@ private func temporaryDataDir() throws -> URL {
         let diagnostics = ProviderDiagnostics(descriptor: ProviderDescriptors.codex, store: store)
 
         // A valid model is kept; an invalid effort falls back to the default.
-        let state = try diagnostics.saveModelSettings(model: "gpt-5.5", reasoningEffort: "bogus")
-        #expect(state["codexModel"] as? String == "gpt-5.5")
+        let state = try diagnostics.saveModelSettings(model: "gpt-5.6-sol", reasoningEffort: "bogus")
+        #expect(state["codexModel"] as? String == "gpt-5.6-sol")
         #expect(state["codexReasoningEffort"] as? String == "auto")
 
         // A bogus model falls back to the default.
         let state2 = try diagnostics.saveModelSettings(model: "gpt-99", reasoningEffort: "high")
         #expect(state2["codexModel"] as? String == "gpt-5.4-mini")
         #expect(state2["codexReasoningEffort"] as? String == "high")
+    }
+
+    @Test func codexModelOptionsIncludeGPT56Family() {
+        let options = ProviderDescriptors.codex.modelOptions
+
+        #expect(options.prefix(3).map(\.id) == [
+            "gpt-5.6-sol",
+            "gpt-5.6-terra",
+            "gpt-5.6-luna",
+        ])
+        #expect(ProviderDescriptors.codex.modelDisplayLabel("gpt-5.6-sol") == "GPT-5.6 Sol")
+        #expect(ProviderDescriptors.codex.modelDisplayLabel("gpt-5.6-terra") == "GPT-5.6 Terra")
+        #expect(ProviderDescriptors.codex.modelDisplayLabel("gpt-5.6-luna") == "GPT-5.6 Luna")
     }
 
     @Test func outputLanguageIsSavedAndNormalized() throws {
@@ -176,8 +189,8 @@ private func temporaryDataDir() throws -> URL {
             binaryName: "missing-\(UUID().uuidString)",
             marker: "OK",
             markerExact: true,
-            modelOptions: [ProviderOption(id: "model", label: "Model", description: "")],
-            effortOptions: [ProviderOption(id: "auto", label: "Auto", description: "")],
+            modelOptions: [ProviderOption(id: "model", label: "Model")],
+            effortOptions: [ProviderOption(id: "auto", label: "Auto")],
             defaultModel: "model",
             defaultEffort: "auto",
             homebrewPaths: []

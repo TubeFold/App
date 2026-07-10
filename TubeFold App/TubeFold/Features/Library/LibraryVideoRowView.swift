@@ -37,7 +37,7 @@ struct LibraryVideoRowView: View {
                     Text(video.errorMessage ?? "Summary failed.")
                         .font(.callout)
                         .foregroundStyle(.orange)
-                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 HStack(spacing: 8) {

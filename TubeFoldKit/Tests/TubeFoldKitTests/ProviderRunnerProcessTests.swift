@@ -74,6 +74,30 @@ private func makeTempDir() throws -> URL {
         }
     }
 
+    @Test func codexFailureExtractsNestedErrorFromStderr() async throws {
+        let dir = try makeTempDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let providerMessage = """
+        The 'gpt-5.6-sol' model requires a newer version of Codex. Please upgrade to the latest app or CLI and try again.
+        """
+        let codex = try writeStubBinary("codex", script: """
+        cat > /dev/null
+        cat >&2 <<'JSON'
+        {"type":"error","status":400,"error":{"type":"invalid_request_error","message":"\(providerMessage)"}}
+        JSON
+        exit 1
+        """, in: dir)
+
+        let provider = CodexProvider(executablePath: codex)
+        do {
+            _ = try await provider.generateSummary(prompt: "PROMPT", settings: ProviderRunSettings(timeout: 30))
+            Issue.record("expected processFailed")
+        } catch let ProviderRunError.processFailed(_, _, stderr) {
+            #expect(stderr.components(separatedBy: .newlines).first == providerMessage)
+            #expect(ProviderFailure.userMessage(providerID: "codex", stderr: stderr) == providerMessage)
+        }
+    }
+
     @Test func codexAutoEffortOmitsConfigFlag() async throws {
         let dir = try makeTempDir()
         defer { try? FileManager.default.removeItem(at: dir) }

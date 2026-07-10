@@ -108,10 +108,11 @@ public struct CodexProvider: SummaryProvider {
         }
         if result.exitCode != 0 {
             // Codex reports the real failure (e.g. an API 400) as an
-            // "error"/"turn.failed" event on the --json stdout stream, NOT on
-            // stderr — surface it so the cause isn't lost.
-            let streamError = Self.errorFromJSONStream(result.stdout)
-            let detail = ProviderFailure.classifyCodex(streamError.isEmpty ? result.stdout + "\n" + result.stderr : streamError)
+            // "error"/"turn.failed" JSON event. Versions differ on whether
+            // that event is written to stdout or stderr, so inspect both.
+            let combinedOutput = result.stdout + "\n" + result.stderr
+            let streamError = Self.errorFromJSONStream(combinedOutput)
+            let detail = ProviderFailure.classifyCodex(streamError.isEmpty ? combinedOutput : streamError)
             throw ProviderRunError.processFailed(
                 exitCode: result.exitCode,
                 detail: detail,
@@ -304,6 +305,48 @@ public struct FakeProvider: SummaryProvider {
 // MARK: - Helpers
 
 enum ProviderFailure {
+    static func userMessageFromJobLog(_ contents: String, providerID: String) -> String? {
+        // Prefer the message field of a JSON error event embedded in the logged
+        // stderr; fall back to the whole logged stderr blob (plain-text errors).
+        let extracted: Substring
+        let jsonMarker = "\\\"message\\\":\\\""
+        if let markerRange = contents.range(of: jsonMarker, options: .backwards),
+           let endRange = contents[markerRange.upperBound...].range(of: "\\\"") {
+            extracted = contents[markerRange.upperBound..<endRange.lowerBound]
+        } else if let stderrRange = contents.range(of: "stderr: \"", options: .backwards),
+                  let endRange = contents[stderrRange.upperBound...].range(of: "\")") {
+            extracted = contents[stderrRange.upperBound..<endRange.lowerBound]
+        } else {
+            return nil
+        }
+        let unescaped = extracted
+            .replacingOccurrences(of: "\\'", with: "'")
+            .replacingOccurrences(of: "\\\"", with: "\"")
+            .replacingOccurrences(of: "\\\\", with: "\\")
+        let message = userMessage(providerID: providerID, stderr: unescaped)
+        return message == "Could not generate summary." ? nil : message
+    }
+
+    /// Phrases that identify a stderr line the user can act on directly.
+    private static let actionablePhrases = [
+        "requires a newer version of Codex",
+        "hit your usage limit",
+        "usage limit reached",
+    ]
+
+    static func userMessage(providerID _: String, stderr: String) -> String {
+        if let actionableLine = stderr
+            .components(separatedBy: .newlines)
+            .map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) })
+            .first(where: { line in
+                !line.hasPrefix("{")
+                    && actionablePhrases.contains { line.localizedCaseInsensitiveContains($0) }
+            }) {
+            return actionableLine
+        }
+        return "Could not generate summary."
+    }
+
     static func classifyCodex(_ output: String) -> String {
         let text = output.lowercased()
         if text.contains("auth") || text.contains("login") || text.contains("not logged in") {

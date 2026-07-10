@@ -12,9 +12,10 @@ struct MainStatusView: View {
                         .font(.headline)
                     HStack(alignment: .top, spacing: 12) {
                         StatusCheckItemView(
-                            title: "Installed",
+                            title: viewModel.providerInstallationStatusTitle,
                             isReady: viewModel.providerInstalled,
                             detail: viewModel.versionSummary,
+                            isWarning: viewModel.providerUpdateAvailable,
                         )
                         StatusCheckItemView(
                             title: "Signed in",
@@ -39,6 +40,20 @@ struct MainStatusView: View {
                             )
                         }
                         .controlSize(.large)
+
+                        if viewModel.providerUpdateAvailable {
+                            Button {
+                                viewModel.copyProviderUpdateCommand()
+                            } label: {
+                                if viewModel.providerUpdateCommandCopied {
+                                    Label("Copied", systemImage: "checkmark")
+                                } else {
+                                    Label("Copy codex update", systemImage: "doc.on.doc")
+                                }
+                            }
+                            .controlSize(.large)
+                            .help("Copy “codex update” to the clipboard")
+                        }
 
                         Spacer(minLength: 0)
                     }

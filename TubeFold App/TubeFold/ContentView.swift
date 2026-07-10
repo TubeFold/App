@@ -42,6 +42,7 @@ struct ContentView: View {
             // opens Settings — the extension may have connected since launch.
             if section == .settings {
                 Task {
+                    await viewModel.refreshProviderInstallation()
                     await viewModel.refreshUsage()
                     await viewModel.refreshExtensionStatus()
                 }
