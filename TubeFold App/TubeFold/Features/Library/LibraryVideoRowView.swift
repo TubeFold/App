@@ -89,10 +89,6 @@ struct LibraryVideoRowView: View {
                         .transition(.opacity.combined(with: .move(edge: .leading)))
                     }
 
-                    RowMiniButtonView("YouTube", systemImage: "play.rectangle") {
-                        viewModel.openYouTube(video)
-                    }
-
                     RowMiniMenuView("More", systemImage: "ellipsis") {
                         moreMenuItems
                     }

@@ -27,7 +27,8 @@ final class AppSettings: ObservableObject {
     }
 
     /// When a summary becomes ready, publish it to Telegraph and open the page
-    /// in the browser automatically. Default: on (the original behavior).
+    /// in the browser automatically. Default: off — publishing creates a
+    /// public page that can never be deleted, so it has to be an opt-in.
     @Published var autoOpenTelegraph: Bool {
         didSet { UserDefaults.standard.set(autoOpenTelegraph, forKey: Keys.autoOpenTelegraph) }
     }
@@ -79,7 +80,7 @@ final class AppSettings: ObservableObject {
     private init() {
         let defaults = UserDefaults.standard
         defaults.register(defaults: [
-            Keys.autoOpenTelegraph: true,
+            Keys.autoOpenTelegraph: false,
             Keys.hideMenuBarIcon: false,
             Keys.hideDockIcon: false,
             Keys.dismissedExtensionTip: false,
@@ -98,7 +99,7 @@ final class AppSettings: ObservableObject {
         for key in Keys.all {
             defaults.removeObject(forKey: key)
         }
-        autoOpenTelegraph = true
+        autoOpenTelegraph = false
         hideMenuBarIcon = false
         hideDockIcon = false
         dismissedExtensionTip = false
