@@ -10,21 +10,49 @@ private final class FakeTelegraph: @unchecked Sendable {
     private var _accountCount = 0
     private var _createPageCount = 0
     private var _editPageCount = 0
+    private var _pageListCalls: [[String: String]] = []
+    private var _createPageTokens: [String] = []
 
     var accountCount: Int { lock.withLock { _accountCount } }
     var createPageCount: Int { lock.withLock { _createPageCount } }
     var editPageCount: Int { lock.withLock { _editPageCount } }
+    var pageListCalls: [[String: String]] { lock.withLock { _pageListCalls } }
+    var createPageTokens: [String] { lock.withLock { _createPageTokens } }
+
+    /// Pages served by `getPageList`, sliced by the requested offset/limit.
+    var publishedPages: [[String: Any]] = []
 
     func handle(method: String, params: [String: String]) -> [String: Any] {
-        if method == "createAccount" {
-            lock.withLock { _accountCount += 1 }
+        if method == "getPageList" {
+            lock.withLock { _pageListCalls.append(params) }
+            guard params["access_token"] == "token-123" else {
+                return ["ok": false, "error": "ACCESS_TOKEN_INVALID"]
+            }
+            let offset = Int(params["offset"] ?? "0") ?? 0
+            let limit = Int(params["limit"] ?? "50") ?? 50
+            let slice = publishedPages.dropFirst(offset).prefix(limit)
             return ["ok": true, "result": [
-                "access_token": "token-123",
+                "total_count": publishedPages.count,
+                "pages": Array(slice),
+            ]]
+        }
+        if method == "createAccount" {
+            let count = lock.withLock { () -> Int in
+                _accountCount += 1
+                return _accountCount
+            }
+            // First account keeps the token the getPageList stub expects;
+            // later ones get distinct tokens so account swaps are observable.
+            return ["ok": true, "result": [
+                "access_token": count == 1 ? "token-123" : "token-\(count)",
                 "short_name": params["short_name"] ?? "",
             ]]
         }
         if method == "createPage" {
-            lock.withLock { _createPageCount += 1 }
+            lock.withLock {
+                _createPageCount += 1
+                _createPageTokens.append(params["access_token"] ?? "")
+            }
             return ["ok": true, "result": [
                 "url": "https://telegra.ph/Test-Page-01",
                 "path": "Test-Page-01",
@@ -250,6 +278,91 @@ private func insertReadyVideo(
         await #expect(throws: TelegraphError.noSummaryToPublish) {
             _ = try await makePublisher(dataDir: dataDir, store: store, fake: fake).publish(videoID: videoID)
         }
+    }
+
+    @Test func listPagesWithoutAccountReturnsEmptyWithoutAPICalls() async throws {
+        let dataDir = try makeDataDir()
+        defer { try? FileManager.default.removeItem(at: dataDir) }
+        let fake = FakeTelegraph()
+        let publisher = makePublisher(dataDir: dataDir, store: try VideoStore.inMemory(), fake: fake)
+
+        let pages = try await publisher.listPages()
+        #expect(pages.isEmpty)
+        #expect(fake.pageListCalls.isEmpty)
+        #expect(fake.accountCount == 0)
+        #expect(publisher.accountShortName() == nil)
+    }
+
+    @Test func listPagesReturnsPublishedPages() async throws {
+        let dataDir = try makeDataDir()
+        defer { try? FileManager.default.removeItem(at: dataDir) }
+        try TelegraphStore(dataDirectory: dataDir).save(["accessToken": "token-123", "shortName": "yt-brain-1a2b3c4d"])
+        let fake = FakeTelegraph()
+        fake.publishedPages = [
+            ["path": "First-01", "url": "https://telegra.ph/First-01", "title": "First", "views": 7],
+            ["path": "Second-02", "url": "https://telegra.ph/Second-02", "title": "Second", "views": 0],
+        ]
+        let publisher = makePublisher(dataDir: dataDir, store: try VideoStore.inMemory(), fake: fake)
+
+        let pages = try await publisher.listPages()
+        #expect(pages == [
+            TelegraphPageInfo(path: "First-01", url: "https://telegra.ph/First-01", title: "First", views: 7),
+            TelegraphPageInfo(path: "Second-02", url: "https://telegra.ph/Second-02", title: "Second", views: 0),
+        ])
+        #expect(fake.pageListCalls.count == 1)
+        #expect(fake.pageListCalls[0]["offset"] == "0")
+        #expect(publisher.accountShortName() == "yt-brain-1a2b3c4d")
+    }
+
+    @Test func listPagesPaginatesPastTheAPILimit() async throws {
+        let dataDir = try makeDataDir()
+        defer { try? FileManager.default.removeItem(at: dataDir) }
+        try TelegraphStore(dataDirectory: dataDir).save(["accessToken": "token-123"])
+        let fake = FakeTelegraph()
+        fake.publishedPages = (0 ..< 250).map { index in
+            ["path": "Page-\(index)", "url": "https://telegra.ph/Page-\(index)", "title": "Page \(index)", "views": index]
+        }
+        let publisher = makePublisher(dataDir: dataDir, store: try VideoStore.inMemory(), fake: fake)
+
+        let pages = try await publisher.listPages()
+        #expect(pages.count == 250)
+        #expect(pages.last?.path == "Page-249")
+        #expect(fake.pageListCalls.count == 2)
+        #expect(fake.pageListCalls[1]["offset"] == "200")
+    }
+
+    @Test func newAccountsUseTheTubefoldPrefix() {
+        let name = TelegraphPublisher.makeShortName()
+        #expect(name.hasPrefix("tubefold-"))
+        #expect(name.count == "tubefold-".count + 8)
+    }
+
+    @Test func regenerateAccountSwapsTokenArchivesOldAndForgetsCachedPages() async throws {
+        let dataDir = try makeDataDir()
+        defer { try? FileManager.default.removeItem(at: dataDir) }
+        let store = try VideoStore.inMemory()
+        let fake = FakeTelegraph()
+        let videoID = try await insertReadyVideo(store, summary: "# Title\n\nBody content here.")
+        let publisher = makePublisher(dataDir: dataDir, store: store, fake: fake)
+
+        _ = try await publisher.publish(videoID: videoID)
+        let newName = try await publisher.regenerateAccount()
+        #expect(newName.hasPrefix("tubefold-"))
+        #expect(publisher.accountShortName() == newName)
+        #expect(fake.accountCount == 2)
+
+        // Old credentials are archived, not lost.
+        let state = TelegraphStore(dataDirectory: dataDir).load()
+        let previous = state["previousAccounts"] as? [[String: Any]]
+        #expect(previous?.count == 1)
+        #expect(previous?.first?["accessToken"] as? String == "token-123")
+
+        // The cached page was forgotten, so re-publishing creates a fresh
+        // page with the new token instead of editing the old account's page.
+        let republished = try await publisher.publish(videoID: videoID)
+        #expect(republished.status == "published")
+        #expect(fake.editPageCount == 0)
+        #expect(fake.createPageTokens == ["token-123", "token-2"])
     }
 
     @Test func apiErrorSurfaces() async throws {

@@ -24,6 +24,8 @@ final class ProviderSetupViewModel: ObservableObject {
     @Published private(set) var outputLanguage = ProviderSetupViewModel.defaultOutputLanguage
     @Published var outputLanguageDraft = ProviderSetupViewModel.defaultOutputLanguage
     @Published private(set) var usage: UsageSummary?
+    @Published private(set) var telegraphPages: [TelegraphPage]?
+    @Published private(set) var telegraphAccount: String?
     @Published private(set) var providerUpdateCommandCopied = false
     /// Defaults to `true` so we never flash an install pitch before the first
     /// status check resolves; flips to the real value once the backend answers.
@@ -85,6 +87,7 @@ final class ProviderSetupViewModel: ObservableObject {
         }
         await refreshUsage()
         await refreshExtensionStatus()
+        await refreshTelegraphPages()
     }
 
     /// Fetch the token-usage summary without blocking the UI with the busy spinner.
@@ -92,6 +95,25 @@ final class ProviderSetupViewModel: ObservableObject {
     func refreshUsage() async {
         guard let summary = try? await service.loadUsage() else { return }
         usage = summary
+    }
+
+    /// Fetch the list of articles published to Telegraph. Failures (offline,
+    /// Telegraph down) keep the previous value so the card never flashes empty.
+    func refreshTelegraphPages() async {
+        guard let response = try? await service.loadTelegraphPages() else { return }
+        telegraphPages = response.pages
+        telegraphAccount = response.account
+    }
+
+    /// Replace the Telegraph account with a fresh one; the article list
+    /// reloads empty and future publishes create pages under the new account.
+    func regenerateTelegraphAccount() async {
+        do {
+            _ = try await service.regenerateTelegraphAccount()
+            await refreshTelegraphPages()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     /// Best-effort check of whether the companion Chrome extension is installed.

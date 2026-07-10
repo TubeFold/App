@@ -505,6 +505,220 @@
         }
       }
     },
+    "%lld views" : {
+      "localizations" : {
+        "ar" : {
+          "variations" : {
+            "plural" : {
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld مشاهدة"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld مشاهدة"
+                }
+              },
+              "two" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld مشاهدتان"
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld مشاهدات"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld مشاهدة"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld مشاهدة"
+                }
+              }
+            }
+          }
+        },
+        "bn" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld বার দেখা হয়েছে"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld বার দেখা হয়েছে"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld view"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld views"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld visualización"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld visualizaciones"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld vue"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld vues"
+                }
+              }
+            }
+          }
+        },
+        "hi" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld बार देखा गया"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld बार देखा गया"
+                }
+              }
+            }
+          }
+        },
+        "pt" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld visualização"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld visualizações"
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld просмотр"
+                }
+              },
+              "few" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld просмотра"
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld просмотров"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld просмотра"
+                }
+              }
+            }
+          }
+        },
+        "ur" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld مشاہدہ"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld مشاہدات"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld 次浏览"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "A quick test confirms the CLI is signed in" : {
       "comment" : "A step in the setup process that confirms the CLI is signed in.",
       "isCommentAutoGenerated" : true,
@@ -619,6 +833,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "关于"
+          }
+        }
+      }
+    },
+    "Account: %@" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الحساب: %@"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "অ্যাকাউন্ট: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuenta: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compte : %@"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "खाता: %@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conta: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Аккаунт: %@"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اکاؤنٹ: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "账户：%@"
           }
         }
       }
@@ -2213,6 +2485,64 @@
         }
       }
     },
+    "Create new account" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إنشاء حساب جديد"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "নতুন অ্যাকাউন্ট তৈরি করুন"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crear cuenta nueva"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créer un compte"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "नया खाता बनाएं"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criar nova conta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать новый аккаунт"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "نیا اکاؤنٹ بنائیں"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建新账户"
+          }
+        }
+      }
+    },
     "Delete" : {
       "localizations" : {
         "ar" : {
@@ -2673,6 +3003,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "反馈"
+          }
+        }
+      }
+    },
+    "Future articles will be published under a fresh tubefold- account. Already published articles stay online under the old account and can no longer be updated from TubeFold — re-publishing a summary creates a new page. The old credentials are kept in telegraph-account.json." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ستُنشر المقالات الجديدة عبر حساب tubefold- جديد. تبقى المقالات المنشورة سابقًا متاحة على الإنترنت تحت الحساب القديم ولا يمكن تحديثها من TubeFold بعد الآن — إعادة نشر ملخص تنشئ صفحة جديدة. تُحفظ بيانات الاعتماد القديمة في telegraph-account.json."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ভবিষ্যতের নিবন্ধগুলি একটি নতুন tubefold- অ্যাকাউন্টের অধীনে প্রকাশিত হবে। ইতিমধ্যে প্রকাশিত নিবন্ধগুলি পুরনো অ্যাকাউন্টের অধীনে অনলাইনে থাকবে এবং TubeFold থেকে আর আপডেট করা যাবে না — সারাংশ পুনরায় প্রকাশ করলে নতুন পৃষ্ঠা তৈরি হবে। পুরনো শংসাপত্রগুলি telegraph-account.json-এ সংরক্ষিত থাকে।"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los próximos artículos se publicarán con una cuenta tubefold- nueva. Los artículos ya publicados permanecen en línea con la cuenta antigua y ya no se pueden actualizar desde TubeFold: volver a publicar un resumen crea una página nueva. Las credenciales antiguas se conservan en telegraph-account.json."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les prochains articles seront publiés sous un nouveau compte tubefold-. Les articles déjà publiés restent en ligne sous l’ancien compte et ne peuvent plus être mis à jour depuis TubeFold — republier un résumé crée une nouvelle page. Les anciens identifiants sont conservés dans telegraph-account.json."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आगे के लेख एक नए tubefold- खाते के तहत प्रकाशित होंगे। पहले से प्रकाशित लेख पुराने खाते के तहत ऑनलाइन रहेंगे और अब TubeFold से अपडेट नहीं किए जा सकते — सारांश को दोबारा प्रकाशित करने पर नया पेज बनेगा। पुराने क्रेडेंशियल telegraph-account.json में सुरक्षित रहते हैं।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os próximos artigos serão publicados com uma nova conta tubefold-. Os artigos já publicados permanecem online com a conta antiga e não podem mais ser atualizados pelo TubeFold — republicar um resumo cria uma nova página. As credenciais antigas ficam guardadas em telegraph-account.json."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новые статьи будут публиковаться от нового аккаунта tubefold-. Уже опубликованные статьи останутся в сети под старым аккаунтом, и обновлять их из TubeFold больше не получится — повторная публикация сводки создаст новую страницу. Старые учётные данные сохраняются в telegraph-account.json."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "آئندہ مضامین ایک نئے tubefold- اکاؤنٹ کے تحت شائع ہوں گے۔ پہلے سے شائع شدہ مضامین پرانے اکاؤنٹ کے تحت آن لائن رہیں گے اور اب TubeFold سے اپ ڈیٹ نہیں کیے جا سکتے — خلاصہ دوبارہ شائع کرنے سے نیا صفحہ بنے گا۔ پرانی اسناد telegraph-account.json میں محفوظ رہتی ہیں۔"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今后的文章将使用新的 tubefold- 账户发布。已发布的文章仍以旧账户保留在线，且无法再通过 TubeFold 更新——重新发布摘要会创建新页面。旧凭据保存在 telegraph-account.json 中。"
           }
         }
       }
@@ -3787,6 +4175,64 @@
         }
       }
     },
+    "No articles yet. Publish a summary with “Read in Telegraph” and it will show up here." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لا توجد مقالات بعد. انشر ملخصًا عبر «القراءة في Telegraph» وسيظهر هنا."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "এখনও কোনও নিবন্ধ নেই। “Telegraph-এ পড়ুন” দিয়ে একটি সারাংশ প্রকাশ করুন, সেটি এখানে দেখা যাবে।"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todavía no hay artículos. Publica un resumen con «Leer en Telegraph» y aparecerá aquí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun article pour l’instant. Publiez un résumé avec « Lire dans Telegraph » et il apparaîtra ici."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अभी कोई लेख नहीं है। “Telegraph में पढ़ें” से कोई सारांश प्रकाशित करें, वह यहां दिखाई देगा।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ainda não há artigos. Publique um resumo com “Ler no Telegraph” e ele aparecerá aqui."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Статей пока нет. Опубликуйте сводку через «Читать в Telegraph» — она появится здесь."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ابھی کوئی مضمون نہیں۔ ”Telegraph میں پڑھیں“ کے ذریعے کوئی خلاصہ شائع کریں، وہ یہاں نظر آئے گا۔"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有文章。使用“在 Telegraph 中阅读”发布摘要后，它会显示在这里。"
+          }
+        }
+      }
+    },
     "No videos yet" : {
       "localizations" : {
         "ar" : {
@@ -4191,6 +4637,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "打开资料库"
+          }
+        }
+      }
+    },
+    "Open Markdown" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "فتح Markdown"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown খুলুন"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Markdown"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir le Markdown"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown खोलें"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Markdown"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть Markdown"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown کھولیں"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开 Markdown"
           }
         }
       }
@@ -5179,6 +5683,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "最近观看"
+          }
+        }
+      }
+    },
+    "Refresh articles" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تحديث المقالات"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "নিবন্ধগুলি রিফ্রেশ করুন"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar artículos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiser les articles"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "लेख रीफ़्रेश करें"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualizar artigos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновить список статей"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مضامین ریفریش کریں"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新文章"
           }
         }
       }
@@ -6177,6 +6739,122 @@
         }
       }
     },
+    "Start a new Telegraph account?" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "هل تريد بدء حساب Telegraph جديد؟"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "নতুন Telegraph অ্যাকাউন্ট শুরু করবেন?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Crear una cuenta de Telegraph nueva?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créer un nouveau compte Telegraph ?"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "नया Telegraph खाता शुरू करें?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criar uma nova conta do Telegraph?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Начать новый аккаунт Telegraph?"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "نیا Telegraph اکاؤنٹ شروع کریں؟"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "要启用新的 Telegraph 账户吗？"
+          }
+        }
+      }
+    },
+    "Start new account…" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "بدء حساب جديد…"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "নতুন অ্যাকাউন্ট শুরু করুন…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crear cuenta nueva…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Créer un compte…"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "नया खाता शुरू करें…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criar nova conta…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Начать новый аккаунт…"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "نیا اکاؤنٹ شروع کریں…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用新账户…"
+          }
+        }
+      }
+    },
     "Storage" : {
       "localizations" : {
         "ar" : {
@@ -6347,6 +7025,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "摘要会以 Markdown 文件保存在这里。打开文件夹即可浏览、移动或备份。"
+          }
+        }
+      }
+    },
+    "Summaries TubeFold has published to telegra.ph from this Mac." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الملخصات التي نشرها TubeFold على telegra.ph من هذا الـ Mac."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "এই Mac থেকে TubeFold telegra.ph-এ যে সারাংশগুলি প্রকাশ করেছে।"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resúmenes que TubeFold ha publicado en telegra.ph desde este Mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Résumés que TubeFold a publiés sur telegra.ph depuis ce Mac."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "वे सारांश जो TubeFold ने इस Mac से telegra.ph पर प्रकाशित किए हैं।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resumos que o TubeFold publicou no telegra.ph a partir deste Mac."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сводки, опубликованные TubeFold на telegra.ph с этого Mac."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "خلاصے جو TubeFold نے اس Mac سے telegra.ph پر شائع کیے ہیں۔"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TubeFold 从这台 Mac 发布到 telegra.ph 的摘要。"
           }
         }
       }
@@ -6527,6 +7263,64 @@
         }
       }
     },
+    "Telegraph articles" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مقالات Telegraph"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telegraph নিবন্ধ"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artículos de Telegraph"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Articles Telegraph"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telegraph लेख"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artigos do Telegraph"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Статьи в Telegraph"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telegraph مضامین"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telegraph 文章"
+          }
+        }
+      }
+    },
     "Test Connection" : {
       "localizations" : {
         "ar" : {
@@ -6641,6 +7435,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "测试"
+          }
+        }
+      }
+    },
+    "The Telegraph account TubeFold publishes under. It lives only on this Mac (telegraph-account.json)." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "حساب Telegraph الذي ينشر TubeFold من خلاله. يوجد فقط على هذا الـ Mac ‏(telegraph-account.json)."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "যে Telegraph অ্যাকাউন্টের অধীনে TubeFold প্রকাশ করে। এটি শুধুমাত্র এই Mac-এ রয়েছে (telegraph-account.json)।"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La cuenta de Telegraph con la que publica TubeFold. Solo existe en este Mac (telegraph-account.json)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le compte Telegraph sous lequel TubeFold publie. Il n’existe que sur ce Mac (telegraph-account.json)."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "वह Telegraph खाता जिसके तहत TubeFold प्रकाशित करता है। यह केवल इस Mac पर मौजूद है (telegraph-account.json)।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A conta do Telegraph com a qual o TubeFold publica. Ela existe apenas neste Mac (telegraph-account.json)."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Аккаунт Telegraph, от имени которого публикует TubeFold. Он хранится только на этом Mac (telegraph-account.json)."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "وہ Telegraph اکاؤنٹ جس کے تحت TubeFold شائع کرتا ہے۔ یہ صرف اسی Mac پر موجود ہے (telegraph-account.json)۔"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TubeFold 用于发布的 Telegraph 账户。它仅保存在这台 Mac 上（telegraph-account.json）。"
           }
         }
       }

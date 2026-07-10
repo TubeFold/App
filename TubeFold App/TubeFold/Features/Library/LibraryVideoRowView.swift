@@ -82,6 +82,11 @@ struct LibraryVideoRowView: View {
                         }
                         .disabled(viewModel.isRenderingPDF(video))
                         .transition(.opacity.combined(with: .move(edge: .leading)))
+
+                        RowMiniButtonView("Open Markdown", systemImage: "doc.plaintext") {
+                            viewModel.openMarkdown(video)
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .leading)))
                     }
 
                     RowMiniButtonView("YouTube", systemImage: "play.rectangle") {
@@ -89,28 +94,7 @@ struct LibraryVideoRowView: View {
                     }
 
                     RowMiniMenuView("More", systemImage: "ellipsis") {
-                        Button {
-                            viewModel.revealMarkdown(video)
-                        } label: {
-                            Label("Show Files", systemImage: "folder")
-                        }
-                        .disabled(!video.hasMarkdown)
-
-                        if video.hasJobLogs {
-                            Button {
-                                viewModel.revealLogs(video)
-                            } label: {
-                                Label("Show Logs", systemImage: "doc.text.magnifyingglass")
-                            }
-                        }
-
-                        Divider()
-
-                        Button(role: .destructive) {
-                            onDelete()
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
+                        moreMenuItems
                     }
                 }
                 .animation(.smooth(duration: 0.3), value: video.hasMarkdown)
@@ -124,11 +108,33 @@ struct LibraryVideoRowView: View {
                 .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1),
         )
         .contextMenu {
-            Button(role: .destructive) {
-                onDelete()
+            moreMenuItems
+        }
+    }
+
+    @ViewBuilder
+    private var moreMenuItems: some View {
+        Button {
+            viewModel.revealMarkdown(video)
+        } label: {
+            Label("Show Files", systemImage: "folder")
+        }
+        .disabled(!video.hasMarkdown)
+
+        if video.hasJobLogs {
+            Button {
+                viewModel.revealLogs(video)
             } label: {
-                Label("Delete", systemImage: "trash")
+                Label("Show Logs", systemImage: "doc.text.magnifyingglass")
             }
+        }
+
+        Divider()
+
+        Button(role: .destructive) {
+            onDelete()
+        } label: {
+            Label("Delete", systemImage: "trash")
         }
     }
 

@@ -70,6 +70,8 @@ struct MainStatusView: View {
 
                 UsageStatsView(viewModel: viewModel)
 
+                TelegraphArticlesSettingsView(viewModel: viewModel)
+
                 StorageSettingsView(viewModel: viewModel)
 
                 ResetDataSettingsView(viewModel: viewModel)

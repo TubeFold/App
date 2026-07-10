@@ -62,6 +62,19 @@ struct ProviderSetupService {
         }
     }
 
+    func loadTelegraphPages() async throws -> TelegraphPagesResponse {
+        try await mapErrors {
+            try await TubeFoldBackend.decode(backend.telegraphPagesPayload())
+        }
+    }
+
+    func regenerateTelegraphAccount() async throws -> String {
+        try await mapErrors {
+            let payload = try await backend.regenerateTelegraphAccount()
+            return (payload["account"] as? String) ?? ""
+        }
+    }
+
     func loadExtensionStatus() async throws -> ExtensionStatus {
         try await mapErrors {
             try await TubeFoldBackend.decode(backend.extensionStatusPayload())

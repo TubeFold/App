@@ -266,6 +266,25 @@ struct UsageSummary: Decodable {
     static let empty = UsageSummary(totalTokens: 0, byProvider: [:])
 }
 
+struct TelegraphPagesResponse: Decodable {
+    /// Short name of the Telegraph account the app publishes under;
+    /// `nil` until the first publish creates it.
+    let account: String?
+    let pages: [TelegraphPage]
+}
+
+/// One article published to telegra.ph by this app's Telegraph account.
+struct TelegraphPage: Decodable, Identifiable, Equatable {
+    let title: String
+    let url: String
+    let path: String
+    let views: Int
+
+    var id: String {
+        path
+    }
+}
+
 struct StringRequest: Encodable {
     let path: String?
 }

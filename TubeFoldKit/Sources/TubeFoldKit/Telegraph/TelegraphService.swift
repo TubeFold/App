@@ -203,6 +203,18 @@ public struct TelegraphClient: Sendable {
         return try await call("editPage/\(encodedPath)", params: params)
     }
 
+    public func getPageList(
+        accessToken: String,
+        offset: Int = 0,
+        limit: Int = 50
+    ) async throws -> [String: Any] {
+        try await call("getPageList", params: [
+            "access_token": accessToken,
+            "offset": String(offset),
+            "limit": String(limit),
+        ])
+    }
+
     static func pageParams(
         accessToken: String,
         title: String,
@@ -262,6 +274,14 @@ public struct TelegraphStore: Sendable {
     }
 }
 
+/// One published Telegraph page, as reported by `getPageList`.
+public struct TelegraphPageInfo: Sendable, Equatable {
+    public let path: String
+    public let url: String
+    public let title: String
+    public let views: Int
+}
+
 public struct TelegraphPublishResult: Sendable, Equatable {
     public let url: String
     /// `published` (new page), `updated` (regenerated summary, same URL) or
@@ -284,21 +304,92 @@ public struct TelegraphPublisher: Sendable {
         self.videoStore = videoStore
     }
 
-    func ensureAccountToken() async throws -> String {
-        if let token = store.load()["accessToken"] as? String, !token.isEmpty {
-            return token
-        }
-        let shortName = "yt-brain-\((0 ..< 8).map { _ in "0123456789abcdef".randomElement()! }.map(String.init).joined())"
+    /// `tubefold-` plus 8 random hex characters (accounts created by older
+    /// builds carry the legacy `yt-brain-` prefix and keep working as-is).
+    static func makeShortName() -> String {
+        "tubefold-\((0 ..< 8).map { _ in "0123456789abcdef".randomElement()! }.map(String.init).joined())"
+    }
+
+    /// Create a Telegraph account and swap it into `telegraph-account.json`,
+    /// archiving any current credentials under `previousAccounts` — Telegraph
+    /// tokens cannot be re-issued, so dropping one would permanently lose
+    /// edit access to that account's pages.
+    private func createAndStoreAccount() async throws -> (token: String, shortName: String) {
+        let shortName = Self.makeShortName()
         let account = try await client.createAccount(shortName: shortName, authorName: "TubeFold")
         guard let token = account["access_token"] as? String, !token.isEmpty else {
             throw TelegraphError.missingAccessToken
         }
-        try store.save([
-            "accessToken": token,
-            "shortName": (account["short_name"] as? String) ?? shortName,
-            "createdAt": ISO8601DateFormatter().string(from: Date()),
-        ])
-        return token
+        var state = store.load()
+        if let oldToken = state["accessToken"] as? String, !oldToken.isEmpty {
+            var previous = state["previousAccounts"] as? [[String: Any]] ?? []
+            previous.append([
+                "accessToken": oldToken,
+                "shortName": (state["shortName"] as? String) ?? "",
+                "retiredAt": ISO8601DateFormatter().string(from: Date()),
+            ])
+            state["previousAccounts"] = previous
+        }
+        let savedShortName = (account["short_name"] as? String) ?? shortName
+        state["accessToken"] = token
+        state["shortName"] = savedShortName
+        state["createdAt"] = ISO8601DateFormatter().string(from: Date())
+        try store.save(state)
+        return (token, savedShortName)
+    }
+
+    func ensureAccountToken() async throws -> String {
+        if let token = store.load()["accessToken"] as? String, !token.isEmpty {
+            return token
+        }
+        return try await createAndStoreAccount().token
+    }
+
+    /// Retire the current account and publish under a brand-new one from now
+    /// on. Every video's cached Telegraph page is forgotten (the new token
+    /// cannot edit the old account's pages), so re-publishing creates fresh
+    /// pages; the old pages stay online under the old account. Returns the
+    /// new account's short name.
+    public func regenerateAccount() async throws -> String {
+        let (_, shortName) = try await createAndStoreAccount()
+        _ = try await videoStore.clearAllTelegraphPages()
+        return shortName
+    }
+
+    /// The stored account's short name (the "identity" pages are published
+    /// under), or `nil` before the first publish creates the account.
+    public func accountShortName() -> String? {
+        let name = store.load()["shortName"] as? String
+        return (name?.isEmpty ?? true) ? nil : name
+    }
+
+    /// Every page the app's Telegraph account has ever published, in the
+    /// API's own order (newest first). Listing never creates an account: with
+    /// no stored token there is nothing published, so this returns `[]`.
+    public func listPages() async throws -> [TelegraphPageInfo] {
+        guard let token = store.load()["accessToken"] as? String, !token.isEmpty else {
+            return []
+        }
+        var pages: [TelegraphPageInfo] = []
+        let pageSize = 200 // getPageList's maximum limit
+        while true {
+            let result = try await client.getPageList(accessToken: token, offset: pages.count, limit: pageSize)
+            let batch = (result["pages"] as? [[String: Any]]) ?? []
+            pages += batch.compactMap { page in
+                guard let path = page["path"] as? String,
+                      let url = page["url"] as? String else { return nil }
+                return TelegraphPageInfo(
+                    path: path,
+                    url: url,
+                    title: (page["title"] as? String) ?? path,
+                    views: (page["views"] as? Int) ?? 0
+                )
+            }
+            let total = (result["total_count"] as? Int) ?? pages.count
+            if batch.isEmpty || pages.count >= total {
+                return pages
+            }
+        }
     }
 
     public func publish(videoID: String) async throws -> TelegraphPublishResult {

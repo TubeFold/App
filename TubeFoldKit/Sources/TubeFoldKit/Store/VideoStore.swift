@@ -417,6 +417,22 @@ public actor VideoStore {
         try modelContext.save()
     }
 
+    /// Forget every video's cached Telegraph page (URL/path/hash). Used when
+    /// a fresh Telegraph account replaces the old one: the new token cannot
+    /// edit the old account's pages, so the next publish must create new
+    /// pages instead. Returns how many videos were cleared.
+    public func clearAllTelegraphPages() throws -> Int {
+        let descriptor = FetchDescriptor<Video>(predicate: #Predicate { $0.telegraphURL != nil })
+        let videos = try modelContext.fetch(descriptor)
+        for video in videos {
+            video.telegraphURL = nil
+            video.telegraphPath = nil
+            video.telegraphSummaryHash = nil
+        }
+        try modelContext.save()
+        return videos.count
+    }
+
     /// Persist the token usage captured from a provider run.
     public func setJobUsage(jobID: String, usage: ProviderUsage) throws {
         guard let job = try jobModel(id: jobID) else { return }

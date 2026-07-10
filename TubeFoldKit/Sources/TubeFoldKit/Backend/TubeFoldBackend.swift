@@ -462,6 +462,45 @@ public final class TubeFoldBackend: Sendable {
         }
     }
 
+    /// All pages the app's Telegraph account has published, for the Settings
+    /// article list. Empty until the first publish creates the account.
+    public func telegraphPagesPayload() async throws -> [String: Any] {
+        let publisher = TelegraphPublisher(
+            dataDirectory: config.dataDirectory,
+            videoStore: store,
+            client: telegraphClient
+        )
+        do {
+            let pages = try await publisher.listPages()
+            return [
+                "account": publisher.accountShortName() as Any,
+                "pages": pages.map { page -> [String: Any] in
+                    ["title": page.title, "url": page.url, "path": page.path, "views": page.views]
+                },
+            ]
+        } catch let error as TelegraphError {
+            throw BackendAPIError.telegraphFailed(error.userMessage)
+        }
+    }
+
+    /// Retire the current Telegraph account and start a fresh one. Old pages
+    /// stay online under the old account (archived in telegraph-account.json);
+    /// cached page links on videos are cleared so re-publishing creates new
+    /// pages under the new account.
+    public func regenerateTelegraphAccount() async throws -> [String: Any] {
+        let publisher = TelegraphPublisher(
+            dataDirectory: config.dataDirectory,
+            videoStore: store,
+            client: telegraphClient
+        )
+        do {
+            let shortName = try await publisher.regenerateAccount()
+            return ["status": "created", "account": shortName]
+        } catch let error as TelegraphError {
+            throw BackendAPIError.telegraphFailed(error.userMessage)
+        }
+    }
+
     // MARK: - Provider setup
 
     public func diagnostics(for providerID: String?) -> ProviderDiagnostics {
