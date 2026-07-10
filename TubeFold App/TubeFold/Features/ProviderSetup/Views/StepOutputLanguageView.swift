@@ -31,7 +31,7 @@ struct StepOutputLanguageView: View {
                 .fixedSize(horizontal: false, vertical: true)
             }
             .padding(18)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .frame(maxWidth: 540, alignment: .leading)
     }

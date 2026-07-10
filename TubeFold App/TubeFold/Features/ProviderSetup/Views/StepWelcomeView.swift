@@ -29,7 +29,7 @@ struct StepWelcomeView: View {
             .font(.headline)
             .foregroundStyle(.primary)
             .padding(18)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             Text("No API key is needed. TubeFold runs the provider's official command-line tool on this Mac.")
                 .font(.callout)

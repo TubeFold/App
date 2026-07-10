@@ -27,6 +27,7 @@ struct BrowserExtensionSettingsView: View {
                 .controlSize(.large)
             }
             .settingsCard()
+            .transition(.opacity)
         }
     }
 }

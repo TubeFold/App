@@ -9,7 +9,8 @@ struct StepRowView: View {
         HStack(spacing: 12) {
             Image(systemName: isComplete ? "checkmark.circle.fill" : "chevron.right")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(isComplete ? .green : (isCurrent ? .orange : .secondary))
+                .foregroundStyle(isComplete ? .green : (isCurrent ? Color.accentColor : .secondary))
+                .contentTransition(.symbolEffect(.replace))
                 .frame(width: 22)
             Text(step.title)
                 .font(.headline)
@@ -18,11 +19,18 @@ struct StepRowView: View {
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 14)
-        .background(isCurrent ? Color.orange.opacity(0.12) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(isCurrent ? Color.orange.opacity(0.65) : Color.clear, lineWidth: 1),
+        // Accent, not orange: the highlight marks "you are here", and orange
+        // reads as a warning everywhere else in the app.
+        .background(
+            isCurrent ? Color.accentColor.opacity(0.12) : Color.clear,
+            in: RoundedRectangle(cornerRadius: 8, style: .continuous),
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(isCurrent ? Color.accentColor.opacity(0.5) : Color.clear, lineWidth: 1),
+        )
+        .animation(.smooth(duration: 0.3), value: isCurrent)
+        .animation(.smooth(duration: 0.3), value: isComplete)
     }
 }
 

@@ -4,6 +4,16 @@ struct LibraryView: View {
     @StateObject private var viewModel = LibraryViewModel()
     @ObservedObject private var appSettings = AppSettings.shared
     @State private var videoPendingDeletion: LibraryVideo?
+    @FocusState private var urlFieldFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Rows and banners slide/scale a touch as they come and go; under Reduce
+    /// Motion they simply cross-fade.
+    private var cardTransition: AnyTransition {
+        reduceMotion
+            ? .opacity
+            : .opacity.combined(with: .scale(scale: 0.97, anchor: .top))
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -14,12 +24,14 @@ struct LibraryView: View {
             // filters these out; this guards against an older/stale backend doing otherwise.)
             if appSettings.showWatchSuggestions, let suggestion = viewModel.suggestion, !suggestion.inLibrary {
                 SuggestionBannerView(suggestion: suggestion, viewModel: viewModel)
+                    .transition(cardTransition)
             }
 
             if let errorMessage = viewModel.errorMessage {
                 Label(errorMessage, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(.red)
                     .fixedSize(horizontal: false, vertical: true)
+                    .transition(.opacity)
             }
 
             if viewModel.isLoading, viewModel.videos.isEmpty {
@@ -40,6 +52,7 @@ struct LibraryView: View {
                             LibraryVideoRowView(video: video, viewModel: viewModel) {
                                 videoPendingDeletion = video
                             }
+                            .transition(cardTransition)
                         }
                     }
                     .padding(.vertical, 4)
@@ -48,6 +61,13 @@ struct LibraryView: View {
             }
         }
         .padding(32)
+        // Library state changes come from background polling and optimistic
+        // updates — animate them so rows and banners settle in instead of popping.
+        .animation(.smooth(duration: 0.35), value: viewModel.videos)
+        .animation(.smooth(duration: 0.3), value: viewModel.suggestion)
+        .animation(.smooth(duration: 0.25), value: viewModel.errorMessage)
+        .animation(.smooth(duration: 0.25), value: viewModel.noticeMessage)
+        .animation(.smooth(duration: 0.25), value: viewModel.showExtensionTip)
         .navigationTitle("Library")
         .confirmationDialog(
             "Delete this video?",
@@ -83,10 +103,11 @@ struct LibraryView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 Image(systemName: "link")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(urlFieldFocused ? Color.accentColor : Color.secondary)
 
                 TextField("Paste a YouTube link…", text: $viewModel.urlInput)
                     .textFieldStyle(.plain)
+                    .focused($urlFieldFocused)
                     .disableAutocorrection(true)
                     .onSubmit { viewModel.submitURL() }
 
@@ -124,12 +145,21 @@ struct LibraryView: View {
                 .disabled(!viewModel.canSubmitURL)
             }
             .padding(10)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(
+                        urlFieldFocused ? Color.accentColor.opacity(0.5) : Color.primary.opacity(0.06),
+                        lineWidth: 1,
+                    ),
+            )
+            .animation(.smooth(duration: 0.2), value: urlFieldFocused)
 
             if let notice = viewModel.noticeMessage {
                 Label(notice, systemImage: "checkmark.circle.fill")
                     .font(.callout)
                     .foregroundStyle(.green)
+                    .transition(.opacity)
             }
 
             if viewModel.showExtensionTip {
@@ -165,6 +195,7 @@ struct LibraryView: View {
         VStack(spacing: 14) {
             Image(systemName: "play.rectangle")
                 .font(.system(size: 42, weight: .regular))
+                .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.secondary)
             Text("No videos yet")
                 .font(.title2.weight(.semibold))

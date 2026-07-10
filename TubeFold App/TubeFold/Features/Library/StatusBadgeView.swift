@@ -2,7 +2,6 @@ import SwiftUI
 
 struct StatusBadgeView: View {
     let status: String
-    @State private var spin = false
 
     private var isSpinning: Bool {
         ["fetchingMetadata", "fetchingTranscript", "generatingSummary"].contains(status)
@@ -11,27 +10,19 @@ struct StatusBadgeView: View {
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: statusIcon)
-                .rotationEffect(.degrees(spin ? 360 : 0))
+                .symbolEffect(.rotate, options: .repeat(.continuous), isActive: isSpinning)
+                .contentTransition(.symbolEffect(.replace))
             Text(statusTitle)
+                .contentTransition(.interpolate)
         }
         .font(.caption.weight(.semibold))
         .foregroundStyle(statusColor)
         .padding(.vertical, 5)
         .padding(.horizontal, 9)
         .background(statusColor.opacity(0.12), in: Capsule())
-        .onAppear { updateSpin() }
-        .onChange(of: status) { _, _ in updateSpin() }
-    }
-
-    private func updateSpin() {
-        if isSpinning {
-            spin = false
-            withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
-                spin = true
-            }
-        } else {
-            withAnimation(.default) { spin = false }
-        }
+        // Status flips arrive from background polling; animate the swap so the
+        // badge morphs between stages instead of hard-cutting.
+        .animation(.smooth(duration: 0.3), value: status)
     }
 
     private var statusTitle: String {
@@ -59,8 +50,10 @@ struct StatusBadgeView: View {
         switch status {
         case "ready":
             "checkmark.circle.fill"
-        case "failed", "cancelled":
+        case "failed":
             "exclamationmark.triangle.fill"
+        case "cancelled":
+            "slash.circle.fill"
         case "queued":
             "clock.fill"
         default:
@@ -68,13 +61,15 @@ struct StatusBadgeView: View {
         }
     }
 
+    /// Red = error, secondary = neutral end state; orange stays reserved for
+    /// warnings elsewhere so each color keeps one meaning across the app.
     private var statusColor: Color {
         switch status {
         case "ready":
             .green
-        case "failed", "cancelled":
-            .orange
-        case "queued":
+        case "failed":
+            .red
+        case "cancelled", "queued":
             .secondary
         default:
             .blue

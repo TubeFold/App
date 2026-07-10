@@ -35,6 +35,7 @@ struct OutputLanguageSettingsView: View {
                 }
                 .controlSize(.large)
                 .disabled(!viewModel.outputLanguageDirty || viewModel.isBusy)
+                .animation(.smooth(duration: 0.2), value: viewModel.outputLanguageDirty)
 
                 Button("Reset") {
                     viewModel.resetOutputLanguage()

@@ -36,7 +36,7 @@ struct LibraryVideoRowView: View {
                 if video.status == "failed" {
                     Text(video.errorMessage ?? "Summary failed.")
                         .font(.callout)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(.red)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
@@ -113,12 +113,16 @@ struct LibraryVideoRowView: View {
                         }
                     }
                 }
-                .animation(.easeInOut(duration: 0.25), value: video.hasMarkdown)
+                .animation(.smooth(duration: 0.3), value: video.hasMarkdown)
             }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1),
+        )
         .contextMenu {
             Button(role: .destructive) {
                 onDelete()
@@ -131,12 +135,15 @@ struct LibraryVideoRowView: View {
     @ViewBuilder
     private var thumbnail: some View {
         if let url = video.thumbnailImageURL {
-            AsyncImage(url: url) { phase in
+            // The transaction fades the loaded image in over the placeholder
+            // instead of swapping it in on whatever frame the download lands.
+            AsyncImage(url: url, transaction: Transaction(animation: .smooth(duration: 0.3))) { phase in
                 switch phase {
                 case let .success(image):
                     image
                         .resizable()
                         .scaledToFill()
+                        .transition(.opacity)
                 default:
                     thumbnailPlaceholder
                 }

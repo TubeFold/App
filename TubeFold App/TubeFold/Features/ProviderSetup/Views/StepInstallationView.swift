@@ -88,7 +88,7 @@ private struct CodexCLIInstallHelpView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(16)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var helpMessage: String {

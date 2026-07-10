@@ -76,13 +76,18 @@ struct MainStatusView: View {
 
                 if let errorMessage = viewModel.errorMessage {
                     Label(errorMessage, systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(.red)
                         .fixedSize(horizontal: false, vertical: true)
+                        .transition(.opacity)
                 }
 
                 Spacer()
             }
             .padding(32)
+            // The extension card removes itself once the extension connects;
+            // let the section collapse smoothly rather than jump.
+            .animation(.smooth(duration: 0.3), value: viewModel.extensionConnected)
+            .animation(.smooth(duration: 0.25), value: viewModel.errorMessage)
         }
         .navigationTitle("Settings")
     }

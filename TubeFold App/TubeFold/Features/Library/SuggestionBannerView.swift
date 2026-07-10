@@ -56,9 +56,9 @@ struct SuggestionBannerView: View {
             .help("Dismiss")
         }
         .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(Color.accentColor.opacity(0.35), lineWidth: 1),
         )
     }
@@ -66,10 +66,10 @@ struct SuggestionBannerView: View {
     @ViewBuilder
     private var thumbnail: some View {
         if let url = suggestion.thumbnailImageURL {
-            AsyncImage(url: url) { phase in
+            AsyncImage(url: url, transaction: Transaction(animation: .smooth(duration: 0.3))) { phase in
                 switch phase {
                 case let .success(image):
-                    image.resizable().scaledToFill()
+                    image.resizable().scaledToFill().transition(.opacity)
                 default:
                     Color.secondary.opacity(0.12)
                 }

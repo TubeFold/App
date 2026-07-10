@@ -3,6 +3,13 @@ import SwiftUI
 struct ProviderSetupWizardView: View {
     @ObservedObject var viewModel: ProviderSetupViewModel
     @Binding var isPresented: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Steps materialize in place (blur + scale) rather than hard-cutting;
+    /// Reduce Motion gets a plain cross-fade.
+    private var stepTransition: AnyTransition {
+        reduceMotion ? .opacity : AnyTransition(.blurReplace)
+    }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -41,6 +48,7 @@ struct ProviderSetupWizardView: View {
                 .padding(.bottom, 26)
 
                 stepContent
+                    .transition(stepTransition)
 
                 Spacer()
 
@@ -48,8 +56,9 @@ struct ProviderSetupWizardView: View {
                     if let errorMessage = viewModel.errorMessage {
                         Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
                             .font(.callout)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(.red)
                             .fixedSize(horizontal: false, vertical: true)
+                            .transition(.opacity)
                     }
 
                     HStack {
@@ -85,6 +94,11 @@ struct ProviderSetupWizardView: View {
             .padding(34)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        // Step changes come from async view-model work, so the animation is
+        // bound to the values here instead of withAnimation at the call sites.
+        .animation(.smooth(duration: 0.35), value: viewModel.currentStep)
+        .animation(.smooth(duration: 0.25), value: viewModel.isBusy)
+        .animation(.smooth(duration: 0.25), value: viewModel.errorMessage)
         .task {
             if !viewModel.hasLoadedState {
                 await viewModel.loadState()
