@@ -58,12 +58,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // runs this delegate. Skip all production startup — the single-instance
         // exit(0) guard below, Sparkle, the menu bar and the backend each take down
         // the preview agent ("…app may have crashed") and break every #Preview.
-        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" { return }
+        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+            return
+        }
 
         // If another copy of TubeFold is already running (e.g. an installed build
         // while LaunchServices opened a tubefold:// link against a different bundle
         // path), focus that one and bail instead of standing up a second instance.
-        if activateRunningInstanceIfPresent() { return }
+        if activateRunningInstanceIfPresent() {
+            return
+        }
         // Bring up the in-process backend: reclaims orphaned jobs, drains the
         // queue, and serves the Chrome extension on 127.0.0.1:43821.
         TubeFoldBackend.shared.startServing()
@@ -100,7 +104,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     static func showMainWindow() {
         NSApp.activate(ignoringOtherApps: true)
         if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {
-            if window.isMiniaturized { window.deminiaturize(nil) }
+            if window.isMiniaturized {
+                window.deminiaturize(nil)
+            }
             window.makeKeyAndOrderFront(nil)
         } else {
             MainWindowOpener.shared.open?()

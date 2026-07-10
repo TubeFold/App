@@ -203,7 +203,11 @@ enum JSONValue: Decodable {
         case let .string(value):
             value
         case let .number(value):
-            value.rounded() == value ? String(Int(value)) : String(value)
+            if value.rounded() == value {
+                String(Int(value))
+            } else {
+                String(value)
+            }
         case let .bool(value):
             value ? "true" : "false"
         case let .object(value):

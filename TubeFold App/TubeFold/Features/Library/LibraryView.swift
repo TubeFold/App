@@ -53,7 +53,11 @@ struct LibraryView: View {
             "Delete this video?",
             isPresented: Binding(
                 get: { videoPendingDeletion != nil },
-                set: { if !$0 { videoPendingDeletion = nil } },
+                set: {
+                    if !$0 {
+                        videoPendingDeletion = nil
+                    }
+                },
             ),
             titleVisibility: .visible,
             presenting: videoPendingDeletion,

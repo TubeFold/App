@@ -43,7 +43,9 @@ final class LibraryViewModel: ObservableObject {
             while !Task.isCancelled {
                 let delaySeconds = activeCount > 0 ? 2.0 : 6.0
                 try? await Task.sleep(nanoseconds: UInt64(delaySeconds * 1_000_000_000))
-                if Task.isCancelled { return }
+                if Task.isCancelled {
+                    return
+                }
                 await load(showSpinner: false)
             }
         }
@@ -189,7 +191,9 @@ final class LibraryViewModel: ObservableObject {
         noticeTask?.cancel()
         noticeTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 4_000_000_000)
-            if Task.isCancelled { return }
+            if Task.isCancelled {
+                return
+            }
             self?.noticeMessage = nil
         }
     }
@@ -210,6 +214,57 @@ final class LibraryViewModel: ObservableObject {
         return lower.contains("youtube.com/") || lower.contains("youtu.be/")
     }
 
+    func isPublishing(_ video: LibraryVideo) -> Bool {
+        publishingVideoIDs.contains(video.id)
+    }
+
+    func publishToTelegraph(_ video: LibraryVideo) {
+        guard !publishingVideoIDs.contains(video.id) else { return }
+        publishingVideoIDs.insert(video.id)
+        Task {
+            do {
+                let response = try await service.publishTelegraph(videoID: video.id)
+                if let url = URL(string: response.url) {
+                    NSWorkspace.shared.open(url)
+                }
+                await load(showSpinner: false)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            publishingVideoIDs.remove(video.id)
+        }
+    }
+
+    func regenerate(_ video: LibraryVideo) {
+        Task {
+            do {
+                try await service.regenerate(videoID: video.id)
+                await load(showSpinner: false)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    func deleteVideo(_ video: LibraryVideo) {
+        // Optimistically drop the row so the deletion feels instant; the next refresh
+        // reconciles with the backend (and restores it if the call failed).
+        videos.removeAll { $0.id == video.id }
+        Task {
+            do {
+                try await service.delete(videoID: video.id)
+                await load(showSpinner: false)
+            } catch {
+                errorMessage = error.localizedDescription
+                await load(showSpinner: false)
+            }
+        }
+    }
+}
+
+// MARK: - Opening artifacts (YouTube / Markdown / PDF / logs)
+
+extension LibraryViewModel {
     func openYouTube(_ video: LibraryVideo) {
         guard let url = video.youtubeURL else { return }
         NSWorkspace.shared.open(url)
@@ -301,52 +356,5 @@ final class LibraryViewModel: ObservableObject {
         let base = "[TubeFold] \(sanitized)"
         // Keep well under the 255-byte filename limit, leaving room for the extension.
         return "\(String(base.prefix(200))).\(fileExtension)"
-    }
-
-    func isPublishing(_ video: LibraryVideo) -> Bool {
-        publishingVideoIDs.contains(video.id)
-    }
-
-    func publishToTelegraph(_ video: LibraryVideo) {
-        guard !publishingVideoIDs.contains(video.id) else { return }
-        publishingVideoIDs.insert(video.id)
-        Task {
-            do {
-                let response = try await service.publishTelegraph(videoID: video.id)
-                if let url = URL(string: response.url) {
-                    NSWorkspace.shared.open(url)
-                }
-                await load(showSpinner: false)
-            } catch {
-                errorMessage = error.localizedDescription
-            }
-            publishingVideoIDs.remove(video.id)
-        }
-    }
-
-    func regenerate(_ video: LibraryVideo) {
-        Task {
-            do {
-                try await service.regenerate(videoID: video.id)
-                await load(showSpinner: false)
-            } catch {
-                errorMessage = error.localizedDescription
-            }
-        }
-    }
-
-    func deleteVideo(_ video: LibraryVideo) {
-        // Optimistically drop the row so the deletion feels instant; the next refresh
-        // reconciles with the backend (and restores it if the call failed).
-        videos.removeAll { $0.id == video.id }
-        Task {
-            do {
-                try await service.delete(videoID: video.id)
-                await load(showSpinner: false)
-            } catch {
-                errorMessage = error.localizedDescription
-                await load(showSpinner: false)
-            }
-        }
     }
 }
