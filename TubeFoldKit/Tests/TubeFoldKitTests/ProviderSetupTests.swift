@@ -20,7 +20,7 @@ private func temporaryDataDir() throws -> URL {
         let state = store.load()
 
         #expect(state["selectedProviderID"] as? String == "codex")
-        #expect(state["codexModel"] as? String == "gpt-5.4-mini")
+        #expect(state["codexModel"] as? String == "gpt-5.6-luna")
         #expect(state["claudeModel"] as? String == "sonnet")
         #expect(state["codexReasoningEffort"] as? String == "auto")
         #expect(state["outputLanguage"] as? String == "English")
@@ -42,7 +42,7 @@ private func temporaryDataDir() throws -> URL {
 
         // A bogus model falls back to the default.
         let state2 = try diagnostics.saveModelSettings(model: "gpt-99", reasoningEffort: "high")
-        #expect(state2["codexModel"] as? String == "gpt-5.4-mini")
+        #expect(state2["codexModel"] as? String == "gpt-5.6-luna")
         #expect(state2["codexReasoningEffort"] as? String == "high")
     }
 

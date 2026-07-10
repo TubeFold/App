@@ -98,7 +98,7 @@ public enum ProviderDescriptors {
     public static let connectionMarker = "CODEX_CONNECTION_OK"
     public static let claudeConnectionMarker = "CLAUDE_CONNECTION_OK"
 
-    public static let defaultCodexModel = "gpt-5.4-mini"
+    public static let defaultCodexModel = "gpt-5.6-luna"
     public static let defaultClaudeModel = "sonnet"
     public static let defaultEffort = "auto"
 

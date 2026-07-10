@@ -17,7 +17,7 @@ final class ProviderSetupViewModel: ObservableObject {
     @Published private(set) var selectedProviderID = "codex"
     @Published private(set) var availableProviders: [ProviderInfo] = ProviderInfo.defaults
     @Published private(set) var modelOptions: [CodexModelOption] = CodexModelOption.defaultModelOptions
-    @Published private(set) var selectedModel = "gpt-5.4-mini"
+    @Published private(set) var selectedModel = "gpt-5.6-luna"
     @Published private(set) var outputLanguage = ProviderSetupViewModel.defaultOutputLanguage
     @Published var outputLanguageDraft = ProviderSetupViewModel.defaultOutputLanguage
     @Published private(set) var usage: UsageSummary?

@@ -133,7 +133,7 @@ struct CodexModelOption: Decodable, Identifiable, Hashable {
     }
 
     static func defaultModel(for provider: String) -> String {
-        provider == "claude" ? "sonnet" : "gpt-5.4-mini"
+        provider == "claude" ? "sonnet" : "gpt-5.6-luna"
     }
 }
 
