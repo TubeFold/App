@@ -17,6 +17,18 @@ without notes.
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-07-10
+
+### Added
+
+- New GPT 5.6 model options for Codex; the default model is now GPT-5.6 Luna.
+- TubeFold now detects an outdated Codex CLI and suggests updating it, with
+  clearer error messages when a summary fails.
+
+### Changed
+
+- Expanded translations across all supported languages.
+
 ## [0.9.1] - 2026-07-08
 
 ### Changed
