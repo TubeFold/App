@@ -17,6 +17,24 @@ without notes.
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-07-14
+
+### Added
+
+- Telegraph account management in Settings: browse all published articles with
+  view counts, reset the account, and clear cached pages.
+- "Open YouTube" action in the library row menu.
+- App Visibility Mode: choose whether TubeFold appears in the Dock, in the
+  menu bar, or both — from Settings or straight from the menu-bar icon.
+
+### Changed
+
+- Automatic opening of published Telegraph pages is now off by default —
+  Telegraph pages are public, so publishing requires explicit opt-in.
+- Smoother animations and visual polish across the app, with Reduce Motion
+  support.
+- Expanded translations across all supported languages.
+
 ## [0.9.2] - 2026-07-10
 
 ### Added
