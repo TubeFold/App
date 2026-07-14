@@ -68,6 +68,8 @@ struct MainStatusView: View {
 
                 AppBehaviorSettingsView()
 
+                AppVisibilitySettingsView()
+
                 UsageStatsView(viewModel: viewModel)
 
                 TelegraphArticlesSettingsView(viewModel: viewModel)

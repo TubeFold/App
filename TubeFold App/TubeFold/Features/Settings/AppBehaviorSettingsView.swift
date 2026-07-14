@@ -33,26 +33,6 @@ struct AppBehaviorSettingsView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-
-            Toggle(isOn: $settings.hideMenuBarIcon) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Hide menu bar icon")
-                    Text("Remove the TubeFold icon from the macOS menu bar. The main window stays available.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-
-            Toggle(isOn: $settings.hideDockIcon) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Hide Dock icon")
-                    Text("Remove the TubeFold icon from the Dock and the app switcher. The main window stays available.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
         }
         .settingsCard()
     }

@@ -34,7 +34,7 @@ final class MenuBarController: NSObject {
 
     /// The most recent status line, so async completions can rebuild the menu
     /// without recomputing it.
-    var lastStatusTitle = "TubeFold is ready"
+    var lastStatusTitle = String(localized: "TubeFold is ready")
 
     /// How long the "summary ready" checkmark lingers after a completion before the
     /// icon settles back to the calm app-icon default.
@@ -60,8 +60,11 @@ final class MenuBarController: NSObject {
 
     /// Show or hide the status item per the user's preference. Polling keeps
     /// running while hidden so the app still auto-opens Telegraph if enabled.
+    /// Also rebuilds the menu so the App Visibility Mode checkmark stays in
+    /// sync when the mode changes from the Settings window.
     func applyMenuBarVisibility() {
         statusItem.isVisible = !AppSettings.shared.hideMenuBarIcon
+        rebuildMenu(statusTitle: lastStatusTitle)
     }
 
     func stop() {

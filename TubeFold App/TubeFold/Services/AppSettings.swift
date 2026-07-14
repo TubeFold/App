@@ -2,6 +2,27 @@ import AppKit
 import Combine
 import Foundation
 
+/// Where the app shows up: the Dock, the menu bar, or both. A facade over the
+/// two stored toggles (`hideDockIcon` / `hideMenuBarIcon`) that rules out the
+/// "hidden everywhere" combination.
+enum AppVisibilityMode: CaseIterable, Identifiable {
+    case dockAndMenuBar
+    case menuBarOnly
+    case dockOnly
+
+    var id: Self {
+        self
+    }
+
+    var title: String {
+        switch self {
+        case .dockAndMenuBar: String(localized: "Dock & Menu Bar")
+        case .menuBarOnly: String(localized: "Menu Bar Only")
+        case .dockOnly: String(localized: "Dock Only")
+        }
+    }
+}
+
 /// Client-side macOS app preferences, persisted in `UserDefaults`.
 ///
 /// These are pure app-behavior toggles (no backend involvement), unlike the
@@ -47,6 +68,43 @@ final class AppSettings: ObservableObject {
         didSet {
             UserDefaults.standard.set(hideDockIcon, forKey: Keys.hideDockIcon)
             AppSettings.applyDockIconVisibility(hidden: hideDockIcon)
+            // Refresh the status-item menu so the App Visibility Mode checkmark follows.
+            MenuBarController.shared.applyMenuBarVisibility()
+        }
+    }
+
+    /// The two stored toggles expressed as a single three-way mode, for the
+    /// Settings picker and the status-item "App Visibility Mode" submenu.
+    var appVisibilityMode: AppVisibilityMode {
+        get {
+            if hideDockIcon {
+                return .menuBarOnly
+            }
+            if hideMenuBarIcon {
+                return .dockOnly
+            }
+            return .dockAndMenuBar
+        }
+        set {
+            let hidden: (dock: Bool, menuBar: Bool) = switch newValue {
+            case .dockAndMenuBar: (false, false)
+            case .menuBarOnly: (true, false)
+            case .dockOnly: (false, true)
+            }
+            // Reveal before hiding so we never pass through a state with both
+            // icons gone; skip no-op writes (their didSets have side effects).
+            if hideDockIcon, !hidden.dock {
+                hideDockIcon = false
+            }
+            if hideMenuBarIcon, !hidden.menuBar {
+                hideMenuBarIcon = false
+            }
+            if !hideDockIcon, hidden.dock {
+                hideDockIcon = true
+            }
+            if !hideMenuBarIcon, hidden.menuBar {
+                hideMenuBarIcon = true
+            }
         }
     }
 
@@ -92,6 +150,13 @@ final class AppSettings: ObservableObject {
         hideDockIcon = defaults.bool(forKey: Keys.hideDockIcon)
         dismissedExtensionTip = defaults.bool(forKey: Keys.dismissedExtensionTip)
         showWatchSuggestions = defaults.bool(forKey: Keys.showWatchSuggestions)
+        // Legacy state from when the two toggles were independent: both icons
+        // hidden. The visibility mode can't express that, so restore the menu
+        // bar icon (didSet doesn't fire in init — persist by hand).
+        if hideDockIcon, hideMenuBarIcon {
+            hideMenuBarIcon = false
+            defaults.set(false, forKey: Keys.hideMenuBarIcon)
+        }
     }
 
     func resetForFirstRunTesting() {

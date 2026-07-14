@@ -1129,6 +1129,122 @@
         }
       }
     },
+    "App visibility" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ظهور التطبيق"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "অ্যাপের দৃশ্যমানতা"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visibilidad de la app"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visibilité de l’app"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ऐप दृश्यता"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visibilidade do app"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Видимость приложения"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ایپ کی مرئیت"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用显示"
+          }
+        }
+      }
+    },
+    "App Visibility Mode" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "وضع ظهور التطبيق"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "অ্যাপ দৃশ্যমানতা মোড"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modo de visibilidad de la app"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode de visibilité de l’app"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ऐप दृश्यता मोड"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modo de visibilidade do app"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Режим видимости приложения"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ایپ کی مرئیت کا موڈ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用显示模式"
+          }
+        }
+      }
+    },
     "Back" : {
       "localizations" : {
         "ar" : {
@@ -2717,6 +2833,122 @@
         }
       }
     },
+    "Dock & Menu Bar" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock وشريط القائمة"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock এবং মেনু বার"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock y barra de menús"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock et barre des menus"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock और मेनू बार"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock e barra de menus"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock и строка меню"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock اور مینو بار"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "程序坞和菜单栏"
+          }
+        }
+      }
+    },
+    "Dock Only" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock فقط"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "শুধুমাত্র Dock"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo Dock"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock uniquement"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "केवल Dock"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apenas Dock"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Только Dock"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "صرف Dock"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅程序坞"
+          }
+        }
+      }
+    },
     "English" : {
       "localizations" : {
         "ar" : {
@@ -3299,122 +3531,6 @@
         }
       }
     },
-    "Hide Dock icon" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "إخفاء أيقونة Dock"
-          }
-        },
-        "bn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dock আইকন লুকান"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocultar icono del Dock"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Masquer l’icône du Dock"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dock आइकन छिपाएं"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocultar ícone no Dock"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скрыть значок в Dock"
-          }
-        },
-        "ur" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dock آئیکن چھپائیں"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐藏 Dock 图标"
-          }
-        }
-      }
-    },
-    "Hide menu bar icon" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "إخفاء أيقونة شريط القائمة"
-          }
-        },
-        "bn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "মেনু বার আইকন লুকান"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocultar icono de la barra de menús"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Masquer l’icône de la barre des menus"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "मेनू बार आइकन छिपाएं"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocultar ícone da barra de menus"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скрыть значок в строке меню"
-          }
-        },
-        "ur" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "مینو بار آئیکن چھپائیں"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隐藏菜单栏图标"
-          }
-        }
-      }
-    },
     "Install Codex CLI in Terminal" : {
       "comment" : "A heading for the installation of the Codex CLI in Terminal.",
       "isCommentAutoGenerated" : true,
@@ -3703,6 +3819,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在加载资料库"
+          }
+        }
+      }
+    },
+    "Menu Bar Only" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "شريط القائمة فقط"
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "শুধুমাত্র মেনু বার"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo barra de menús"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Barre des menus uniquement"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "केवल मेनू बार"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apenas barra de menus"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Только строка меню"
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "صرف مینو بار"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅菜单栏"
           }
         }
       }
@@ -5746,122 +5920,6 @@
         }
       }
     },
-    "Remove the TubeFold icon from the Dock and the app switcher. The main window stays available." : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "إزالة أيقونة TubeFold من Dock ومبدّل التطبيقات. ستبقى النافذة الرئيسية متاحة."
-          }
-        },
-        "bn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dock এবং অ্যাপ সুইচার থেকে TubeFold আইকন সরান। প্রধান উইন্ডো উপলভ্য থাকবে।"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elimina el icono de TubeFold del Dock y del selector de apps. La ventana principal seguirá disponible."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retirez l’icône TubeFold du Dock et du sélecteur d’apps. La fenêtre principale reste disponible."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dock और ऐप स्विचर से TubeFold आइकन हटाएं। मुख्य विंडो उपलब्ध रहेगी।"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remova o ícone do TubeFold do Dock e do alternador de apps. A janela principal continuará disponível."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скрыть значок TubeFold из Dock и переключателя приложений. Главное окно останется доступным."
-          }
-        },
-        "ur" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TubeFold آئیکن کو Dock اور ایپ سوئچر سے ہٹا دیں۔ مرکزی ونڈو دستیاب رہے گی۔"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从 Dock 和 App 切换器中移除 TubeFold 图标。主窗口仍然可用。"
-          }
-        }
-      }
-    },
-    "Remove the TubeFold icon from the macOS menu bar. The main window stays available." : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "إزالة أيقونة TubeFold من شريط قوائم macOS. ستبقى النافذة الرئيسية متاحة."
-          }
-        },
-        "bn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS মেনু বার থেকে TubeFold আইকন সরান। প্রধান উইন্ডো উপলভ্য থাকবে।"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elimina el icono de TubeFold de la barra de menús de macOS. La ventana principal seguirá disponible."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retirez l’icône TubeFold de la barre des menus macOS. La fenêtre principale reste disponible."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "macOS मेनू बार से TubeFold आइकन हटाएं। मुख्य विंडो उपलब्ध रहेगी।"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remova o ícone do TubeFold da barra de menus do macOS. A janela principal continuará disponível."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скрыть значок TubeFold из строки меню macOS. Главное окно останется доступным."
-          }
-        },
-        "ur" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TubeFold آئیکن کو macOS مینو بار سے ہٹا دیں۔ مرکزی ونڈو دستیاب رہے گی۔"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "从 macOS 菜单栏中移除 TubeFold 图标。主窗口仍然可用。"
-          }
-        }
-      }
-    },
     "Report an issue" : {
       "localizations" : {
         "ar" : {
@@ -6794,6 +6852,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "显示日志"
+          }
+        }
+      }
+    },
+    "Show TubeFold in the Dock, in the menu bar, or both. The main window stays available." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أظهر TubeFold في Dock أو شريط القائمة أو كليهما. تبقى النافذة الرئيسية متاحة."
+          }
+        },
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TubeFold-কে Dock-এ, মেনু বারে বা উভয় জায়গায় দেখান। প্রধান উইন্ডো উপলব্ধ থাকে।"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muestra TubeFold en el Dock, en la barra de menús o en ambos. La ventana principal sigue disponible."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Affichez TubeFold dans le Dock, dans la barre des menus ou les deux. La fenêtre principale reste disponible."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TubeFold को Dock में, मेनू बार में या दोनों में दिखाएं। मुख्य विंडो उपलब्ध रहती है।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostre o TubeFold no Dock, na barra de menus ou em ambos. A janela principal continua disponível."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать TubeFold в Dock, в строке меню или там и там. Главное окно остаётся доступным."
+          }
+        },
+        "ur" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TubeFold کو Dock میں، مینو بار میں یا دونوں میں دکھائیں۔ مرکزی ونڈو دستیاب رہتی ہے۔"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在程序坞、菜单栏或两者中显示 TubeFold。主窗口仍然可用。"
           }
         }
       }

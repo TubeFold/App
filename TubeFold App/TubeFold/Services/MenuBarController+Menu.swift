@@ -22,6 +22,7 @@ extension MenuBarController {
         latestSummaryMenuItems().forEach(menu.addItem)
 
         menu.addItem(.separator())
+        menu.addItem(appVisibilityMenuItem())
 
         let checkForUpdates = NSMenuItem(
             title: String(localized: "Check for Updates…"),
@@ -76,6 +77,36 @@ extension MenuBarController {
         openSummaryWeb.isEnabled = lastReadyVideo != nil && publishingVideoID == nil
 
         return [openSummary, openSummaryPDF, openSummaryWeb]
+    }
+
+    /// The "App Visibility Mode" submenu — a radio group of the three
+    /// Dock/menu-bar placements, checkmark on the active one.
+    private func appVisibilityMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(
+            title: String(localized: "App Visibility Mode"),
+            action: nil,
+            keyEquivalent: "",
+        )
+        let submenu = NSMenu()
+        let current = AppSettings.shared.appVisibilityMode
+        for mode in AppVisibilityMode.allCases {
+            let modeItem = NSMenuItem(
+                title: mode.title,
+                action: #selector(selectAppVisibilityMode(_:)),
+                keyEquivalent: "",
+            )
+            modeItem.representedObject = mode
+            modeItem.state = mode == current ? .on : .off
+            modeItem.target = self
+            submenu.addItem(modeItem)
+        }
+        item.submenu = submenu
+        return item
+    }
+
+    @objc private func selectAppVisibilityMode(_ sender: NSMenuItem) {
+        guard let mode = sender.representedObject as? AppVisibilityMode else { return }
+        AppSettings.shared.appVisibilityMode = mode
     }
 
     @objc private func openApp() {
