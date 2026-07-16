@@ -14,7 +14,7 @@ TubeFold is a native macOS app. Paste a YouTube link (or click once in the Chrom
 
 No API keys. No TubeFold account. No TubeFold servers. No telemetry.
 
-![TubeFold library window with queued, summarizing, and ready YouTube summaries](.github/assets/library.png)
+![TubeFold library window with summarizing and ready YouTube summaries](.github/assets/library.png)
 
 ---
 
