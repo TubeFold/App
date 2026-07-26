@@ -17,6 +17,12 @@ without notes.
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-07-26
+
+### Changed
+
+- The Claude "Opus" model option is now labelled Opus 5.
+
 ## [0.9.3] - 2026-07-14
 
 ### Added

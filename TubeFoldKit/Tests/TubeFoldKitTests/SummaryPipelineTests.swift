@@ -261,7 +261,7 @@ private struct ExplodingProvider: SummaryProvider {
             settings: ProviderRunSettings(model: "opus", reasoningEffort: "auto", timeout: 1),
             outputLanguage: "English"
         )
-        #expect(claudeMarkdown.contains("model: \"Claude Opus 4.8\""))
+        #expect(claudeMarkdown.contains("model: \"Claude Opus 5\""))
         #expect(!claudeMarkdown.contains("effort:"))
     }
 

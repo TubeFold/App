@@ -145,7 +145,7 @@ public enum ProviderDescriptors {
         marker: claudeConnectionMarker,
         markerExact: false,
         modelOptions: [
-            ProviderOption(id: "opus", label: "Opus 4.8"),
+            ProviderOption(id: "opus", label: "Opus 5"),
             ProviderOption(id: "sonnet", label: "Sonnet 5"),
             ProviderOption(id: "haiku", label: "Haiku 4.5"),
         ],

@@ -124,7 +124,7 @@ struct CodexModelOption: Decodable, Identifiable, Hashable {
 
     static let defaultClaudeModelOptions: [CodexModelOption] = [
         CodexModelOption(id: "sonnet", label: "Sonnet 5"),
-        CodexModelOption(id: "opus", label: "Opus 4.8"),
+        CodexModelOption(id: "opus", label: "Opus 5"),
         CodexModelOption(id: "haiku", label: "Haiku 4.5"),
     ]
 
