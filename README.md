@@ -54,6 +54,10 @@ If you paste transcripts into Claude by hand today — this is that workflow, fi
     <td>One click turns a note into a shareable public article.</td>
   </tr>
   <tr>
+    <td><strong>Channel transcript dump (CLI)</strong></td>
+    <td><code>tubefold https://www.youtube.com/@handle/videos</code> saves every video's transcript as a dated Markdown file into one folder — no summarization, just the raw text with publish dates. <code>--tabs shorts,streams</code>, <code>--limit N</code>; re-runs only fetch new videos.</td>
+  </tr>
+  <tr>
     <td><strong>Any output language</strong></td>
     <td>Summaries in your language regardless of the video's language.</td>
   </tr>

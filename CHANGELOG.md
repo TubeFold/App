@@ -17,6 +17,16 @@ without notes.
 
 ## [Unreleased]
 
+### Added
+
+- Channel mode in the `tubefold` CLI: pass a channel URL (`youtube.com/@handle`,
+  `/channel/UC…`, `/c/…`, `/user/…`, optionally with a `/videos`, `/shorts` or
+  `/streams` tab) instead of a video URL and every video's transcript is saved
+  as its own Markdown file — publish date first in the front matter, header and
+  filename — into one folder per channel, plus an `index.md`. No provider runs.
+  `--tabs`, `--limit`, `--overwrite` and `--no-index` control the export;
+  re-running skips videos already in the folder.
+
 ## [0.9.4] - 2026-07-26
 
 ### Changed
