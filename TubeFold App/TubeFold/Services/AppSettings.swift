@@ -37,6 +37,7 @@ final class AppSettings: ObservableObject {
         static let hideDockIcon = "hideDockIcon"
         static let dismissedExtensionTip = "dismissedExtensionTip"
         static let showWatchSuggestions = "showWatchSuggestions"
+        static let channelExportDirectory = "channelExportDirectory"
 
         static let all = [
             autoOpenTelegraph,
@@ -44,6 +45,7 @@ final class AppSettings: ObservableObject {
             hideDockIcon,
             dismissedExtensionTip,
             showWatchSuggestions,
+            channelExportDirectory,
         ]
     }
 
@@ -135,6 +137,17 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(showWatchSuggestions, forKey: Keys.showWatchSuggestions) }
     }
 
+    /// Parent folder for channel transcript exports (one sub-folder per
+    /// channel is created inside). Remembered from the last "Choose…" so
+    /// repeat exports land in the same place.
+    @Published var channelExportDirectory: URL {
+        didSet { UserDefaults.standard.set(channelExportDirectory.path, forKey: Keys.channelExportDirectory) }
+    }
+
+    static let defaultChannelExportDirectory = FileManager.default
+        .homeDirectoryForCurrentUser
+        .appendingPathComponent("Documents/YouTube Transcripts", isDirectory: true)
+
     private init() {
         let defaults = UserDefaults.standard
         defaults.register(defaults: [
@@ -150,6 +163,9 @@ final class AppSettings: ObservableObject {
         hideDockIcon = defaults.bool(forKey: Keys.hideDockIcon)
         dismissedExtensionTip = defaults.bool(forKey: Keys.dismissedExtensionTip)
         showWatchSuggestions = defaults.bool(forKey: Keys.showWatchSuggestions)
+        channelExportDirectory = defaults.string(forKey: Keys.channelExportDirectory)
+            .map { URL(fileURLWithPath: $0, isDirectory: true) }
+            ?? Self.defaultChannelExportDirectory
         // Legacy state from when the two toggles were independent: both icons
         // hidden. The visibility mode can't express that, so restore the menu
         // bar icon (didSet doesn't fire in init — persist by hand).
@@ -169,5 +185,6 @@ final class AppSettings: ObservableObject {
         hideDockIcon = false
         dismissedExtensionTip = false
         showWatchSuggestions = false
+        channelExportDirectory = Self.defaultChannelExportDirectory
     }
 }

@@ -26,6 +26,12 @@ without notes.
   filename — into one folder per channel, plus an `index.md`. No provider runs.
   `--tabs`, `--limit`, `--overwrite` and `--no-index` control the export;
   re-running skips videos already in the folder.
+- The same channel export in the app: paste a channel link into the Library
+  add bar to get an export sheet — pick Videos / Shorts / Live streams, all or
+  the newest N, the destination folder — then watch the per-video progress
+  and a Saved / Already exported / No captions / Failed summary with a
+  "Show in Finder" button. Videos that have no captions on YouTube are
+  reported separately from real failures.
 
 ## [0.9.4] - 2026-07-26
 

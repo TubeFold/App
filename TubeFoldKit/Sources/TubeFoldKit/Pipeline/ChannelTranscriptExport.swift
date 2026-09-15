@@ -41,6 +41,9 @@ public struct ChannelExportOptions: Sendable {
 public enum ChannelExportOutcome: Sendable, Equatable {
     case saved(path: String)
     case skipped(reason: String)
+    /// YouTube has no caption track at all for the video (typical for older
+    /// uploads) — nothing went wrong on our side, so it is not a failure.
+    case noCaptions
     case failed(message: String)
 }
 
@@ -67,6 +70,9 @@ public struct ChannelExportSummary: Sendable {
     public let folder: URL
     public let channelTitle: String
     public let items: [ChannelExportItem]
+    /// The run stopped early because the calling task was cancelled; `items`
+    /// holds what was processed up to that point.
+    public let cancelled: Bool
 
     public var saved: Int {
         items.filter {
@@ -86,6 +92,10 @@ public struct ChannelExportSummary: Sendable {
                 false
             }
         }.count
+    }
+
+    public var noCaptions: Int {
+        items.filter { $0.outcome == .noCaptions }.count
     }
 
     public var failed: Int {
@@ -109,7 +119,8 @@ public struct ChannelTranscriptExporter: Sendable {
     /// List the channel and write one transcript file per video.
     ///
     /// Throws only when the channel itself can't be listed; per-video failures
-    /// are recorded as `.failed` items and the run continues.
+    /// are recorded as `.failed` items and the run continues. Cancelling the
+    /// task stops after the current video — the index still gets written.
     public func export(
         reference: YouTubeChannelReference,
         options: ChannelExportOptions,
@@ -130,7 +141,12 @@ public struct ChannelTranscriptExporter: Sendable {
         let existing = options.skipExisting ? TranscriptDocument.existingVideoIDs(in: folder) : []
 
         var items: [ChannelExportItem] = []
+        var cancelled = false
         for (offset, video) in listing.videos.enumerated() {
+            if Task.isCancelled {
+                cancelled = true
+                break
+            }
             let item: ChannelExportItem
             if existing.contains(video.videoID) {
                 item = ChannelExportItem(
@@ -153,7 +169,7 @@ public struct ChannelTranscriptExporter: Sendable {
             let index = Self.indexMarkdown(listing: listing, items: items)
             try? index.write(to: folder.appendingPathComponent("index.md"), atomically: true, encoding: .utf8)
         }
-        return ChannelExportSummary(folder: folder, channelTitle: listing.title, items: items)
+        return ChannelExportSummary(folder: folder, channelTitle: listing.title, items: items, cancelled: cancelled)
     }
 
     private func exportOne(
@@ -190,14 +206,20 @@ public struct ChannelTranscriptExporter: Sendable {
                 outcome: .saved(path: path.path)
             )
         } catch {
-            let message = (error as? InnerTubeError)?.userMessage
-                ?? (error as? LocalizedError)?.errorDescription
-                ?? "\(error)"
+            let outcome: ChannelExportOutcome = if case InnerTubeError.noTranscript = error {
+                .noCaptions
+            } else {
+                .failed(
+                    message: (error as? InnerTubeError)?.userMessage
+                        ?? (error as? LocalizedError)?.errorDescription
+                        ?? "\(error)"
+                )
+            }
             return ChannelExportItem(
                 videoID: video.videoID,
                 title: metadata.title == video.videoID ? video.title : metadata.title,
                 publishedAt: metadata.publishedAt,
-                outcome: .failed(message: message)
+                outcome: outcome
             )
         }
     }
@@ -223,6 +245,7 @@ public struct ChannelTranscriptExporter: Sendable {
             let status = switch item.outcome {
             case let .saved(path): "saved — `\(URL(fileURLWithPath: path).lastPathComponent)`"
             case let .skipped(reason): "skipped (\(reason))"
+            case .noCaptions: "no captions on YouTube"
             case let .failed(message): "failed — \(message)"
             }
             let title = item.title.isEmpty ? item.videoID : item.title

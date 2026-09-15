@@ -91,6 +91,19 @@ struct LibraryView: View {
                 "“\(video.displayTitle)” and its generated summary will be removed from your Library. This can't be undone.",
             )
         }
+        .sheet(item: $viewModel.channelExportRequest) { request in
+            ChannelExportSheetView(
+                request: request,
+                isPresented: Binding(
+                    get: { viewModel.channelExportRequest != nil },
+                    set: {
+                        if !$0 {
+                            viewModel.channelExportRequest = nil
+                        }
+                    },
+                ),
+            )
+        }
         .task {
             viewModel.startAutoRefresh()
         }
@@ -105,7 +118,7 @@ struct LibraryView: View {
                 Image(systemName: "link")
                     .foregroundStyle(urlFieldFocused ? Color.accentColor : Color.secondary)
 
-                TextField("Paste a YouTube link…", text: $viewModel.urlInput)
+                TextField("Paste a YouTube video or channel link…", text: $viewModel.urlInput)
                     .textFieldStyle(.plain)
                     .focused($urlFieldFocused)
                     .disableAutocorrection(true)

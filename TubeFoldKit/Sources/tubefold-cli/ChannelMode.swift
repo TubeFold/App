@@ -70,12 +70,17 @@ func runChannelExport(
                     logger.debug("saved: \(path)")
                 case let .skipped(reason):
                     logger.info("\(position) skipped (\(reason)) — \(label)")
+                case .noCaptions:
+                    logger.info("\(position) no captions — \(label)")
                 case let .failed(message):
                     logger.info("\(position) FAILED — \(label): \(message)")
                 }
             }
         )
-        logger.info("Saved \(summary.saved), skipped \(summary.skipped), failed \(summary.failed)")
+        logger.info(
+            "Saved \(summary.saved), skipped \(summary.skipped), "
+                + "no captions \(summary.noCaptions), failed \(summary.failed)"
+        )
         logger.info("Folder: \(summary.folder.path)")
         print(summary.folder.path)
 
@@ -85,7 +90,7 @@ func runChannelExport(
             open.arguments = [summary.folder.path]
             try? open.run()
         }
-        exit(summary.saved == 0 && summary.failed > 0 ? 1 : 0)
+        exit(summary.saved == 0 && summary.failed + summary.noCaptions > 0 ? 1 : 0)
     } catch let error as ChannelBrowseError {
         die(error.userMessage)
     } catch let error as InnerTubeError {

@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Foundation
+import TubeFoldKit
 
 @MainActor
 final class LibraryViewModel: ObservableObject {
@@ -13,6 +14,9 @@ final class LibraryViewModel: ObservableObject {
     @Published var urlInput = ""
     @Published private(set) var isSubmitting = false
     @Published private(set) var noticeMessage: String?
+    /// A channel URL was added — presents the transcript-export sheet instead
+    /// of queuing a summary job.
+    @Published var channelExportRequest: ChannelExportRequest?
     @Published private(set) var suggestion: WatchSuggestion?
     /// Defaults to `true` so the empty-state / tip nudges stay hidden until the
     /// first status check resolves (no flash for users who already have it).
@@ -156,6 +160,15 @@ final class LibraryViewModel: ObservableObject {
         guard !trimmed.isEmpty, !isSubmitting else { return }
         guard Self.looksLikeYouTubeURL(trimmed) else {
             errorMessage = "That doesn't look like a YouTube link."
+            return
+        }
+        // A channel link never parses as a video, so it can be checked first;
+        // it opens the export sheet rather than creating a summary.
+        if let channel = try? YouTubeChannelURL.parse(trimmed) {
+            errorMessage = nil
+            noticeMessage = nil
+            urlInput = ""
+            channelExportRequest = ChannelExportRequest(reference: channel)
             return
         }
 

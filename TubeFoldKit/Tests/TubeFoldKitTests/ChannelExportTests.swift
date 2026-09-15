@@ -321,7 +321,7 @@ import Testing
         #expect(index.contains("| 2024-05-02 | [Newer]"))
     }
 
-    @Test func aFailedVideoDoesNotAbortTheRun() async throws {
+    @Test func aCaptionlessVideoDoesNotAbortTheRun() async throws {
         let directory = try makeDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
@@ -333,10 +333,10 @@ import Testing
             options: ChannelExportOptions(outputDirectory: directory, requestDelay: .zero)
         )
 
-        #expect((summary.saved, summary.failed) == (1, 1))
-        #expect(summary.items.first?.outcome == .failed(message: InnerTubeError.noTranscript.userMessage))
+        #expect((summary.saved, summary.noCaptions, summary.failed) == (1, 1, 0))
+        #expect(summary.items.first?.outcome == .noCaptions)
         let index = try String(contentsOf: summary.folder.appendingPathComponent("index.md"))
-        #expect(index.contains("failed — No transcript found for this video"))
+        #expect(index.contains("no captions on YouTube"))
     }
 
     @Test func limitCapsTheListing() async throws {
