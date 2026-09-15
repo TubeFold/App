@@ -32,6 +32,7 @@ without notes.
   and a Saved / Already exported / No captions / Failed summary with a
   "Show in Finder" button. Videos that have no captions on YouTube are
   reported separately from real failures.
+- GPT-6 Astra (`gpt-6-astra`) is available as a Codex model option.
 
 ## [0.9.4] - 2026-07-26
 
