@@ -21,19 +21,11 @@ without notes.
 
 ### Added
 
-- Export a whole channel's transcripts. Paste a channel link (for example
-  `youtube.com/@handle`) instead of a video link and TubeFold saves the
-  transcript of every video as a separate Markdown file — named and dated by
-  publish date, so the folder reads in chronological order — into one folder
-  for the channel. No summaries are generated and nothing is added to your
-  Library; it's the raw text, ready to search, skim or feed into other tools.
-- In the app, the channel link opens a small export sheet: choose Videos,
-  Shorts or live streams, everything or just the newest N, and where to save.
-  You see each video land as it's fetched and can stop at any time; at the end
-  a summary shows how many were saved, how many were already there from a
-  previous run, and how many have no captions on YouTube (nothing to export
-  for those). Run it again later and only the new videos are fetched. The
-  same export is available in the `tubefold` CLI.
+- Paste a YouTube channel link instead of a video link to save every video's
+  transcript as a dated Markdown file in one folder — no summaries, just the text.
+- The app shows an export sheet for it: pick Videos, Shorts or live streams, all
+  or the newest N, and the folder, then watch the progress and get a Saved /
+  Already exported / No captions tally at the end.
 - GPT-6 Astra (`gpt-6-astra`) is available as a Codex model option.
 
 ## [0.9.4] - 2026-07-26
