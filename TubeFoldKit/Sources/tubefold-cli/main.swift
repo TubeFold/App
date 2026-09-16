@@ -27,7 +27,8 @@ func die(_ message: String, code: Int32 = 1) -> Never {
 
 func usage() -> Never {
     let text = """
-    usage: tubefold <youtube-url> [options]
+    usage: tubefold <youtube-video-url> [options]       summarize one video
+           tubefold <youtube-channel-url> [options]     dump a channel's transcripts
 
     Options:
       --provider <name>        codex (default), claude, or fake
@@ -39,6 +40,15 @@ func usage() -> Never {
       --allow-any <bool>       transcript fallback when original language unknown
       --open / --no-open       reveal the saved file after writing
       --verbose                debug logging
+
+    Channel mode (youtube.com/@handle, /channel/UC…, /c/…, /user/…):
+    writes one dated transcript .md per video into <output-dir>/<channel>/,
+    plus an index.md; no provider runs and nothing is summarized.
+
+      --tabs <list>            videos (default), shorts, streams — comma-separated
+      --limit <n>              stop after the n newest videos
+      --overwrite              re-export videos already in the folder
+      --no-index               skip writing index.md
     """
     FileHandle.standardError.write(Data((text + "\n").utf8))
     exit(2)
@@ -55,7 +65,7 @@ while let argument = iterator.next() {
     switch argument {
     case "--help", "-h":
         usage()
-    case "--verbose", "--open", "--no-open":
+    case "--verbose", "--open", "--no-open", "--overwrite", "--no-index":
         booleanFlags.insert(argument)
     case let flag where flag.hasPrefix("--"):
         guard let value = iterator.next() else {
@@ -131,6 +141,33 @@ func expandPath(_ value: String) -> URL {
 }
 
 let outputDir = expandPath(flags["output-dir"] ?? config["OUTPUT_DIR"] ?? "~/Documents/YouTube Summaries")
+
+// ------------------------------------------------------------ channel mode
+
+// A channel URL never parses as a video URL, so channel detection can go
+// first: it decides between "summarize one video" and "dump every transcript".
+if let channel = try? YouTubeChannelURL.parse(urlArgument) {
+    var limit: Int?
+    if let raw = flags["limit"] {
+        guard let parsed = Int(raw), parsed > 0 else {
+            die("--limit expects a positive number", code: 2)
+        }
+        limit = parsed
+    }
+    await runChannelExport(
+        reference: channel,
+        options: ChannelModeOptions(
+            outputDirectory: outputDir,
+            tabs: parseChannelTabs(flags["tabs"], urlTab: channel.tab),
+            limit: limit,
+            allowAny: allowAny,
+            skipExisting: !booleanFlags.contains("--overwrite"),
+            writeIndex: !booleanFlags.contains("--no-index"),
+            openAfterSave: openAfterSave
+        ),
+        logger: logger
+    )
+}
 
 // ---------------------------------------------------------------- pipeline
 

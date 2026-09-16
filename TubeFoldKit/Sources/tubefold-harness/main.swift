@@ -13,7 +13,7 @@ func fail(_ message: String) -> Never {
 
 let arguments = Array(CommandLine.arguments.dropFirst())
 guard let target = arguments.first else {
-    fail("usage: tubefold-harness <url-or-video-id> [--transcript] [--allow-any true|false]")
+    fail("usage: tubefold-harness <url-or-video-id> [--transcript] [--channel] [--tabs videos,shorts]")
 }
 
 // Debug: inspect the live extension-status payload against the real data dir.
@@ -24,6 +24,48 @@ if target == "--extension-status" {
     print(String(decoding: data, as: UTF8.self))
     exit(0)
 }
+// Debug: list a whole channel (ids + titles only, no transcripts) so paging
+// against the live browse endpoint can be inspected without downloading.
+if arguments.contains("--channel") {
+    let reference: YouTubeChannelReference
+    do {
+        reference = try YouTubeChannelURL.parse(target)
+    } catch {
+        fail("error: \(error.localizedDescription)")
+    }
+    var tabs: [ChannelTab] = [reference.tab ?? .videos]
+    if let flagIndex = arguments.firstIndex(of: "--tabs"), flagIndex + 1 < arguments.count {
+        tabs = arguments[flagIndex + 1].split(separator: ",").compactMap {
+            ChannelTab(rawValue: $0.trimmingCharacters(in: .whitespaces).lowercased())
+        }
+    }
+    do {
+        let listing = try await InnerTubeClient().fetchChannelListing(
+            reference: reference,
+            tabs: tabs,
+            onPage: { count in
+                FileHandle.standardError.write(Data("\u{2026} \(count) videos\n".utf8))
+            }
+        )
+        let data = try JSONSerialization.data(
+            withJSONObject: [
+                "channel_id": listing.channelID,
+                "title": listing.title,
+                "url": listing.url,
+                "count": listing.videos.count,
+                "videos": listing.videos.map { ["id": $0.videoID, "title": $0.title] },
+            ],
+            options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        )
+        print(String(decoding: data, as: UTF8.self))
+        exit(0)
+    } catch let error as ChannelBrowseError {
+        fail("error: \(error.userMessage)")
+    } catch {
+        fail("error: \(error.localizedDescription)")
+    }
+}
+
 let includeTranscript = arguments.contains("--transcript")
 var allowAny = true
 if let flagIndex = arguments.firstIndex(of: "--allow-any"), flagIndex + 1 < arguments.count {

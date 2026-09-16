@@ -109,6 +109,7 @@ public enum ProviderDescriptors {
         marker: connectionMarker,
         markerExact: true,
         modelOptions: [
+            ProviderOption(id: "gpt-6-astra", label: "GPT-6 Astra"),
             ProviderOption(id: "gpt-5.6-sol", label: "GPT-5.6 Sol"),
             ProviderOption(id: "gpt-5.6-terra", label: "GPT-5.6 Terra"),
             ProviderOption(id: "gpt-5.6-luna", label: "GPT-5.6 Luna"),

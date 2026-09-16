@@ -12,7 +12,8 @@ public struct InnerTubeClient: Sendable {
     /// Injectable transport so tests never hit the network.
     public typealias Transport = @Sendable (URLRequest) async throws -> (Data, HTTPURLResponse)
 
-    private let transport: Transport
+    /// Internal so the channel-browse extension can reuse the same transport.
+    let transport: Transport
     private let profiles: [InnerTubeClientProfile]
 
     public init(

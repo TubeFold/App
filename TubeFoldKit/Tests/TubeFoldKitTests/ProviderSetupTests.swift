@@ -46,14 +46,16 @@ private func temporaryDataDir() throws -> URL {
         #expect(state2["codexReasoningEffort"] as? String == "high")
     }
 
-    @Test func codexModelOptionsIncludeGPT56Family() {
+    @Test func codexModelOptionsLeadWithAstraAndTheGPT56Family() {
         let options = ProviderDescriptors.codex.modelOptions
 
-        #expect(options.prefix(3).map(\.id) == [
+        #expect(options.prefix(4).map(\.id) == [
+            "gpt-6-astra",
             "gpt-5.6-sol",
             "gpt-5.6-terra",
             "gpt-5.6-luna",
         ])
+        #expect(ProviderDescriptors.codex.modelDisplayLabel("gpt-6-astra") == "GPT-6 Astra")
         #expect(ProviderDescriptors.codex.modelDisplayLabel("gpt-5.6-sol") == "GPT-5.6 Sol")
         #expect(ProviderDescriptors.codex.modelDisplayLabel("gpt-5.6-terra") == "GPT-5.6 Terra")
         #expect(ProviderDescriptors.codex.modelDisplayLabel("gpt-5.6-luna") == "GPT-5.6 Luna")
