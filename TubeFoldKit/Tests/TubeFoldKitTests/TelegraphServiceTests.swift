@@ -122,7 +122,7 @@ private func insertReadyVideo(
         }
         #expect(emChildren[1] == .element(
             tag: "a",
-            attrs: ["href": "https://tubefold.github.io/"],
+            attrs: ["href": "https://tubefold.app/"],
             children: [.text("TubeFold")]
         ))
         guard case let .text(note) = emChildren[2] else {

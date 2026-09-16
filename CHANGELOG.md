@@ -17,6 +17,10 @@ without notes.
 
 ## [Unreleased]
 
+### Changed
+
+- Project links (About window, the "Generated with TubeFold" footer, Telegraph credit) now point to the new website, tubefold.app.
+
 ## [0.9.6] - 2026-09-16
 
 ### Added

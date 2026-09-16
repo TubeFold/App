@@ -14,7 +14,7 @@ import Foundation
 enum SummaryMarkdown {
     /// Project credit, mirroring `SummaryText.projectName`/`projectURL`.
     private static let projectName = "TubeFold"
-    private static let projectURL = "https://tubefold.github.io/"
+    private static let projectURL = "https://tubefold.app/"
 
     static func htmlDocument(markdown: String, title: String) -> String {
         // The pipeline records these in the summary's YAML front matter; the

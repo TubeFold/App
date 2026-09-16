@@ -7,7 +7,7 @@ import Foundation
 /// the model; providers produce only the Markdown body.
 public enum SummaryText {
     public static let projectName = "TubeFold"
-    public static let projectURL = "https://tubefold.github.io/"
+    public static let projectURL = "https://tubefold.app/"
 
     /// Scalar value in the generated YAML front matter.
     public enum YAMLScalar: Equatable, Sendable {

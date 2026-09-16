@@ -13,7 +13,7 @@ struct AboutView: View {
             systemImage: "chevron.left.forwardslash.chevron.right",
             url: "https://github.com/TubeFold/App",
         ),
-        AboutLink(title: "Website", systemImage: "globe", url: "https://tubefold.github.io/"),
+        AboutLink(title: "Website", systemImage: "globe", url: "https://tubefold.app/"),
         AboutLink(
             title: "Chrome extension",
             systemImage: "puzzlepiece.extension",

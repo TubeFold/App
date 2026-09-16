@@ -111,7 +111,7 @@ private struct ExplodingProvider: SummaryProvider {
         #expect(summary.hasPrefix("---\ntype: \"tubefold\"\nsource: \"youtube\"\n"))
         #expect(summary.contains("published_at: \"2024-05-01\""))
         #expect(summary.contains("transcript_is_generated: true"))
-        #expect(summary.contains("_Generated with [TubeFold](https://tubefold.github.io/)_"))
+        #expect(summary.contains("_Generated with [TubeFold](https://tubefold.app/)_"))
         #expect(video?.summaryMarkdown == summary)
 
         // Per-job artifacts exist too.
