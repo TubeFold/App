@@ -17,6 +17,8 @@ without notes.
 
 ## [Unreleased]
 
+## [0.9.6] - 2026-09-16
+
 ### Added
 
 - Channel mode in the `tubefold` CLI: pass a channel URL (`youtube.com/@handle`,
