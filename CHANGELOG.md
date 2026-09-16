@@ -21,19 +21,19 @@ without notes.
 
 ### Added
 
-- Channel mode in the `tubefold` CLI: pass a channel URL (`youtube.com/@handle`,
-  `/channel/UC…`, `/c/…`, `/user/…`, optionally with a `/videos`, `/shorts` or
-  `/streams` tab) instead of a video URL and every video's transcript is saved
-  as its own Markdown file — publish date first in the front matter, header and
-  filename — into one folder per channel, plus an `index.md`. No provider runs.
-  `--tabs`, `--limit`, `--overwrite` and `--no-index` control the export;
-  re-running skips videos already in the folder.
-- The same channel export in the app: paste a channel link into the Library
-  add bar to get an export sheet — pick Videos / Shorts / Live streams, all or
-  the newest N, the destination folder — then watch the per-video progress
-  and a Saved / Already exported / No captions / Failed summary with a
-  "Show in Finder" button. Videos that have no captions on YouTube are
-  reported separately from real failures.
+- Export a whole channel's transcripts. Paste a channel link (for example
+  `youtube.com/@handle`) instead of a video link and TubeFold saves the
+  transcript of every video as a separate Markdown file — named and dated by
+  publish date, so the folder reads in chronological order — into one folder
+  for the channel. No summaries are generated and nothing is added to your
+  Library; it's the raw text, ready to search, skim or feed into other tools.
+- In the app, the channel link opens a small export sheet: choose Videos,
+  Shorts or live streams, everything or just the newest N, and where to save.
+  You see each video land as it's fetched and can stop at any time; at the end
+  a summary shows how many were saved, how many were already there from a
+  previous run, and how many have no captions on YouTube (nothing to export
+  for those). Run it again later and only the new videos are fetched. The
+  same export is available in the `tubefold` CLI.
 - GPT-6 Astra (`gpt-6-astra`) is available as a Codex model option.
 
 ## [0.9.4] - 2026-07-26
