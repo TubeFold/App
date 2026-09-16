@@ -22,10 +22,8 @@ without notes.
 ### Added
 
 - Paste a YouTube channel link instead of a video link to save every video's
-  transcript as a dated Markdown file in one folder — no summaries, just the text.
-- The app shows an export sheet for it: pick Videos, Shorts or live streams, all
-  or the newest N, and the folder, then watch the progress and get a Saved /
-  Already exported / No captions tally at the end.
+  transcript as a dated Markdown file in one folder — pick Videos, Shorts or
+  live streams and how many, then watch the progress; no summaries, just the text.
 - GPT-6 Astra (`gpt-6-astra`) is available as a Codex model option.
 
 ## [0.9.4] - 2026-07-26
