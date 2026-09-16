@@ -21,10 +21,8 @@ without notes.
 
 ### Added
 
-- **Batch channel transcripts.** Paste a YouTube channel link instead of a
-  video link to save every video's transcript as a dated Markdown file in one
-  folder — pick Videos, Shorts or live streams and how many, then watch the
-  progress; no summaries, just the text.
+- **Batch channel transcripts.** Paste a YouTube channel link to save every
+  video's transcript as a dated Markdown file in one folder.
 - GPT-6 Astra (`gpt-6-astra`) is available as a Codex model option.
 
 ## [0.9.4] - 2026-07-26
